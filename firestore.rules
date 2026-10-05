@@ -1,0 +1,119 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function active() {
+      return signedIn() && request.auth.token.accountStatus == 'active';
+    }
+
+    function admin() {
+      return active() && request.auth.token.role == 'admin';
+    }
+
+    function editor() {
+      return active() && request.auth.token.role in ['editor', 'admin'];
+    }
+
+    function owner(uid) {
+      return active() && request.auth.uid == uid;
+    }
+
+    function published() {
+      return resource.data.status == 'published';
+    }
+
+    match /appConfig/public {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /appReleases/{version} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /users/{uid} {
+      allow read: if owner(uid) || admin();
+      allow create, delete: if false;
+      allow update: if owner(uid)
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt']);
+
+      match /notifications/{notificationId} {
+        allow read: if owner(uid);
+        allow create, delete: if false;
+        allow update: if owner(uid)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
+      }
+
+      match /devices/{deviceId} {
+        allow read: if owner(uid);
+        allow create, update, delete: if owner(uid);
+      }
+    }
+
+    match /layers/{layerId} {
+      allow read: if published() || editor();
+      allow write: if false;
+    }
+
+    match /dashboards/{dashboardId} {
+      allow read: if published() || editor();
+      allow write: if false;
+    }
+
+    match /publications/{publicationId} {
+      allow read: if published() || editor();
+      allow write: if false;
+    }
+
+    match /changeRequests/{requestId} {
+      allow read: if admin() || (editor() && resource.data.requestedBy == request.auth.uid);
+      allow create, update, delete: if false;
+
+      match /events/{eventId} {
+        allow read: if admin()
+          || (editor()
+            && get(/databases/$(database)/documents/changeRequests/$(requestId)).data.requestedBy == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
+    match /tickets/{ticketId} {
+      allow read: if admin() || (active() && resource.data.ownerUid == request.auth.uid);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if admin()
+          || (active()
+            && get(/databases/$(database)/documents/tickets/$(ticketId)).data.ownerUid == request.auth.uid);
+        allow write: if false;
+      }
+
+      match /events/{eventId} {
+        allow read: if admin()
+          || (active()
+            && get(/databases/$(database)/documents/tickets/$(ticketId)).data.ownerUid == request.auth.uid);
+        allow write: if false;
+      }
+    }
+
+    match /auditLogs/{eventId} {
+      allow read: if admin();
+      allow write: if false;
+    }
+
+    match /translationCache/{cacheKey} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
