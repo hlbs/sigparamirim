@@ -81,7 +81,7 @@ Antes de iniciar qualquer fase:
 
 **Release-alvo:** `v0.3.0`
 
-**Estado:** prévia auditável publicada em `v0.3.0-beta.1`; gate científico final ainda aberto.
+**Estado:** narrativa didática e auditável revisada em `v0.3.0-beta.2`; gate científico final ainda aberto.
 
 **Objetivos:**
 

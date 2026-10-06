@@ -14,12 +14,12 @@ function MetricCard({ metric, digits = 2 }: { metric: NarrativeMetric; digits?: 
   return (
     <article className="story-metric-card">
       <span className={`metric-review ${verified ? 'verified' : 'source'}`}>
-        {verified ? '✓ Relação verificada' : '○ Registro da fonte'}
+        {verified ? '✓ Cálculo conferido' : '○ Dado do estudo'}
       </span>
-      <strong>{formatMetric(metric, digits)}</strong>
+      <MetricValue metric={metric} digits={digits} />
       <span className="metric-label">{metric.labelPtBr}</span>
       <details>
-        <summary>Rastreabilidade</summary>
+        <summary>Conheça a origem do dado</summary>
         <p>Origem: {metric.sourceCell}</p>
         {metric.derivation && <p>Cálculo: {metric.derivation}</p>}
       </details>
@@ -27,13 +27,27 @@ function MetricCard({ metric, digits = 2 }: { metric: NarrativeMetric; digits?: 
   );
 }
 
-function ReferenceLink({ index }: { index: number }) {
-  const reference = scientificReferences[index];
-  if (!reference) return null;
+function MetricValue({ metric, digits = 2 }: { metric: NarrativeMetric; digits?: number }) {
+  const formatted = formatMetric(metric, digits);
+  const [value, ...unitParts] = formatted.split(' ');
   return (
-    <a className="doi-link" href={reference.url} target="_blank" rel="noreferrer">
-      {reference.author}, {reference.year} · DOI: {reference.doi}
-    </a>
+    <strong className="metric-value">
+      <span>{value}</span>
+      {unitParts.length > 0 && <small>{unitParts.join(' ')}</small>}
+    </strong>
+  );
+}
+
+function Citation({ references }: { references: number[] }) {
+  return (
+    <sup className="citation" aria-label={`Referências ${references.join(', ')}`}>
+      {references.map((reference, index) => (
+        <span key={reference}>
+          {index > 0 && ', '}
+          <a href={`#ref-${reference}`}>[{reference}]</a>
+        </span>
+      ))}
+    </sup>
   );
 }
 
@@ -53,7 +67,7 @@ function NarrativeSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="story-section" data-tone={tone} aria-labelledby={`${id}-title`}>
+    <section id={id} className="story-section" data-tone={tone} aria-labelledby={`${id}-title`}>
       <div className="story-copy">
         <span className="eyebrow">{eyebrow}</span>
         <h2 id={`${id}-title`}>{title}</h2>
@@ -117,23 +131,23 @@ export function HomePage() {
           <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
           <h1 id="home-title">Uma leitura territorial construída com dados rastreáveis.</h1>
           <p>
-            Explore dimensões, relevo, geometria e drenagem. Cada número informa se foi transcrito da
-            fonte ou recalculado pelo pipeline da plataforma.
+            Descubra como o relevo, a forma e a rede de drenagem ajudam a contar a história da Bacia do
+            Rio Paramirim. Aqui, números ganham contexto sem perder o vínculo com a ciência que os sustenta.
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#dimensao">Conhecer a bacia</a>
             <NavLink className="button button-secondary" to="/mapa">Abrir o WebGIS</NavLink>
           </div>
           <div className="story-audit-line">
-            <strong>{morphometryValidation.summary.verifiedCount}</strong> relações conferidas
+            <strong>{morphometryValidation.summary.verifiedCount}</strong> cálculos conferidos
             <span aria-hidden="true">·</span>
-            <strong>{morphometryDataset.source.rowCount}</strong> indicadores preservados
+            <strong>{morphometryDataset.source.rowCount}</strong> indicadores documentados
           </div>
         </div>
         <div className="story-hero-mark" aria-label="Identidade do SIG Paramirim">
           <img src="/sig-logo.png" alt="SIG Paramirim" />
-          <span>Relatório morfométrico</span>
-          <small>Fonte versionada por checksum</small>
+          <span>Conheça a bacia</span>
+          <small>Informação científica acessível e rastreável</small>
         </div>
       </section>
 
@@ -143,12 +157,13 @@ export function HomePage() {
         title="Escala e proporção da bacia"
         description={<>
           <p>
-            A planilha registra uma área de {formatMetric(area)}, com eixo de comprimento de {formatMetric(length)}.
-            A largura média de {formatMetric(width)} foi reproduzida pela relação entre área e comprimento.
+            A Bacia do Rio Paramirim ocupa {formatMetric(area)} e se estende por cerca de {formatMetric(length)} em
+            seu eixo principal. Para visualizar melhor essas proporções, imagine uma largura média de {formatMetric(width)}.
           </p>
-          <p className="scientific-caution">Essas medidas descrevem a escala geométrica; isoladamente, não determinam a resposta hidrológica.</p>
-          <ReferenceLink index={3} />
-          <ReferenceLink index={5} />
+          <p>
+            Área, comprimento e largura formam um primeiro retrato do território. Na hidrologia, porém, esse retrato
+            ganha significado quando é lido em conjunto com relevo, clima, solos e drenagem.<Citation references={[4, 6]} />
+          </p>
         </>}
       >
         <div className="metric-grid metric-grid-three">
@@ -165,10 +180,14 @@ export function HomePage() {
         tone="soft"
         description={<>
           <p>
-            A diferença entre as elevações máxima e mínima reproduz exatamente a amplitude registrada.
-            A declividade média de {formatMetric(slope)} permanece identificada como valor transcrito da fonte.
+            O território se eleva de {formatMetric(minimumElevation)} a {formatMetric(maximumElevation)}. Entre esses
+            extremos há uma diferença de {formatMetric(relief)}, ou seja, uma variação vertical de mais de 1,6 quilômetro.
           </p>
-          <p className="scientific-caution">A visualização apresenta a distribuição vertical conhecida, sem classificar o terreno ou inferir processos erosivos.</p>
+          <p>
+            A elevação média, de {formatMetric(meanElevation)}, e a declividade média, de {formatMetric(slope)}, resumem
+            como as alturas e inclinações se distribuem pela bacia. São informações essenciais para entender o caminho
+            da água, mas não devem ser interpretadas isoladamente.
+          </p>
         </>}
       >
         <figure className="elevation-figure" aria-labelledby="elevation-caption">
@@ -194,13 +213,13 @@ export function HomePage() {
         title="Quatro razões descrevem a forma"
         description={<>
           <p>
-            Fator de forma, elongação, circularidade e compacidade foram recalculados com área, perímetro e
-            comprimento. A leitura conjunta registra a geometria sem convertê-la automaticamente em previsão de cheia.
+            Além do tamanho, uma bacia também pode ser compreendida pelo seu desenho. Fator de forma, razão de
+            elongação, circularidade e compacidade comparam área, perímetro e comprimento por diferentes pontos de vista.
           </p>
-          <ReferenceLink index={1} />
-          <ReferenceLink index={2} />
-          <ReferenceLink index={3} />
-          <ReferenceLink index={5} />
+          <p>
+            Esses índices facilitam a comparação entre bacias de dimensões distintas. Eles ajudam a organizar a leitura
+            do território, mas não funcionam como previsão de cheias quando observados sozinhos.<Citation references={[1, 2, 3, 4, 6]} />
+          </p>
         </>}
       >
         <div className="shape-metrics">
@@ -217,38 +236,42 @@ export function HomePage() {
       <NarrativeSection
         id="drenagem"
         eyebrow="04 · Rede de drenagem"
-        title="Extensão de canais relacionada à área"
+        title="Uma rede que percorre mais de dois mil quilômetros"
         tone="brand"
         description={<>
           <p>
-            O inventário registra {formatMetric(totalChannels)} de canais e {formatMetric(streamCount, 0)} segmentos.
-            A densidade de {formatMetric(drainageDensity)} resulta da divisão do comprimento total pela área.
+            Se todos os trechos de canais identificados fossem colocados em linha, eles somariam {formatMetric(totalChannels)}.
+            Essa rede está organizada em {formatMetric(streamCount, 0)} segmentos que conduzem a água através da paisagem.
           </p>
-          <p className="scientific-caution">O valor é apresentado sem atribuir, por si só, infiltração, permeabilidade ou risco hidrológico.</p>
-          <ReferenceLink index={0} />
-          <ReferenceLink index={1} />
-          <ReferenceLink index={3} />
-          <ReferenceLink index={4} />
+          <p>
+            A densidade de drenagem relaciona essa extensão com a área da bacia. O resultado, {formatMetric(drainageDensity)},
+            funciona como uma medida de comparação: ele descreve quanto canal foi mapeado por unidade de área, sem determinar,
+            por si só, infiltração, permeabilidade ou risco hidrológico.<Citation references={[1, 2, 4, 5]} />
+          </p>
         </>}
       >
         <div className="drainage-visual">
-          <div className="drainage-number"><strong>{formatMetric(drainageDensity)}</strong><span>Densidade de drenagem verificada</span></div>
+          <div className="drainage-number"><MetricValue metric={drainageDensity} /><span>Densidade de drenagem</span></div>
           <div className="drainage-divider" />
-          <div className="drainage-number"><strong>{formatMetric(overlandFlow)}</strong><span>Comprimento de escoamento superficial calculado</span></div>
+          <div className="drainage-number"><MetricValue metric={overlandFlow} /><span>Comprimento médio estimado do escoamento superficial</span></div>
         </div>
       </NarrativeSection>
 
       <NarrativeSection
         id="canal"
         eyebrow="05 · Canal principal"
-        title="Um perfil longitudinal resumido"
+        title="O caminho do canal principal"
         tone="soft"
         description={<>
           <p>
-            Ao longo de {formatMetric(channelLength)}, os extremos informados passam de {formatMetric(channelStart)}{' '}
-            para {formatMetric(channelEnd)}. A relação entre essa diferença e o comprimento gera o gradiente apresentado.
+            O canal principal funciona como um eixo da drenagem: ao longo de {formatMetric(channelLength)}, ele conecta um
+            ponto a {formatMetric(channelStart)} de altitude a outro situado a {formatMetric(channelEnd)}.
           </p>
-          <p className="scientific-caution">O perfil completo e as declividades compensadas permanecem reservados até a validação dos dados intermediários.</p>
+          <p>
+            A diferença de altitude distribuída por esse percurso produz um gradiente médio de {formatMetric(channelGradient)}.
+            O desenho ao lado é uma representação didática desse trajeto — uma síntese, e não o perfil topográfico completo.
+            <Citation references={[4, 6]} />
+          </p>
         </>}
       >
         <figure className="channel-profile" aria-labelledby="channel-caption">
@@ -270,33 +293,34 @@ export function HomePage() {
 
       <section className="method-section" aria-labelledby="method-title">
         <div>
-          <span className="eyebrow">Transparência científica</span>
-          <h2 id="method-title">O que já pode ser mostrado — e o que continua bloqueado</h2>
+          <span className="eyebrow">Como construímos esta leitura</span>
+          <h2 id="method-title">Dados confiáveis, explicações responsáveis</h2>
           <p>
-            O pipeline preserva {morphometryValidation.summary.metricCount} indicadores e recalculou {morphometryValidation.summary.recalculatedCount} relações.
-            Nesta entrega, somente valores de origem selecionados e relações verificadas alimentam a narrativa.
+            Cada indicador mantém uma ligação com sua origem, enquanto as relações matemáticas que podem ser reproduzidas
+            passam por uma conferência independente. Assim, a informação fica mais fácil de compreender sem perder a
+            rastreabilidade necessária à pesquisa científica.
           </p>
         </div>
         <dl className="audit-grid">
-          <div><dt>Compatíveis com o recálculo</dt><dd>{morphometryValidation.summary.verifiedCount}</dd></div>
-          <div><dt>Aguardando revisão</dt><dd>{morphometryValidation.summary.needsReviewCount}</dd></div>
-          <div><dt>Unidades a confirmar</dt><dd>{morphometryValidation.summary.missingUnitCount}</dd></div>
+          <div><dt>Indicadores documentados</dt><dd>{morphometryValidation.summary.metricCount}</dd></div>
+          <div><dt>Relações recalculadas</dt><dd>{morphometryValidation.summary.recalculatedCount}</dd></div>
+          <div><dt>Cálculos conferidos</dt><dd>{morphometryValidation.summary.verifiedCount}</dd></div>
         </dl>
-        <div className="blocked-data-note">
-          <strong>Fora da narrativa nesta versão</strong>
+        <div className="curation-note">
+          <strong>Curadoria científica contínua</strong>
           <p>
-            As {morphometryValidation.concentrationTime.methodCount} estimativas de tempo de concentração e a integral hipsométrica
-            aguardam métodos, insumos e referências suficientes para uma publicação responsável.
+            Novas interpretações são incorporadas à plataforma somente depois da conferência de métodos, unidades e referências.
+            Esse cuidado evita conclusões apressadas e mantém a experiência clara para diferentes públicos.
           </p>
         </div>
       </section>
 
       <section className="references-section" aria-labelledby="references-title">
-        <span className="eyebrow">Referências metodológicas</span>
-        <h2 id="references-title">Fontes com DOI verificado</h2>
+        <span className="eyebrow">Referências</span>
+        <h2 id="references-title">As bases científicas desta leitura</h2>
         <ol>
-          {scientificReferences.map((reference) => (
-            <li key={reference.doi}>
+          {scientificReferences.map((reference, index) => (
+            <li key={reference.doi} id={`ref-${index + 1}`}>
               <span>{reference.author} ({reference.year}). {reference.title}.</span>
               <a href={reference.url} target="_blank" rel="noreferrer">DOI: {reference.doi}</a>
             </li>

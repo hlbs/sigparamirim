@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O projeto está no marco de pré-lançamento `v0.3.0-beta.1`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A página inicial já apresenta uma narrativa morfométrica factual e rastreável; interpretações e indicadores pendentes de revisão científica permanecem fora do pacote publicado.
+O projeto está no marco de pré-lançamento `v0.3.0-beta.2`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A página inicial apresenta uma narrativa morfométrica didática, factual e rastreável; interpretações e indicadores pendentes de revisão científica permanecem fora do pacote publicado.
 
 ## Desenvolvimento local
 

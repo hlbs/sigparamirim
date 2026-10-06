@@ -2,6 +2,20 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.2] - 2026-10-06
+
+### Aprimorado
+
+- Narrativa integralmente reescrita em linguagem didática e inclusiva, aproximando os conceitos hidrológicos do público geral sem perder precisão científica.
+- Citações numéricas inseridas nos textos e referências consolidadas em uma única seção ao final da leitura.
+- Seção de metodologia reposicionada como compromisso de qualidade e curadoria científica contínua.
+- Composição tipográfica revisada para evitar títulos e unidades fragmentados em desktop e dispositivos móveis.
+
+### Corrigido
+
+- Valores e unidades agora possuem tratamento visual independente, preservando expressões como `km/km²`.
+- Âncoras internas das seções adicionadas para garantir a navegação pelo botão “Conhecer a bacia”.
+
 ## [0.3.0-beta.1] - 2026-10-06
 
 ### Adicionado
