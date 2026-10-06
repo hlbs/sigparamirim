@@ -42,7 +42,7 @@ service cloud.firestore {
       allow delete: if false;
       allow update: if self(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt']);
+          .hasOnly(['displayName', 'photoURL', 'bio', 'lattesUrl', 'institution', 'educationLevel', 'country', 'state', 'city', 'contactEmail', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt']);
 
       match /notifications/{notificationId} {
         allow read: if active() && self(uid);

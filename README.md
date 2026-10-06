@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O projeto está no marco de pré-lançamento `v0.3.0-beta.6`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A página inicial apresenta uma narrativa morfométrica didática, com leitura integrada da forma, relevo, drenagem, águas superficiais e limitações para inferências subterrâneas. O referencial bibliográfico dos tempos de concentração está versionado no projeto; a interface destaca Giandotti como estimativa compatível com a escala territorial publicada para a bacia e apresenta os demais resultados em uma auditoria com limites e motivos de exclusão.
+O projeto está no marco de pré-lançamento `v0.3.0-beta.7`: PWA responsiva, entrada única com Google, identidade visual modular, header e menu lateral premium, perfil customizável, proteção integral do shell, papéis, regras de segurança e fundação do fluxo editorial. A página inicial apresenta uma narrativa morfométrica didática, com leitura integrada da forma, relevo, drenagem, águas superficiais e limitações para inferências subterrâneas. O referencial bibliográfico dos tempos de concentração está versionado no projeto; a interface destaca Giandotti como estimativa compatível com a escala territorial publicada para a bacia e apresenta os demais resultados em uma auditoria com limites e motivos de exclusão.
 
 ## Desenvolvimento local
 

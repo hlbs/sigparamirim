@@ -39,3 +39,30 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
 
   return updatedSnapshot.data() as UserProfile;
 }
+
+export type EditableProfileFields = Pick<UserProfile, 'displayName' | 'bio' | 'lattesUrl' | 'institution' | 'educationLevel' | 'country' | 'state' | 'city' | 'contactEmail'>;
+
+export async function updateUserProfile(fields: EditableProfileFields, avatar?: Blob): Promise<void> {
+  if (!firebase.app) throw new Error('O Firebase não está configurado para este ambiente.');
+  const user = firebase.auth?.currentUser;
+  if (!user) throw new Error('É necessário estar autenticado para editar o perfil.');
+  const [{ getFirestore, doc, updateDoc, serverTimestamp }, { getStorage, ref, uploadBytes, getDownloadURL }] = await Promise.all([
+    import('firebase/firestore'),
+    import('firebase/storage'),
+  ]);
+  const db = getFirestore(firebase.app, firebase.databaseId);
+  let photoURL = user.photoURL;
+  if (avatar) {
+    const storage = getStorage(firebase.app);
+    const avatarRef = ref(storage, `avatars/${user.uid}/profile-${Date.now()}.jpg`);
+    await uploadBytes(avatarRef, avatar, { contentType: 'image/jpeg', cacheControl: 'public,max-age=3600' });
+    photoURL = await getDownloadURL(avatarRef);
+  }
+  await updateDoc(doc(db, 'users', user.uid), {
+    ...fields,
+    photoURL,
+    updatedAt: serverTimestamp(),
+  });
+  const { updateProfile } = await import('firebase/auth');
+  await updateProfile(user, { displayName: fields.displayName || user.displayName, photoURL });
+}

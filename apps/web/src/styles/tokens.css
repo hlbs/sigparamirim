@@ -1,0 +1,31 @@
+:root {
+  --font-display: Inter, ui-sans-serif, system-ui, sans-serif;
+  --brand: #5a5e0b;
+  --brand-strong: #3f4305;
+  --brand-soft: #e9ebc9;
+  --brand-glow: rgba(209, 219, 92, .32);
+  --surface: #fffef8;
+  --surface-muted: #f1f2e7;
+  --text: #181a11;
+  --text-muted: #5f6252;
+  --border: #d7dac5;
+  --shadow-soft: 0 12px 34px rgba(41, 44, 6, .11);
+  --shadow-elevated: 0 22px 65px rgba(41, 44, 6, .18);
+  --ease-premium: cubic-bezier(.2, .8, .2, 1);
+}
+
+:root[data-theme="dark"] {
+  --brand: #b7bf50;
+  --brand-strong: #d6dc82;
+  --brand-soft: #303519;
+  --brand-glow: rgba(193, 204, 91, .22);
+  --surface: #20231a;
+  --surface-muted: #171911;
+  --text: #f7f8e9;
+  --text-muted: #c1c5ae;
+  --border: #454a32;
+  --shadow-soft: 0 12px 34px rgba(0, 0, 0, .22);
+  --shadow-elevated: 0 22px 65px rgba(0, 0, 0, .38);
+}
+
+body { font-family: var(--font-display); letter-spacing: .002em; }

@@ -17,6 +17,14 @@ export interface UserProfile {
   email: string | null;
   displayName: string;
   photoURL: string | null;
+  bio?: string;
+  lattesUrl?: string;
+  institution?: string;
+  educationLevel?: string;
+  country?: string;
+  state?: string;
+  city?: string;
+  contactEmail?: string;
   role: UserRole;
   accountStatus: AccountStatus;
   providerIds: string[];

@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.7] - 2026-10-06
+
+### Aprimorado
+
+- identidade visual reorganizada em módulos CSS de tokens, shell, componentes, autenticação e perfil;
+- header e menu lateral receberam hierarquia, estados hover/focus, microinterações, ícones SVG e footer institucional do desenvolvedor;
+- criado dropdown de usuário com acesso ao perfil e saída da conta;
+- perfil passou a aceitar foto com seleção, zoom e recorte quadrado, além de biografia, Lattes, instituição, escolaridade, país, estado, cidade e contato;
+- regras do Firestore atualizadas para os campos customizáveis do perfil.
+
 ## [0.3.0-beta.6] - 2026-10-06
 
 ### Aprimorado
