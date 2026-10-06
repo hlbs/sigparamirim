@@ -44,3 +44,5 @@ A página inicial consome exclusivamente `narrative.generated.json`. O importado
 ## Gate científico ainda pendente
 
 Os tempos de concentração possuem um tratamento deliberadamente separado: `narrative.generated.json` publica `concentrationTimeComparison` apenas como comparação de sensibilidade entre métodos (`mode: method_sensitivity_only`, `designUseAllowed: false`). Isso permite explicar ao leitor por que os resultados divergem sem transformar uma fórmula não validada regionalmente em parâmetro de projeto. Para uso em dimensionamento, ainda são necessários domínio de calibração, fórmula, unidades, dados de chuva, cobertura, solos, subdivisão da bacia e validação com hidrogramas observados.
+
+O referencial usado para essa triagem está versionado em `docs/referencial/tempos-concentracao/`. A página pública destaca Giandotti como compatível com a escala publicada do Paramirim e apresenta os demais resultados em uma auditoria com limites e motivos de exclusão. A compatibilidade de escala não deve ser confundida com calibração regional.

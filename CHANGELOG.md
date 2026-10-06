@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.6] - 2026-10-06
+
+### Aprimorado
+
+- criado o referencial bibliográfico versionado em `docs/referencial/tempos-concentracao/`, com seis PDFs técnicos e síntese de limitações por método;
+- seção de resposta à chuva revisada a partir da literatura, distinguindo tempo de viagem, tempo de equilíbrio e escala de resposta do hidrograma;
+- tabela pública de auditoria passou a usar limites documentados e a marcar explicitamente os casos em que a fonte do relatório não permite confirmar fórmula, variante ou domínio.
+
 ## [0.3.0-beta.5] - 2026-10-06
 
 ### Aprimorado

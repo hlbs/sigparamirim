@@ -404,9 +404,13 @@ export function HomePage() {
         tone="brand"
         description={<>
           <p>
-            Tempo de concentração é uma estimativa do intervalo necessário para que a água do ponto hidraulicamente mais distante
-            alcance a saída da bacia. Depois de revisar as onze metodologias listadas no relatório, apenas a equação de Giandotti
-            apresentou faixa de calibração publicada compatível com a área do Paramirim. O valor de referência é, portanto, {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h.
+            Tempo de concentração não é uma propriedade fixa como a área ou o relevo. Dependendo do estudo, ele pode representar
+            tempo de viagem, tempo de equilíbrio ou uma escala de resposta do hidrograma. Essa diferença conceitual é uma das razões
+            pelas quais equações empíricas não devem ser comparadas como se medissem exatamente a mesma coisa.<Citation references={[7, 10]} />
+          </p>
+          <p>
+            Para a escala territorial do Paramirim, a revisão das onze metodologias listadas no relatório encontrou apenas a equação
+            de Giandotti com faixa de calibração publicada compatível. O valor de referência é, portanto, {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h.
           </p>
           <p>
             As demais foram descartadas para esta leitura pública: algumas foram calibradas em bacias muito menores; outras exigem
