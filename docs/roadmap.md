@@ -81,6 +81,8 @@ Antes de iniciar qualquer fase:
 
 **Release-alvo:** `v0.3.0`
 
+**Estado:** prévia auditável publicada em `v0.3.0-beta.1`; gate científico final ainda aberto.
+
 **Objetivos:**
 
 - criar pipeline auditável para o relatório morfométrico;
@@ -88,6 +90,8 @@ Antes de iniciar qualquer fase:
 - validar referências e DOI;
 - construir página inicial em scroll narrativo com visualizações acessíveis;
 - apresentar limitações e incertezas sem extrapolar os dados.
+
+O incremento beta publica apenas afirmações factuais, métricas permitidas por lista explícita e referências com DOI. Indicadores `needs_review` e interpretações da fonte são excluídos do artefato entregue ao navegador.
 
 **Gate de saída:**
 

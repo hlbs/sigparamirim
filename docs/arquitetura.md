@@ -87,7 +87,9 @@ O shell inteiro fica atrás de um portão global. O primeiro login Google cria u
 
 O relatório morfométrico será importado por pipeline auditável. Valores originais, normalizações, cálculos, interpretações e referências devem permanecer distinguíveis. Nenhuma afirmação científica poderá ser publicada com DOI inventado ou não verificado.
 
-O pipeline inicial registra checksum e célula de origem para 55 indicadores, recalcula somente relações reproduzíveis e bloqueia a narrativa quando faltam método, unidade ou referência. O arquivo original permanece externo e imutável; os JSONs versionados são derivados rastreáveis.
+O pipeline inicial registra checksum e célula de origem para 55 indicadores, recalcula somente relações reproduzíveis e bloqueia os indicadores quando faltam método, unidade ou referência. O arquivo original permanece externo e imutável; os JSONs versionados são derivados rastreáveis.
+
+A Home consome um derivado público separado, `narrative.generated.json`, produzido pelo próprio pipeline. Esse arquivo contém apenas estados `source_only` e `verified`, sem o campo de interpretação da fonte. Uma lista explícita no frontend restringe os indicadores efetivamente exibidos. O conjunto canônico completo não é importado pela PWA.
 
 ### 5.4 WebGIS
 

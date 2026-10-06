@@ -4,6 +4,7 @@
   "worksheet": "Planilha1",
   "sha256": "8F8DF0DA5BA294BF1C9A2E5DD00423903562C01B9E306CC8144A53DBE12E4243",
   "canonicalData": "morphometry.generated.json",
+  "narrativeData": "narrative.generated.json",
   "validationReport": "validation-report.json",
   "originalPreservedExternally": true
 }

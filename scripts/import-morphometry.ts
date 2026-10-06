@@ -169,7 +169,21 @@ const canonical = {
   schemaVersion: 1,
   source: { fileName: basename(inputPath), worksheet: worksheet.sheet, sha256: checksum, rowCount: metrics.length },
   publicationStatus: 'blocked_pending_scientific_review',
+  narrativePolicy: {
+    mode: 'factual_source_attributed',
+    allowedReviewStatuses: ['source_only', 'verified'],
+    excludedReviewStatus: 'needs_review',
+    sourceInterpretationAllowed: false,
+  },
   metrics,
+};
+const narrative = {
+  schemaVersion: 1,
+  source: canonical.source,
+  narrativePolicy: canonical.narrativePolicy,
+  metrics: metrics
+    .filter((metric) => metric.reviewStatus !== 'needs_review')
+    .map(({ sourceInterpretation: _blockedInterpretation, ...metric }) => metric),
 };
 const validation = {
   schemaVersion: 1,
@@ -205,6 +219,7 @@ const manifest = {
   worksheet: worksheet.sheet,
   sha256: checksum,
   canonicalData: 'morphometry.generated.json',
+  narrativeData: 'narrative.generated.json',
   validationReport: 'validation-report.json',
   originalPreservedExternally: true,
 };
@@ -213,6 +228,7 @@ await mkdir(outputDirectory, { recursive: true });
 await Promise.all([
   writeFile(resolve(outputDirectory, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8'),
   writeFile(resolve(outputDirectory, 'morphometry.generated.json'), `${JSON.stringify(canonical, null, 2)}\n`, 'utf8'),
+  writeFile(resolve(outputDirectory, 'narrative.generated.json'), `${JSON.stringify(narrative, null, 2)}\n`, 'utf8'),
   writeFile(resolve(outputDirectory, 'validation-report.json'), `${JSON.stringify(validation, null, 2)}\n`, 'utf8'),
 ]);
 

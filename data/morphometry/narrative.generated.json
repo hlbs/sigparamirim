@@ -6,7 +6,6 @@
     "sha256": "8F8DF0DA5BA294BF1C9A2E5DD00423903562C01B9E306CC8144A53DBE12E4243",
     "rowCount": 55
   },
-  "publicationStatus": "blocked_pending_scientific_review",
   "narrativePolicy": {
     "mode": "factual_source_attributed",
     "allowedReviewStatuses": [
@@ -25,7 +24,6 @@
       "value": 17070.32,
       "unit": "km²",
       "sourceCell": "Planilha1!B2",
-      "sourceInterpretation": "Large basin",
       "reviewStatus": "source_only"
     },
     {
@@ -36,7 +34,6 @@
       "value": 1057.67,
       "unit": "km",
       "sourceCell": "Planilha1!B3",
-      "sourceInterpretation": "Basin perimeter",
       "reviewStatus": "source_only"
     },
     {
@@ -47,7 +44,6 @@
       "value": 258.62,
       "unit": "km",
       "sourceCell": "Planilha1!B4",
-      "sourceInterpretation": "Basin length",
       "reviewStatus": "source_only"
     },
     {
@@ -58,7 +54,6 @@
       "value": 66.01,
       "unit": "km",
       "sourceCell": "Planilha1!B5",
-      "sourceInterpretation": "Basin width",
       "reviewStatus": "verified",
       "derivedValue": 66.00541334776892,
       "derivation": "A / Lb",
@@ -75,7 +70,6 @@
       "value": 2022,
       "unit": "m",
       "sourceCell": "Planilha1!B6",
-      "sourceInterpretation": "Maximum elevation of the basin",
       "reviewStatus": "source_only"
     },
     {
@@ -86,7 +80,6 @@
       "value": 400,
       "unit": "m",
       "sourceCell": "Planilha1!B7",
-      "sourceInterpretation": "Minimum elevation of the basin",
       "reviewStatus": "source_only"
     },
     {
@@ -97,7 +90,6 @@
       "value": 735.96,
       "unit": "m",
       "sourceCell": "Planilha1!B8",
-      "sourceInterpretation": "Average elevation of the basin",
       "reviewStatus": "source_only"
     },
     {
@@ -108,7 +100,6 @@
       "value": 1622,
       "unit": "m",
       "sourceCell": "Planilha1!B9",
-      "sourceInterpretation": "Very high relief, indicating mountainous terrain",
       "reviewStatus": "verified",
       "derivedValue": 1622,
       "derivation": "Hmax - Hmin",
@@ -125,7 +116,6 @@
       "value": 5.82,
       "unit": "°",
       "sourceCell": "Planilha1!B10",
-      "sourceInterpretation": "Steep",
       "reviewStatus": "source_only"
     },
     {
@@ -136,7 +126,6 @@
       "value": 10.19,
       "unit": "%",
       "sourceCell": "Planilha1!B11",
-      "sourceInterpretation": "Steep",
       "reviewStatus": "source_only"
     },
     {
@@ -147,7 +136,6 @@
       "value": 386.54,
       "unit": "km",
       "sourceCell": "Planilha1!B12",
-      "sourceInterpretation": "Length of the main channel",
       "reviewStatus": "source_only"
     },
     {
@@ -158,7 +146,6 @@
       "value": 979.89,
       "unit": "m",
       "sourceCell": "Planilha1!B13",
-      "sourceInterpretation": "Elevation at the upstream end of the main channel",
       "reviewStatus": "source_only"
     },
     {
@@ -169,7 +156,6 @@
       "value": 409,
       "unit": "m",
       "sourceCell": "Planilha1!B14",
-      "sourceInterpretation": "Elevation at the downstream end of the main channel",
       "reviewStatus": "source_only"
     },
     {
@@ -180,7 +166,6 @@
       "value": 1.48,
       "unit": "m/km",
       "sourceCell": "Planilha1!B15",
-      "sourceInterpretation": "Very low gradient, indicative of a flat channel",
       "reviewStatus": "verified",
       "derivedValue": 1.476923474931443,
       "derivation": "(Hmontante - Hjusante) / Lc",
@@ -198,7 +183,6 @@
       "value": 1.56,
       "unit": null,
       "sourceCell": "Planilha1!B16",
-      "sourceInterpretation": "Meandering channel",
       "reviewStatus": "source_only"
     },
     {
@@ -209,7 +193,6 @@
       "value": 0.15,
       "unit": "%",
       "sourceCell": "Planilha1!B17",
-      "sourceInterpretation": "Very gentle slope",
       "reviewStatus": "verified",
       "derivedValue": 0.1476923474931443,
       "derivation": "((Hmontante - Hjusante) / (Lc × 1.000)) × 100",
@@ -220,50 +203,6 @@
       ]
     },
     {
-      "id": "compensated_channel_slope_lr",
-      "labelPtBr": "Declividade compensada do canal por regressão linear",
-      "group": "main_channel",
-      "sourceLabel": "Compensated Channel Slope (Linear Regression)",
-      "value": 0,
-      "unit": "m/m",
-      "sourceCell": "Planilha1!B18",
-      "sourceInterpretation": "Calculated compensated channel slope using linear regression",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "compensated_channel_slope_lr_percent",
-      "labelPtBr": "Declividade compensada por regressão linear (percentual)",
-      "group": "main_channel",
-      "sourceLabel": "Compensated Channel Slope - LR (%)",
-      "value": 0.06,
-      "unit": "%",
-      "sourceCell": "Planilha1!B19",
-      "sourceInterpretation": "Very gentle compensated slope",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "compensated_channel_slope_ts",
-      "labelPtBr": "Declividade compensada do canal por Taylor–Schwartz",
-      "group": "main_channel",
-      "sourceLabel": "Compensated Channel Slope (Taylor-Schwartz)",
-      "value": 0.01,
-      "unit": "m/m",
-      "sourceCell": "Planilha1!B20",
-      "sourceInterpretation": "Gentle compensated slope",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "compensated_channel_slope_ts_percent",
-      "labelPtBr": "Declividade compensada por Taylor–Schwartz (percentual)",
-      "group": "main_channel",
-      "sourceLabel": "Compensated Channel Slope - TS (%)",
-      "value": 1.41,
-      "unit": "%",
-      "sourceCell": "Planilha1!B21",
-      "sourceInterpretation": "Gentle compensated slope",
-      "reviewStatus": "needs_review"
-    },
-    {
       "id": "total_channel_length",
       "labelPtBr": "Comprimento total dos canais (Lt)",
       "group": "drainage_network",
@@ -271,7 +210,6 @@
       "value": 2092.98,
       "unit": "km",
       "sourceCell": "Planilha1!B22",
-      "sourceInterpretation": "Total length of all channels",
       "reviewStatus": "source_only"
     },
     {
@@ -282,7 +220,6 @@
       "value": 0.12,
       "unit": "km/km²",
       "sourceCell": "Planilha1!B23",
-      "sourceInterpretation": "Very coarse drainage texture",
       "reviewStatus": "verified",
       "derivedValue": 0.1226093008215429,
       "derivation": "Lt / A",
@@ -299,7 +236,6 @@
       "value": 0.01,
       "unit": "streams/km²",
       "sourceCell": "Planilha1!B24",
-      "sourceInterpretation": "Low stream frequency",
       "reviewStatus": "verified",
       "derivedValue": 0.011657660781988856,
       "derivation": "Nu / A",
@@ -316,7 +252,6 @@
       "value": 0.19,
       "unit": null,
       "sourceCell": "Planilha1!B25",
-      "sourceInterpretation": "Coarse drainage texture",
       "reviewStatus": "verified",
       "derivedValue": 0.18814942278782606,
       "derivation": "Nu / P",
@@ -333,7 +268,6 @@
       "value": 0.1,
       "unit": null,
       "sourceCell": "Planilha1!B26",
-      "sourceInterpretation": "Low drainage intensity",
       "reviewStatus": "verified",
       "derivedValue": 0.09507974275912813,
       "derivation": "Fs / Dd",
@@ -350,7 +284,6 @@
       "value": 4.08,
       "unit": "km",
       "sourceCell": "Planilha1!B27",
-      "sourceInterpretation": "Long overland flow length, indicating low drainage density",
       "reviewStatus": "verified",
       "derivedValue": 4.077994056321608,
       "derivation": "1 / (2 × Dd)",
@@ -366,29 +299,11 @@
       "value": 8.16,
       "unit": "km²/km",
       "sourceCell": "Planilha1!B28",
-      "sourceInterpretation": "High constant of channel maintenance, indicating low drainage density",
       "reviewStatus": "verified",
       "derivedValue": 8.155988112643216,
       "derivation": "1 / Dd",
       "inputIds": [
         "drainage_density"
-      ]
-    },
-    {
-      "id": "infiltration_number",
-      "labelPtBr": "Número de infiltração (If)",
-      "group": "drainage_network",
-      "sourceLabel": "Infiltration Number (If)",
-      "value": 0,
-      "unit": null,
-      "sourceCell": "Planilha1!B29",
-      "sourceInterpretation": "Low infiltration number, indicating high infiltration",
-      "reviewStatus": "needs_review",
-      "derivedValue": 0.0014293376376943747,
-      "derivation": "Dd × Fs",
-      "inputIds": [
-        "drainage_density",
-        "stream_frequency"
       ]
     },
     {
@@ -399,7 +314,6 @@
       "value": 4,
       "unit": null,
       "sourceCell": "Planilha1!B30",
-      "sourceInterpretation": "Highest stream order (Strahler): 4",
       "reviewStatus": "source_only"
     },
     {
@@ -410,7 +324,6 @@
       "value": 199,
       "unit": null,
       "sourceCell": "Planilha1!B31",
-      "sourceInterpretation": "Total number of stream segments",
       "reviewStatus": "source_only"
     },
     {
@@ -421,7 +334,6 @@
       "value": 10.52,
       "unit": "km",
       "sourceCell": "Planilha1!B32",
-      "sourceInterpretation": "Average length of streams",
       "reviewStatus": "verified",
       "derivedValue": 10.51748743718593,
       "derivation": "Lt / Nu",
@@ -431,28 +343,6 @@
       ]
     },
     {
-      "id": "bifurcation_ratio",
-      "labelPtBr": "Razão de bifurcação (Rb)",
-      "group": "drainage_network",
-      "sourceLabel": "Bifurcation Ratio (Rb)",
-      "value": 3.52,
-      "unit": null,
-      "sourceCell": "Planilha1!B33",
-      "sourceInterpretation": "Normal bifurcation ratio for natural drainage systems",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "junction_density",
-      "labelPtBr": "Densidade de confluências",
-      "group": "drainage_network",
-      "sourceLabel": "Junction Density",
-      "value": 0.01,
-      "unit": "junctions/km²",
-      "sourceCell": "Planilha1!B34",
-      "sourceInterpretation": "Low junction density",
-      "reviewStatus": "needs_review"
-    },
-    {
       "id": "form_factor",
       "labelPtBr": "Fator de forma (Ff)",
       "group": "shape_and_terrain",
@@ -460,7 +350,6 @@
       "value": 0.26,
       "unit": null,
       "sourceCell": "Planilha1!B35",
-      "sourceInterpretation": "Elongated shape, low susceptibility to flash floods",
       "reviewStatus": "verified",
       "derivedValue": 0.255221612202339,
       "derivation": "A / Lb²",
@@ -477,7 +366,6 @@
       "value": 0.57,
       "unit": null,
       "sourceCell": "Planilha1!B36",
-      "sourceInterpretation": "Oval shape",
       "reviewStatus": "verified",
       "derivedValue": 0.5700510936109854,
       "derivation": "(2 × √(A / π)) / Lb",
@@ -494,7 +382,6 @@
       "value": 0.19,
       "unit": null,
       "sourceCell": "Planilha1!B37",
-      "sourceInterpretation": "Strongly elongated shape",
       "reviewStatus": "verified",
       "derivedValue": 0.19175696806314388,
       "derivation": "(4 × π × A) / P²",
@@ -511,7 +398,6 @@
       "value": 2.28,
       "unit": null,
       "sourceCell": "Planilha1!B38",
-      "sourceInterpretation": "Rectangular-oblong shape",
       "reviewStatus": "verified",
       "derivedValue": 2.283623075742433,
       "derivation": "P / (2 × √(π × A))",
@@ -521,17 +407,6 @@
       ]
     },
     {
-      "id": "asymmetry_factor",
-      "labelPtBr": "Fator de assimetria (Af)",
-      "group": "shape_and_terrain",
-      "sourceLabel": "Asymmetry Factor (Af)",
-      "value": 100,
-      "unit": null,
-      "sourceCell": "Planilha1!B39",
-      "sourceInterpretation": "Significant tilt to the left (looking downstream)",
-      "reviewStatus": "needs_review"
-    },
-    {
       "id": "fitness_ratio",
       "labelPtBr": "Índice de conformação (Rf)",
       "group": "shape_and_terrain",
@@ -539,7 +414,6 @@
       "value": 0.37,
       "unit": null,
       "sourceCell": "Planilha1!B40",
-      "sourceInterpretation": "Moderate fitness ratio",
       "reviewStatus": "verified",
       "derivedValue": 0.36546370796184063,
       "derivation": "Lc / P",
@@ -556,7 +430,6 @@
       "value": 0.2,
       "unit": null,
       "sourceCell": "Planilha1!B41",
-      "sourceInterpretation": "Low ruggedness",
       "reviewStatus": "verified",
       "derivedValue": 0.19887228593254258,
       "derivation": "(H / 1.000) × Dd",
@@ -566,17 +439,6 @@
       ]
     },
     {
-      "id": "orographic_coefficient",
-      "labelPtBr": "Coeficiente orográfico (Oc)",
-      "group": "shape_and_terrain",
-      "sourceLabel": "Orographic Coefficient (Oc)",
-      "value": 12563.1,
-      "unit": null,
-      "sourceCell": "Planilha1!B42",
-      "sourceInterpretation": "High orographic influence",
-      "reviewStatus": "needs_review"
-    },
-    {
       "id": "massivity_index",
       "labelPtBr": "Índice de massividade",
       "group": "shape_and_terrain",
@@ -584,7 +446,6 @@
       "value": 0.04,
       "unit": "m/km²",
       "sourceCell": "Planilha1!B43",
-      "sourceInterpretation": "Low massivity, indicating relatively flat terrain",
       "reviewStatus": "verified",
       "derivedValue": 0.043113427281972455,
       "derivation": "Elevação média / A",
@@ -592,149 +453,6 @@
         "mean_elevation",
         "basin_area"
       ]
-    },
-    {
-      "id": "storage_coefficient",
-      "labelPtBr": "Coeficiente de armazenamento",
-      "group": "shape_and_terrain",
-      "sourceLabel": "Storage Coefficient",
-      "value": 12.47,
-      "unit": "km",
-      "sourceCell": "Planilha1!B44",
-      "sourceInterpretation": "Moderate storage capacity",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_kirpich",
-      "labelPtBr": "Tempo de concentração — Kirpich (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Kirpich (Tc)",
-      "value": 80.13,
-      "unit": "h",
-      "sourceCell": "Planilha1!B45",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_kerby",
-      "labelPtBr": "Tempo de concentração — Kerby (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Kerby (Tc)",
-      "value": 8.89,
-      "unit": "h",
-      "sourceCell": "Planilha1!B46",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_giandotti",
-      "labelPtBr": "Tempo de concentração — Giandotti (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Giandotti (Tc)",
-      "value": 34.22,
-      "unit": "h",
-      "sourceCell": "Planilha1!B47",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_temez",
-      "labelPtBr": "Tempo de concentração — Témez (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Témez (Tc)",
-      "value": 95.76,
-      "unit": "h",
-      "sourceCell": "Planilha1!B48",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_usda",
-      "labelPtBr": "Tempo de concentração — USDA (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - USDA (Tc)",
-      "value": 267.41,
-      "unit": "h",
-      "sourceCell": "Planilha1!B49",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_passini",
-      "labelPtBr": "Tempo de concentração — Passini (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Passini (Tc)",
-      "value": 1443.88,
-      "unit": "h",
-      "sourceCell": "Planilha1!B50",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_ventura_heras",
-      "labelPtBr": "Tempo de concentração — Ventura-Heras (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Ventura-Heras (Tc)",
-      "value": 2617.15,
-      "unit": "h",
-      "sourceCell": "Planilha1!B51",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_bransby_williams",
-      "labelPtBr": "Tempo de concentração — Bransby-Williams (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Bransby-Williams (Tc)",
-      "value": 32.79,
-      "unit": "h",
-      "sourceCell": "Planilha1!B52",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_johnstone_cross",
-      "labelPtBr": "Tempo de concentração — Johnstone-Cross (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Johnstone-Cross (Tc)",
-      "value": 46.37,
-      "unit": "h",
-      "sourceCell": "Planilha1!B53",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_clark",
-      "labelPtBr": "Tempo de concentração — Clark (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - Clark (Tc)",
-      "value": 96.5,
-      "unit": "h",
-      "sourceCell": "Planilha1!B54",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "concentration_time_california_culverts",
-      "labelPtBr": "Tempo de concentração — California Culverts (Tc)",
-      "group": "concentration_time",
-      "sourceLabel": "Time of Concentration - California Culverts (Tc)",
-      "value": 53.61,
-      "unit": "h",
-      "sourceCell": "Planilha1!B55",
-      "sourceInterpretation": "Long time of concentration, indicating slow response to rainfall",
-      "reviewStatus": "needs_review"
-    },
-    {
-      "id": "hypsometric_integral",
-      "labelPtBr": "Integral hipsométrica (HI)",
-      "group": "hypsometry",
-      "sourceLabel": "Hypsometric Integral (HI)",
-      "value": 0.15,
-      "unit": "adimensional",
-      "sourceCell": "Planilha1!B56",
-      "sourceInterpretation": "Old stage",
-      "reviewStatus": "needs_review"
     }
   ]
 }

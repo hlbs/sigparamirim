@@ -7,6 +7,7 @@ import { UserAvatar } from './components/UserAvatar';
 import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
+import { HomePage } from './pages/HomePage';
 
 const navigation = [
   { path: '/', label: 'Início', icon: '⌂' },
@@ -28,58 +29,6 @@ function Placeholder({ title, description }: { title: string; description: strin
         Arquitetura preparada para implementação incremental e validação em emuladores.
       </div>
     </section>
-  );
-}
-
-function Home() {
-  const cards = [
-    ['WebGIS', 'Camadas vetoriais e raster com filtros, identificação e composição cartográfica.'],
-    ['Observatório Científico', 'Produção técnica e científica relacionada à Bacia do Rio Paramirim.'],
-    ['Atendimento', 'Canal estruturado de ajuda, acompanhamento e resolução de solicitações.'],
-  ];
-
-  return (
-    <div className="home">
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
-          <h1>Conhecimento territorial para compreender, planejar e preservar.</h1>
-          <p>
-            Uma plataforma científica em construção para integrar mapas, indicadores morfométricos,
-            publicações e atendimento em um único ambiente.
-          </p>
-          <div className="hero-actions">
-            <NavLink className="button button-primary" to="/mapa">Explorar o mapa</NavLink>
-            <NavLink className="button button-secondary" to="/observatorio">Conhecer o observatório</NavLink>
-          </div>
-        </div>
-        <div className="hero-visual" aria-label="Identidade visual do SIG Paramirim">
-          <img src="/sig-logo.png" alt="SIG Paramirim" />
-          <div className="phase-chip">Marco v{__APP_VERSION__}</div>
-        </div>
-      </section>
-
-      <section className="module-grid" aria-label="Módulos da plataforma">
-        {cards.map(([title, text], index) => (
-          <article className="module-card" key={title}>
-            <span className="module-index">0{index + 1}</span>
-            <h2>{title}</h2>
-            <p>{text}</p>
-          </article>
-        ))}
-      </section>
-
-      <section className="foundation-callout">
-        <div>
-          <span className="eyebrow">Fase atual</span>
-          <h2>Fundação técnica e catálogo de dados</h2>
-        </div>
-        <p>
-          O projeto está inventariando fontes, projeções, metadados e requisitos de segurança antes da
-          publicação das primeiras camadas.
-        </p>
-      </section>
-    </div>
   );
 }
 
@@ -190,7 +139,7 @@ function PlatformShell() {
 
       <main className="main-content">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/mapa" element={<Placeholder title="Mapa e dashboard" description="O catálogo geoespacial e o motor OpenLayers serão conectados após a validação das camadas iniciais." />} />
           <Route path="/observatorio" element={<Placeholder title="Observatório Científico Paramirim" description="Acervo pesquisável de publicações, fontes e estudos sobre a bacia." />} />
           <Route path="/ajuda" element={<Placeholder title="Central de ajuda" description="Abertura e acompanhamento de tickets com histórico e anexos protegidos." />} />

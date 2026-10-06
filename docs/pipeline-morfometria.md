@@ -14,6 +14,7 @@ O importador valida a aba, o cabeçalho e a quantidade esperada de indicadores. 
 
 - `manifest.json`: identificação lógica, checksum SHA-256 e nomes dos derivados;
 - `morphometry.generated.json`: 55 métricas com rótulo em português, célula de origem, unidade normalizada e estado de revisão;
+- `narrative.generated.json`: subconjunto público sem interpretações textuais e sem indicadores `needs_review`;
 - `validation-report.json`: recálculos independentes, divergências e bloqueios científicos.
 
 O caminho absoluto da fonte não é persistido. O original continua fora do Git e os derivados permitem confirmar se a fonte mudou pelo checksum.
@@ -24,7 +25,11 @@ O caminho absoluto da fonte não é persistido. O original continua fora do Git 
 - `verified`: relação matemática reproduzida com as entradas disponíveis e compatível com o arredondamento da planilha;
 - `needs_review`: indicador sem dados intermediários, método, unidade, precisão ou referência suficientes.
 
-As interpretações textuais da planilha são preservadas apenas como evidência de origem. Elas não estão autorizadas para publicação até que seus limiares e referências com DOI sejam verificados.
+As interpretações textuais da planilha são preservadas apenas no derivado canônico como evidência de origem. Elas não entram no derivado narrativo nem no bundle da PWA até que seus limiares e referências com DOI sejam verificados.
+
+## Política da narrativa pública
+
+A página inicial consome exclusivamente `narrative.generated.json`. O importador aplica a política `factual_source_attributed`: admite valores `source_only` e relações `verified`, remove todo campo `sourceInterpretation` e exclui integralmente indicadores `needs_review`. Uma lista explícita no frontend limita ainda mais quais métricas podem ser apresentadas. O estado `verified` confirma apenas compatibilidade matemática com o arredondamento da fonte; não representa validação causal ou hidrológica.
 
 ## Resultado inicial
 
@@ -36,6 +41,6 @@ As interpretações textuais da planilha são preservadas apenas como evidência
 - 11 estimativas de tempo de concentração com dispersão de aproximadamente 294 vezes entre mínimo e máximo;
 - integral hipsométrica bloqueada por ausência da curva ou do método de cálculo.
 
-## Próximo gate científico
+## Gate científico ainda pendente
 
-Antes de alimentar a narrativa da página inicial, é necessário registrar fórmulas, parâmetros intermediários, unidade, aplicabilidade e referência conferida para os indicadores bloqueados. A interface deve consumir apenas métricas autorizadas pelo processo de revisão hidrológica e editorial.
+Para promover a versão beta a `v0.3.0`, ainda é necessário registrar fórmulas, parâmetros intermediários, unidade, aplicabilidade e referência conferida para os indicadores bloqueados, além da revisão técnica e editorial final. Esses indicadores continuam ausentes da narrativa pública.

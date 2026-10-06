@@ -2,6 +2,26 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.1] - 2026-10-06
+
+### Adicionado
+
+- Página inicial em narrativa visual responsiva, alimentada pelos dados morfométricos rastreáveis da bacia.
+- Seções acessíveis sobre dimensão, relevo, forma, drenagem e perfil longitudinal, com alternativas textuais e suporte à redução de movimento.
+- Referências científicas verificáveis por DOI e indicação explícita da célula de origem e do estado de conferência de cada indicador.
+- Derivado público `narrative.generated.json`, separado do conjunto científico canônico.
+
+### Segurança científica
+
+- Somente indicadores `source_only` ou `verified` entram no pacote narrativo.
+- Interpretações originais não validadas e todos os indicadores `needs_review` são removidos antes do build do navegador.
+- Textos evitam inferências causais, classificações hidrológicas ou diagnósticos não sustentados pelos dados disponíveis.
+
+### Verificado
+
+- Pipeline determinístico, tipos, lint, testes, build PWA e regras Firebase.
+- Layout desktop e mobile, tema escuro e preferência por movimento reduzido.
+
 ## [0.2.2] - 2026-10-06
 
 ### Corrigido
