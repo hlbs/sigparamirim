@@ -79,7 +79,7 @@ Responsável pelo layout responsivo, header, navegação, perfil, avatar, tema, 
 
 ### 5.2 Identidade e autorização
 
-Provedores previstos: Google, Facebook e Microsoft. Os papéis canônicos serão `user`, `editor` e `admin`; o estado de conta será `active` ou `suspended`. Custom claims transportarão somente autorização resumida. Promoção de cargos, suspensão e ações sensíveis ocorrerão no backend e gerarão auditoria.
+Provedor de identidade: Google. Os papéis canônicos serão `user`, `editor` e `admin`; o estado de conta será `pending`, `active` ou `suspended`. Custom claims transportarão somente autorização resumida. Promoção de cargos, suspensão e ações sensíveis ocorrerão no backend e gerarão auditoria.
 
 ### 5.3 Conteúdo científico
 
@@ -231,4 +231,3 @@ Uma fase só pode avançar quando:
 5. acessibilidade e responsividade aplicáveis forem verificadas;
 6. não houver segredos, credenciais ou dados pessoais indevidos no Git ou no bundle;
 7. houver evidência de revisão e estratégia de rollback para mudanças persistentes.
-

@@ -1,13 +1,11 @@
 import type {
   AccountStatus as DomainAccountStatus,
-  AuthProvider as DomainAuthProvider,
   UserProfile as DomainUserProfile,
   UserRole as DomainUserRole,
 } from '@sig-paramirim/domain';
 
 export type UserRole = DomainUserRole;
 export type AccountStatus = DomainAccountStatus;
-export type AuthProvider = DomainAuthProvider;
 export type UserProfile = DomainUserProfile;
 
 export type AuthStateStatus =

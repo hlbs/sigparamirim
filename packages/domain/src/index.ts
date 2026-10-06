@@ -1,8 +1,6 @@
 export type UserRole = 'user' | 'editor' | 'admin';
 export type AccountStatus = 'pending' | 'active' | 'suspended';
 
-export type AuthProvider = 'google' | 'facebook' | 'microsoft';
-
 export interface UserPreferences {
   language: 'pt-BR' | 'en' | 'es' | 'fr' | 'zh-CN' | 'de' | 'ar';
   theme: 'light' | 'dark' | 'system';

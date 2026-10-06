@@ -64,8 +64,8 @@ Nenhum recurso remoto foi alterado, nenhuma API foi habilitada e nenhum deploy f
 
 ## Itens não verificados
 
-- Provedores Google, Facebook e Microsoft habilitados no Authentication.
-- Domínios autorizados, política de criação de conta e configuração de tenant Microsoft.
+- Provedor Google habilitado no Authentication.
+- Domínios autorizados e política de criação de conta.
 - Estado do App Check e enforcement por produto.
 - Regras atualmente implantadas no Firestore e no Storage.
 - Conteúdo, permissões IAM e propriedades avançadas do bucket.

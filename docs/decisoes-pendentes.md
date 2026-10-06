@@ -12,8 +12,8 @@ Este registro reúne definições que não podem ser inventadas. A ausência de 
 | DP-004 | Confirmar Hosting Site ID, domínio e domínios autorizados | afeta Auth, redirects, CSP e deploy | antes de configurar ambientes remotos |
 | DP-005 | Confirmar região do `sigparamirimdb`, Functions e Storage | afeta latência, custos e residência dos dados | antes de criar Functions ou recursos dependentes |
 | DP-006 | Confirmar plano de faturamento e orçamento Google Cloud/Firebase | Translation API, Functions, App Check e processamento podem gerar custos | antes de habilitar serviços cobrados |
-| DP-007 | Fornecer e validar a configuração do Facebook Login | sem ela o provedor não funciona | antes do teste E2E do Facebook |
-| DP-008 | Fornecer a configuração Microsoft e definir tenant único ou múltiplos tenants | altera OAuth, consentimento e público elegível | antes do teste E2E da Microsoft |
+| DP-007 | Encerrada em 2026-10-06: Facebook removido do escopo de autenticação | reduz credenciais externas e manutenção | aplicado na versão 0.2.1 |
+| DP-008 | Encerrada em 2026-10-06: Microsoft removido do escopo de autenticação | reduz credenciais externas e manutenção | aplicado na versão 0.2.1 |
 | DP-009 | Definir política LGPD, termos, privacidade e responsável por solicitações de titulares | afeta perfis, tickets, auditoria, carimbo e retenção | antes do piloto com usuários reais |
 | DP-010 | Definir retenção de tickets, anexos, notificações e logs de auditoria | afeta armazenamento, deleção e compliance | antes de habilitar gravação em produção |
 
@@ -73,4 +73,3 @@ Cada decisão encerrada deve registrar:
 5. impactos em segurança, custo, dados e cronograma;
 6. critérios de teste decorrentes;
 7. versão em que a decisão entrou em vigor.
-

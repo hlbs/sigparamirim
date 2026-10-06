@@ -61,7 +61,7 @@ Antes de iniciar qualquer fase:
 
 **Objetivos:**
 
-- integrar Google, Facebook e Microsoft;
+- integrar login com Google;
 - criar onboarding, perfil, avatar e preferências;
 - implementar papéis `user`, `editor` e `admin`;
 - configurar Firestore nomeado, regras, Functions v2 e App Check;
@@ -69,7 +69,7 @@ Antes de iniciar qualquer fase:
 
 **Gate de saída:**
 
-- três provedores validados em ambientes autorizados;
+- provedor Google validado em ambiente autorizado;
 - vinculação e conflito de contas testados;
 - usuários suspensos bloqueados;
 - nenhuma autopromoção possível;
@@ -256,4 +256,3 @@ Todo release exige, na ordem:
 15. smoke test e registro do rollback disponível.
 
 Falha em qualquer gate obrigatório impede o release. Correções devem gerar nova evidência; não se deve classificar uma funcionalidade como concluída sem validação verificável.
-

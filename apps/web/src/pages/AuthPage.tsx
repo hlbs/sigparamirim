@@ -1,32 +1,26 @@
 import { useState } from 'react';
 import { Navigate, NavLink, useLocation } from 'react-router-dom';
-import { signInWithProvider, useAuth, type AuthProvider } from '../features/auth';
+import { signInWithGoogle, useAuth } from '../features/auth';
 import { AuthLoading } from '../components/AuthLoading';
-
-const providers: Array<{ id: AuthProvider; label: string; mark: string }> = [
-  { id: 'google', label: 'Continuar com Google', mark: 'G' },
-  { id: 'facebook', label: 'Continuar com Facebook', mark: 'f' },
-  { id: 'microsoft', label: 'Continuar com Microsoft', mark: 'M' },
-];
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [pendingProvider, setPendingProvider] = useState<AuthProvider | null>(null);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const destination = (location.state as { from?: string } | null)?.from || '/';
 
   if (loading) return <AuthLoading label="Verificando sua sessão" />;
   if (user) return <Navigate to={destination} replace />;
 
-  const handleProvider = async (provider: AuthProvider) => {
-    setPendingProvider(provider);
+  const handleGoogle = async () => {
+    setPending(true);
     setError(null);
     try {
-      await signInWithProvider(provider);
+      await signInWithGoogle();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Não foi possível concluir o acesso. Tente novamente.');
-      setPendingProvider(null);
+      setPending(false);
     }
   };
 
@@ -54,17 +48,14 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           <p>{isRegister ? 'Escolha uma conta para criar seu perfil com segurança.' : 'Entre para acessar seu perfil e recursos personalizados.'}</p>
 
           <div className="provider-list">
-            {providers.map((provider) => (
-              <button
-                key={provider.id}
-                className={`provider-button provider-${provider.id}`}
-                disabled={pendingProvider !== null}
-                onClick={() => void handleProvider(provider.id)}
-              >
-                <span aria-hidden="true">{provider.mark}</span>
-                {pendingProvider === provider.id ? 'Conectando…' : provider.label}
-              </button>
-            ))}
+            <button
+              className="provider-button provider-google"
+              disabled={pending}
+              onClick={() => void handleGoogle()}
+            >
+              <span aria-hidden="true">G</span>
+              {pending ? 'Conectando…' : 'Continuar com Google'}
+            </button>
           </div>
 
           {error && <div className="auth-error" role="alert">{error}</div>}

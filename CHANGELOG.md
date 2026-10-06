@@ -2,6 +2,19 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.2.1] - 2026-10-06
+
+### Alterado
+
+- Autenticação simplificada para utilizar exclusivamente contas Google.
+- Removidas as integrações, opções visuais e dependências de código específicas de Facebook e Microsoft.
+- Documentação, arquitetura e roadmap atualizados para refletir a decisão.
+
+### Verificado
+
+- Login Google disponível na interface publicada.
+- Build, tipos, testes automatizados e layout responsivo revalidados.
+
 ## [0.2.0] - 2026-10-06
 
 ### Adicionado

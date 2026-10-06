@@ -4,11 +4,9 @@
 
 Este marco estabelece autenticação social, perfil de usuário e autorização por papéis sem criar um caminho de autopromoção. O banco utilizado por cliente, regras e backend é sempre o Firestore nomeado `sigparamirimdb`.
 
-## Provedores
+## Provedor de identidade
 
-A interface oferece Google, Facebook e Microsoft. Cada provedor somente funciona depois de ser habilitado no Firebase Authentication e de seus domínios, identificadores e segredos serem configurados no console. Segredos de OAuth nunca pertencem ao repositório nem a variáveis `VITE_*`.
-
-Na verificação remota de 6 de outubro de 2026, os três provedores ainda não possuíam configuração no projeto. Google exige a seleção da conta de suporte e um cliente OAuth; Facebook e Microsoft exigem, adicionalmente, os identificadores e segredos emitidos pelas respectivas plataformas. O código está publicado, mas o login social só conclui depois dessa configuração externa.
+A plataforma utiliza exclusivamente o Google como provedor de login. A decisão reduz dependências externas, elimina a gestão de segredos OAuth próprios de Meta e Microsoft e simplifica o suporte ao usuário. O provedor Google deve permanecer habilitado no Firebase Authentication, com `ppgeol-tools.web.app` e `ppgeol-tools.firebaseapp.com` entre os domínios autorizados.
 
 ## Primeiro acesso
 
@@ -47,7 +45,6 @@ As Functions aceitam a variável de ambiente server-side `ENFORCE_APP_CHECK=true
 
 ## Limitações conhecidas
 
-- Facebook e Microsoft dependem de credenciais externas ainda não presentes no projeto.
-- O e-mail/UID do primeiro administrador precisa ser formalmente definido.
+- A política de acesso permanece dependente da definição formal do e-mail/UID do primeiro administrador.
 - A sincronização entre documento de perfil e custom claims é compensável, mas não atômica entre serviços; falhas devem ser auditadas e reprocessadas.
 - Contas que acabaram de receber novas claims precisam renovar o token.
