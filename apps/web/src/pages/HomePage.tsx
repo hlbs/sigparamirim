@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   compatibleConcentrationTime,
+  concentrationTimeMethods,
   formatMetric,
   narrativeMetric,
   scientificReferences,
@@ -56,8 +57,21 @@ function ConcentrationTimeRecommendation() {
         <span className="rationale-icon" aria-hidden="true">✓</span>
         <p>{method.context}</p>
       </div>
+      <div className="concentration-audit-heading">Auditoria das demais metodologias</div>
+      <div className="concentration-audit" role="table" aria-label="Resultados e limites das metodologias de tempo de concentração">
+        <div className="concentration-audit-row concentration-audit-header" role="row">
+          <span>Método</span><span>Resultado</span><span>Limite / condição verificada</span>
+        </div>
+        {concentrationTimeMethods.map((candidate) => (
+          <div className={`concentration-audit-row ${candidate.assessment === 'scale_compatible' ? 'is-selected' : ''}`} role="row" key={candidate.id}>
+            <strong>{candidate.method}</strong>
+            <span>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h</span>
+            <span>{candidate.limit}</span>
+          </div>
+        ))}
+      </div>
       <figcaption id="concentration-recommendation-caption">
-        Entre as onze metodologias presentes no relatório, esta é a única cuja faixa de calibração publicada contempla a área de 17.070,32 km². A estimativa ainda precisa ser validada com chuva, sub-bacias e hidrogramas observados antes de qualquer dimensionamento.
+        A área de estudo é 17.070,32 km². Entre as onze metodologias presentes no relatório, Giandotti é a única cuja faixa de calibração publicada contempla essa escala. Os demais resultados permanecem visíveis para auditoria, mas não são considerados referências para esta bacia. A estimativa selecionada ainda precisa ser validada com chuva, sub-bacias e hidrogramas observados antes de qualquer dimensionamento.
       </figcaption>
     </figure>
   );

@@ -186,6 +186,13 @@ a { color: inherit; }
 .concentration-rationale { display: grid; grid-template-columns: 34px 1fr; gap: 13px; align-items: start; margin: 30px 0 23px; padding: 17px; border: 1px solid rgba(226,233,154,.35); border-radius: 17px; background: rgba(0,0,0,.12); }
 .rationale-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: #dbe678; color: #303405; font-weight: 900; }
 .concentration-rationale p { margin: 0; color: rgba(255,255,255,.86); font-size: .9rem; line-height: 1.55; }
+.concentration-audit-heading { margin: 28px 0 9px; color: rgba(255,255,255,.74); font-size: .72rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.concentration-audit { display: grid; gap: 4px; max-height: 390px; overflow: auto; padding-right: 3px; }
+.concentration-audit-row { display: grid; grid-template-columns: minmax(105px, .75fr) minmax(76px, .5fr) minmax(180px, 1.7fr); gap: 10px; align-items: center; padding: 9px 10px; border: 1px solid rgba(255,255,255,.11); border-radius: 10px; background: rgba(0,0,0,.1); color: rgba(255,255,255,.7); font-size: .68rem; line-height: 1.35; }
+.concentration-audit-header { border: 0; background: transparent; color: rgba(255,255,255,.5); font-size: .62rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.concentration-audit-row strong, .concentration-audit-row span:nth-child(2) { color: rgba(255,255,255,.92); }
+.concentration-audit-row.is-selected { border-color: rgba(226,233,154,.7); background: rgba(219,230,120,.14); box-shadow: inset 3px 0 #dbe678; }
+.concentration-audit-row.is-selected strong, .concentration-audit-row.is-selected span:nth-child(2) { color: #eff5b0; }
 .concentration-recommendation figcaption { color: rgba(255,255,255,.68); font-size: .78rem; line-height: 1.55; }
 @keyframes flow-dash { to { stroke-dashoffset: -30; } }
 .synthesis-visual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
@@ -349,6 +356,10 @@ a { color: inherit; }
   .drainage-visual { grid-template-columns: 1fr; gap: 22px; }
   .drainage-divider { width: auto; height: 1px; }
   .drainage-support-grid, .channel-stats, .audit-grid, .synthesis-visual { grid-template-columns: 1fr; }
+  .concentration-audit { max-height: none; }
+  .concentration-audit-row { grid-template-columns: 1fr 1fr; gap: 5px 9px; }
+  .concentration-audit-row span:last-child { grid-column: 1 / -1; color: rgba(255,255,255,.62); }
+  .concentration-audit-header { display: none; }
   .synthesis-note { grid-column: auto; }
   .story-next { align-items: stretch; flex-direction: column; }
   .story-next-actions { display: grid; }

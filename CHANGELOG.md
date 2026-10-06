@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.5] - 2026-10-06
+
+### Aprimorado
+
+- adicionada auditoria visual das onze metodologias de tempo de concentração, com resultado calculado, limite de aplicação e motivo de exclusão;
+- o valor de Giandotti permanece destacado como referência compatível com a escala, enquanto os demais resultados ficam contextualizados e não equivalentes.
+
 ## [0.3.0-beta.4] - 2026-10-06
 
 ### Aprimorado

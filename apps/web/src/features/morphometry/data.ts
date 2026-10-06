@@ -98,18 +98,18 @@ export function formatMetric(metric: NarrativeMetric, digits = 2): string {
 export type ConcentrationTimeAssessment = 'scale_compatible' | 'extrapolated' | 'insufficient_metadata';
 
 const concentrationContext = [
-  { id: 'concentration_time_kirpich', method: 'Kirpich', assessment: 'extrapolated', context: 'Calibrada originalmente em pequenas bacias rurais; a área do Paramirim supera amplamente a faixa de origem.' },
-  { id: 'concentration_time_kerby', method: 'Kerby', assessment: 'extrapolated', context: 'Representa sobretudo o escoamento inicial sobre a superfície e foi desenvolvida com comprimentos muito menores.' },
-  { id: 'concentration_time_giandotti', method: 'Giandotti', assessment: 'scale_compatible', context: 'A faixa de calibração publicada, de 170 a 70.000 km², inclui a área da bacia; ainda requer validação regional.' },
-  { id: 'concentration_time_temez', method: 'Témez', assessment: 'insufficient_metadata', context: 'Equação regional desenvolvida para condições espanholas; o relatório não documenta a variante nem os insumos adotados.' },
-  { id: 'concentration_time_usda', method: 'USDA', assessment: 'insufficient_metadata', context: 'Métodos USDA/NRCS dependem de características como cobertura, retenção e trajetória de fluxo, ausentes no relatório.' },
-  { id: 'concentration_time_passini', method: 'Passini', assessment: 'insufficient_metadata', context: 'O valor não pode ser reproduzido sem a fórmula, a convenção de unidades e a identificação inequívoca do método.' },
-  { id: 'concentration_time_ventura_heras', method: 'Ventura–Heras', assessment: 'insufficient_metadata', context: 'O valor extremo sugere forte sensibilidade à formulação ou às unidades; faltam elementos para reproduzi-lo.' },
-  { id: 'concentration_time_bransby_williams', method: 'Bransby–Williams', assessment: 'insufficient_metadata', context: 'Usa área, comprimento e declividade, mas precisa ter variante, unidades e domínio de aplicação confirmados.' },
-  { id: 'concentration_time_johnstone_cross', method: 'Johnstone–Cross', assessment: 'extrapolated', context: 'A calibração publicada alcança cerca de 4.206 km²; o Paramirim possui mais de quatro vezes essa área.' },
-  { id: 'concentration_time_clark', method: 'Clark', assessment: 'insufficient_metadata', context: 'O método de Clark exige parâmetros de translação e armazenamento; a origem do valor isolado não está documentada.' },
-  { id: 'concentration_time_california_culverts', method: 'California Culverts', assessment: 'extrapolated', context: 'Desenvolvida para pequenas bacias montanhosas da Califórnia, muito diferentes da escala regional analisada.' },
-] as const satisfies ReadonlyArray<{ id: string; method: string; assessment: ConcentrationTimeAssessment; context: string }>;
+  { id: 'concentration_time_kirpich', method: 'Kirpich', assessment: 'extrapolated', limit: '< 0,50 km²; declividade 3–10%; talvegue < 10 km', context: 'Calibrada para pequenas bacias rurais. O limite publicado é inferior à área do Paramirim.' },
+  { id: 'concentration_time_kerby', method: 'Kerby', assessment: 'extrapolated', limit: 'Sem limite de área confirmado na fonte disponível', context: 'Representa sobretudo o escoamento inicial sobre a superfície; faltam domínio regional e comprimento de fluxo documentados.' },
+  { id: 'concentration_time_giandotti', method: 'Giandotti', assessment: 'scale_compatible', limit: '170–70.000 km²', context: 'A faixa de calibração publicada inclui os 17.070,32 km² do Paramirim; ainda requer validação regional.' },
+  { id: 'concentration_time_temez', method: 'Témez', assessment: 'insufficient_metadata', limit: 'Limite de área não confirmado para a variante usada', context: 'Foi desenvolvida para condições regionais espanholas; o relatório não documenta a variante nem os insumos adotados.' },
+  { id: 'concentration_time_usda', method: 'USDA', assessment: 'insufficient_metadata', limit: 'Não aplicável sem parâmetros de cobertura, retenção e trajetória', context: 'A família USDA/NRCS exige características de superfície e percurso ausentes no relatório.' },
+  { id: 'concentration_time_passini', method: 'Passini', assessment: 'insufficient_metadata', limit: 'Limite não confirmável sem fórmula e unidades', context: 'O valor não pode ser reproduzido sem identificar a equação, a convenção de unidades e seu domínio.' },
+  { id: 'concentration_time_ventura_heras', method: 'Ventura–Heras', assessment: 'insufficient_metadata', limit: 'Limite não confirmado para a variante usada', context: 'O resultado extremo sugere sensibilidade à formulação ou às unidades; faltam elementos para reproduzi-lo.' },
+  { id: 'concentration_time_bransby_williams', method: 'Bransby–Williams', assessment: 'insufficient_metadata', limit: 'Limite de área não confirmado para a variante usada', context: 'Usa área, comprimento e declividade, mas requer variante, unidades e domínio de aplicação confirmados.' },
+  { id: 'concentration_time_johnstone_cross', method: 'Johnstone–Cross', assessment: 'extrapolated', limit: '64,8–4.206,1 km²', context: 'A calibração publicada alcança cerca de 4.206 km²; o Paramirim possui mais de quatro vezes essa área.' },
+  { id: 'concentration_time_clark', method: 'Clark', assessment: 'insufficient_metadata', limit: 'Sem limite de área; requer translação e armazenamento', context: 'O método exige parâmetros de translação e armazenamento que não aparecem na origem do valor.' },
+  { id: 'concentration_time_california_culverts', method: 'California Culverts', assessment: 'extrapolated', limit: '< 0,50 km²; declividade 3–10%; talvegue < 10 km', context: 'Foi desenvolvida para pequenas bacias montanhosas da Califórnia, muito diferentes da escala regional analisada.' },
+] as const satisfies ReadonlyArray<{ id: string; method: string; assessment: ConcentrationTimeAssessment; limit: string; context: string }>;
 
 const concentrationIndex = new Map(
   morphometryDataset.concentrationTimeComparison.metrics.map((metric) => [metric.id, metric]),
