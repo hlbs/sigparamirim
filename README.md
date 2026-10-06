@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O projeto está no marco `v0.2.0`: PWA responsiva, autenticação social, perfis, papéis, regras de segurança e fundação do fluxo editorial. A ingestão geoespacial, o WebGIS e os demais módulos serão habilitados progressivamente após validação em emuladores e ambientes de prévia.
+O projeto está no marco `v0.2.2`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A fase científica foi iniciada com um pipeline auditável para o relatório morfométrico; a narrativa permanece bloqueada até a validação metodológica e bibliográfica.
 
 ## Desenvolvimento local
 
@@ -13,6 +13,8 @@ O projeto está no marco `v0.2.0`: PWA responsiva, autenticação social, perfis
 3. Execute `npm run dev`.
 4. Verifique tipos com `npm run typecheck`.
 5. Gere o build com `npm run build`.
+
+Para regenerar os dados morfométricos auditáveis, execute `npm run import:morphometry -- <caminho-do-relatorio.xlsx>`.
 
 Os emuladores usam, por padrão, Firestore em `127.0.0.1:8180`, Storage em
 `127.0.0.1:9199` e a interface de inspeção em `127.0.0.1:4000`.

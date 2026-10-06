@@ -2,6 +2,27 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.2.2] - 2026-10-06
+
+### Corrigido
+
+- Proteção global do shell: visitantes são enviados ao login e contas pendentes ou suspensas não acessam os módulos.
+- Login e criação de conta consolidados no único botão Google, com remoção da página redundante de cadastro.
+- Leitura de conteúdo no Firestore restrita a contas ativas, preservando rascunhos somente para editores e administradores.
+- Bootstrap de perfil tornado idempotente e limitado a identidades Google; suspensões revogam sessões renováveis.
+
+### Adicionado
+
+- Telas responsivas e acessíveis para cadastro em análise e conta suspensa.
+- Pipeline auditável do relatório morfométrico, com checksum, proveniência por célula, recálculo de 19 relações e relatório de bloqueios científicos.
+- Testes das decisões de acesso, cálculos morfométricos e regras de segurança atualizadas.
+
+### Segurança
+
+- Functions sensíveis conferem o papel e o estado no perfil canônico do Firestore.
+- Campos de provedores de identidade não podem mais ser alterados pelo cliente.
+- Visitantes, contas pendentes e contas suspensas não leem camadas, dashboards ou publicações.
+
 ## [0.2.1] - 2026-10-06
 
 ### Alterado

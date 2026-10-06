@@ -1,5 +1,45 @@
+import { Navigate } from 'react-router-dom';
+import { AuthLoading } from '../components/AuthLoading';
 import { signOutUser, useAuth } from '../features/auth';
 import { UserAvatar } from '../components/UserAvatar';
+
+export function AccountStatusPage() {
+  const { user, loading, canAccessPlatform, accountStatus } = useAuth();
+
+  if (loading) return <AuthLoading label="Verificando sua autorização" />;
+  if (!user) return <Navigate to="/entrar" replace />;
+  if (canAccessPlatform) return <Navigate to="/" replace />;
+
+  const suspended = accountStatus === 'suspended';
+
+  return (
+    <main className="account-status-page">
+      <section className="account-status-card" aria-labelledby="account-status-title">
+        <img src="/sig-logo.png" alt="SIG Paramirim" />
+        <span className={`account-status-badge ${suspended ? 'suspended' : 'pending'}`}>
+          {suspended ? 'Acesso suspenso' : 'Cadastro em análise'}
+        </span>
+        <h1 id="account-status-title">
+          {suspended ? 'Seu acesso está temporariamente suspenso.' : 'Seu cadastro foi recebido.'}
+        </h1>
+        <p>
+          {suspended
+            ? 'A administração precisa regularizar sua conta antes que você volte a acessar a plataforma.'
+            : 'A administração analisará sua solicitação. Assim que o acesso for aprovado, a plataforma será liberada para esta conta.'}
+        </p>
+        <div className="account-status-identity">
+          <UserAvatar name={user.displayName} email={user.email} photoURL={user.photoURL} />
+          <div><strong>{user.displayName || 'Usuário SIG Paramirim'}</strong><span>{user.email}</span></div>
+        </div>
+        <div className="account-status-actions">
+          <button type="button" className="button button-primary" onClick={() => window.location.reload()}>Verificar acesso</button>
+          <button type="button" className="button button-outline" onClick={() => void signOutUser()}>Sair da conta</button>
+        </div>
+        <small>O acesso ao conteúdo permanece bloqueado enquanto a conta não estiver ativa.</small>
+      </section>
+    </main>
+  );
+}
 
 export function ProfilePage() {
   const { user } = useAuth();

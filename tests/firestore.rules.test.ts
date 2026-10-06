@@ -81,10 +81,25 @@ afterAll(async () => {
 });
 
 describe('regras Firestore do SIG Paramirim', () => {
-  test('permite leitura pública somente de camada publicada', async () => {
-    const db = environment.unauthenticatedContext().firestore();
-    await assertSucceeds(db.doc('layers/public-layer').get());
-    await assertFails(db.doc('layers/draft-layer').get());
+  test('bloqueia conteúdo para anônimos e contas ainda não ativas', async () => {
+    const anonymousDb = environment.unauthenticatedContext().firestore();
+    const pendingDb = environment.authenticatedContext('alice', {
+      role: 'user', accountStatus: 'pending',
+    }).firestore();
+    await assertFails(anonymousDb.doc('layers/public-layer').get());
+    await assertFails(pendingDb.doc('layers/public-layer').get());
+  });
+
+  test('permite conteúdo publicado a contas ativas e reserva rascunhos a editores', async () => {
+    const activeDb = environment.authenticatedContext('active-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    const editorDb = environment.authenticatedContext('editor-a', {
+      role: 'editor', accountStatus: 'active',
+    }).firestore();
+    await assertSucceeds(activeDb.doc('layers/public-layer').get());
+    await assertFails(activeDb.doc('layers/draft-layer').get());
+    await assertSucceeds(editorDb.doc('layers/draft-layer').get());
   });
 
   test('bloqueia criação de perfil diretamente pelo cliente', async () => {
@@ -100,6 +115,7 @@ describe('regras Firestore do SIG Paramirim', () => {
     }).firestore();
     await assertSucceeds(db.doc('users/alice').get());
     await assertSucceeds(db.doc('users/alice').update({ displayName: 'Alice Atualizada' }));
+    await assertFails(db.doc('users/alice').update({ providerIds: ['password'] }));
     await assertFails(db.doc('users/alice').update({ role: 'admin' }));
   });
 

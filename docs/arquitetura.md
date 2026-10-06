@@ -81,9 +81,13 @@ Responsável pelo layout responsivo, header, navegação, perfil, avatar, tema, 
 
 Provedor de identidade: Google. Os papéis canônicos serão `user`, `editor` e `admin`; o estado de conta será `pending`, `active` ou `suspended`. Custom claims transportarão somente autorização resumida. Promoção de cargos, suspensão e ações sensíveis ocorrerão no backend e gerarão auditoria.
 
+O shell inteiro fica atrás de um portão global. O primeiro login Google cria uma conta `user/pending`; contas pendentes ou suspensas recebem telas próprias e não acessam os módulos. Não existe formulário separado de cadastro.
+
 ### 5.3 Conteúdo científico
 
 O relatório morfométrico será importado por pipeline auditável. Valores originais, normalizações, cálculos, interpretações e referências devem permanecer distinguíveis. Nenhuma afirmação científica poderá ser publicada com DOI inventado ou não verificado.
+
+O pipeline inicial registra checksum e célula de origem para 55 indicadores, recalcula somente relações reproduzíveis e bloqueia a narrativa quando faltam método, unidade ou referência. O arquivo original permanece externo e imutável; os JSONs versionados são derivados rastreáveis.
 
 ### 5.4 WebGIS
 

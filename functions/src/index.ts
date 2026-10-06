@@ -31,26 +31,26 @@ const reviewSchema = z.object({
   justification: z.string().trim().min(10).max(1000),
 });
 
-type Claims = {
-  role?: 'user' | 'editor' | 'admin';
-  accountStatus?: 'pending' | 'active' | 'suspended';
-};
-
 function requireAuthentication(auth: { uid: string; token: Record<string, unknown> } | undefined) {
   if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
   return auth;
 }
 
-function requireActiveRole(
+async function requireActiveRole(
   auth: { uid: string; token: Record<string, unknown> } | undefined,
   roles: Array<'editor' | 'admin'>,
 ) {
   const session = requireAuthentication(auth);
-  const claims = session.token as Claims;
-  if (claims.accountStatus !== 'active' || !claims.role || !roles.includes(claims.role as 'editor' | 'admin')) {
+  const profile = await db.collection('users').doc(session.uid).get();
+  if (!profile.exists) {
     throw new HttpsError('permission-denied', 'Seu perfil não possui autorização para esta operação.');
   }
-  return { uid: session.uid, role: claims.role };
+  const role = roleSchema.catch('user').parse(profile.get('role'));
+  const accountStatus = accountStatusSchema.catch('pending').parse(profile.get('accountStatus'));
+  if (accountStatus !== 'active' || !roles.includes(role as 'editor' | 'admin')) {
+    throw new HttpsError('permission-denied', 'Seu perfil não possui autorização para esta operação.');
+  }
+  return { uid: session.uid, role };
 }
 
 function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
@@ -64,32 +64,24 @@ function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
 export const healthcheck = onCall({ enforceAppCheck: appCheckEnabled }, (request) => {
   const auth = requireAuthentication(request.auth);
   logger.info('Verificação de integridade concluída.', { uid: auth.uid });
-  return { status: 'ok', version: '0.2.1' };
+  return { status: 'ok', version: '0.2.2' };
 });
 
 export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
   const session = requireAuthentication(request.auth);
   const userRef = db.collection('users').doc(session.uid);
-  const existing = await userRef.get();
-
-  if (existing.exists) {
-    const data = existing.data() ?? {};
-    const role = roleSchema.catch('user').parse(data.role);
-    const accountStatus = accountStatusSchema.catch('pending').parse(data.accountStatus);
-    const identity = await getAuth().getUser(session.uid);
-    await getAuth().setCustomUserClaims(session.uid, {
-      ...(identity.customClaims ?? {}), role, accountStatus,
-    });
-    return { created: false, role, accountStatus };
+  const identity = await getAuth().getUser(session.uid);
+  const providerIds = identity.providerData.map((provider) => provider.providerId);
+  if (!providerIds.includes('google.com')) {
+    throw new HttpsError('permission-denied', 'O acesso ao SIG Paramirim requer uma conta Google.');
   }
 
-  const identity = await getAuth().getUser(session.uid);
   const profile = {
     uid: session.uid,
     displayName: identity.displayName ?? '',
     email: identity.email ?? '',
     photoURL: identity.photoURL ?? null,
-    providerIds: identity.providerData.map((provider) => provider.providerId),
+    providerIds,
     role: 'user' as const,
     accountStatus: 'pending' as const,
     language: 'pt-BR',
@@ -99,19 +91,32 @@ export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, asy
     lastLoginAt: FieldValue.serverTimestamp(),
   };
 
-  await userRef.create(profile);
-  await getAuth().setCustomUserClaims(session.uid, {
-    ...(identity.customClaims ?? {}),
-    role: profile.role,
-    accountStatus: profile.accountStatus,
+  const access = await db.runTransaction(async (transaction) => {
+    const existing = await transaction.get(userRef);
+    if (existing.exists) {
+      const data = existing.data() ?? {};
+      const role = roleSchema.catch('user').parse(data.role);
+      const accountStatus = accountStatusSchema.catch('pending').parse(data.accountStatus);
+      transaction.update(userRef, { providerIds, updatedAt: FieldValue.serverTimestamp() });
+      return { created: false, role, accountStatus };
+    }
+
+    transaction.create(userRef, profile);
+    return { created: true, role: profile.role, accountStatus: profile.accountStatus };
   });
 
-  logger.info('Perfil inicial criado.', { uid: session.uid });
-  return { created: true, role: profile.role, accountStatus: profile.accountStatus };
+  await getAuth().setCustomUserClaims(session.uid, {
+    ...(identity.customClaims ?? {}),
+    role: access.role,
+    accountStatus: access.accountStatus,
+  });
+
+  logger.info(access.created ? 'Perfil inicial criado.' : 'Perfil existente sincronizado.', { uid: session.uid });
+  return access;
 });
 
 export const adminUpdateUserAccess = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
-  const actor = requireActiveRole(request.auth, ['admin']);
+  const actor = await requireActiveRole(request.auth, ['admin']);
   const input = parseInput(accessUpdateSchema, request.data);
   if (actor.uid === input.uid) {
     throw new HttpsError('failed-precondition', 'O administrador não pode alterar o próprio acesso.');
@@ -140,11 +145,14 @@ export const adminUpdateUserAccess = onCall({ enforceAppCheck: appCheckEnabled }
   await getAuth().setCustomUserClaims(input.uid, {
     ...(identity.customClaims ?? {}), role: input.role, accountStatus: input.accountStatus,
   });
+  if (input.accountStatus === 'suspended') {
+    await getAuth().revokeRefreshTokens(input.uid);
+  }
   return { ok: true };
 });
 
 export const submitChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
-  const actor = requireActiveRole(request.auth, ['editor', 'admin']);
+  const actor = await requireActiveRole(request.auth, ['editor', 'admin']);
   const input = parseInput(changeRequestSchema, request.data);
   const requestRef = db.collection('changeRequests').doc();
   const admins = await db.collection('users').where('role', '==', 'admin')
@@ -171,7 +179,7 @@ export const submitChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
 });
 
 export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
-  const actor = requireActiveRole(request.auth, ['admin']);
+  const actor = await requireActiveRole(request.auth, ['admin']);
   const input = parseInput(reviewSchema, request.data);
   const requestRef = db.collection('changeRequests').doc(input.requestId);
 

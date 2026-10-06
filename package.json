@@ -1,6 +1,6 @@
 {
   "name": "sig-paramirim",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Plataforma científica e WebGIS da Bacia Hidrográfica do Rio Paramirim.",
   "workspaces": [
@@ -14,7 +14,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:rules": "vitest run tests/firestore.rules.test.ts",
-    "lint": "npm run lint --workspaces --if-present"
+    "lint": "npm run lint --workspaces --if-present",
+    "import:morphometry": "tsx scripts/import-morphometry.ts"
   },
   "engines": {
     "node": ">=22"
@@ -25,6 +26,8 @@
   },
   "packageManager": "npm@11.1.0",
   "devDependencies": {
-    "@firebase/rules-unit-testing": "^5.0.2"
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "read-excel-file": "^9.3.10",
+    "tsx": "^4.20.6"
   }
 }

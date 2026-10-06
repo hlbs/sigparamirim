@@ -10,11 +10,13 @@ A plataforma utiliza exclusivamente o Google como provedor de login. A decisão 
 
 ## Primeiro acesso
 
-1. O usuário autentica com um provedor habilitado.
+1. O usuário seleciona `Continuar com Google`; o mesmo fluxo cria a identidade no primeiro acesso e autentica nos seguintes.
 2. A callable Function `bootstrapProfile` cria `users/{uid}` se o perfil ainda não existir.
 3. Todo perfil novo recebe `role=user` e `accountStatus=pending`.
 4. As custom claims correspondentes são emitidas pelo backend.
-5. O cliente renova o token e apresenta o estado de análise, sem conceder acesso editorial.
+5. O cliente renova o token e apresenta uma tela exclusiva de análise, sem renderizar o shell nem o conteúdo da plataforma.
+
+Não existe cadastro separado. A rota legada `/criar-conta` apenas redireciona para `/entrar`.
 
 ## Papéis e estados
 
@@ -26,6 +28,15 @@ A plataforma utiliza exclusivamente o Google como provedor de login. A decisão 
 - `suspended`: conta bloqueada nas regras e funções protegidas.
 
 O frontend nunca é a fonte de autoridade. Regras Firestore/Storage e callable Functions validam sessão, estado e papel novamente.
+
+## Fronteiras de acesso
+
+- `/entrar` é a única página de entrada anônima.
+- `/status-conta` é acessível somente para apresentar os estados `pending` e `suspended`.
+- todas as demais rotas passam pelo portão global e exigem `accountStatus=active`;
+- conteúdo publicado no Firestore exige conta ativa; rascunhos exigem editor ou administrador ativo;
+- o perfil próprio pode ser lido por uma conta pendente para compor o estado de onboarding, mas notificações, dispositivos e arquivos permanecem bloqueados;
+- campos de identidade, papéis e status são mantidos pelo backend e não podem ser alterados pelo cliente.
 
 ## Bootstrap do primeiro administrador
 
@@ -47,4 +58,4 @@ As Functions aceitam a variável de ambiente server-side `ENFORCE_APP_CHECK=true
 
 - A política de acesso permanece dependente da definição formal do e-mail/UID do primeiro administrador.
 - A sincronização entre documento de perfil e custom claims é compensável, mas não atômica entre serviços; falhas devem ser auditadas e reprocessadas.
-- Contas que acabaram de receber novas claims precisam renovar o token.
+- Contas que acabaram de ser ativadas usam `Verificar acesso` para renovar a sessão; suspensões revogam refresh tokens e as Functions sensíveis consultam o perfil canônico.

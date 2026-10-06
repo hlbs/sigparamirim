@@ -10,10 +10,6 @@ function safeDisplayName(user: User): string {
   return emailPrefix || 'Usuário';
 }
 
-function providerIds(user: User): string[] {
-  return [...new Set(user.providerData.map((provider) => provider.providerId).filter(Boolean))];
-}
-
 export async function ensureUserProfile(user: User): Promise<UserProfile> {
   if (!firebase.app) {
     throw new Error('O Firebase não está configurado para este ambiente.');
@@ -32,7 +28,6 @@ export async function ensureUserProfile(user: User): Promise<UserProfile> {
   await firestoreModule.updateDoc(reference, {
     displayName: safeDisplayName(user),
     photoURL: user.photoURL,
-    providerIds: providerIds(user),
     lastLoginAt: firestoreModule.serverTimestamp(),
     updatedAt: firestoreModule.serverTimestamp(),
   });

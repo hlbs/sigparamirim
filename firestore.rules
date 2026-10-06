@@ -42,33 +42,33 @@ service cloud.firestore {
       allow delete: if false;
       allow update: if self(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt', 'providerIds']);
+          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt']);
 
       match /notifications/{notificationId} {
-        allow read: if self(uid);
+        allow read: if active() && self(uid);
         allow create, delete: if false;
-        allow update: if self(uid)
+        allow update: if active() && self(uid)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
       }
 
       match /devices/{deviceId} {
-        allow read: if self(uid);
-        allow create, update, delete: if self(uid);
+        allow read: if active() && self(uid);
+        allow create, update, delete: if active() && self(uid);
       }
     }
 
     match /layers/{layerId} {
-      allow read: if published() || editor();
+      allow read: if active() && (published() || editor());
       allow write: if false;
     }
 
     match /dashboards/{dashboardId} {
-      allow read: if published() || editor();
+      allow read: if active() && (published() || editor());
       allow write: if false;
     }
 
     match /publications/{publicationId} {
-      allow read: if published() || editor();
+      allow read: if active() && (published() || editor());
       allow write: if false;
     }
 

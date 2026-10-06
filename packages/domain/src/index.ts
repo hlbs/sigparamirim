@@ -1,6 +1,8 @@
 export type UserRole = 'user' | 'editor' | 'admin';
 export type AccountStatus = 'pending' | 'active' | 'suspended';
 
+export * from './morphometry';
+
 export interface UserPreferences {
   language: 'pt-BR' | 'en' | 'es' | 'fr' | 'zh-CN' | 'de' | 'ar';
   theme: 'light' | 'dark' | 'system';

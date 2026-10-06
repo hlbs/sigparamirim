@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { NavLink, Route, Routes } from 'react-router-dom';
+import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { LanguageCode, usePreferences } from './stores/preferences';
 import { useAuth } from './features/auth';
 import { AuthLoading } from './components/AuthLoading';
 import { UserAvatar } from './components/UserAvatar';
-import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
+import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { AuthPage } from './pages/AuthPage';
-import { AccessDeniedPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
+import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 
 const navigation = [
   { path: '/', label: 'Início', icon: '⌂' },
@@ -228,9 +228,10 @@ export function App() {
 
   return (
     <Routes>
-      <Route path="/entrar" element={<AuthPage mode="login" />} />
-      <Route path="/criar-conta" element={<AuthPage mode="register" />} />
-      <Route path="*" element={<PlatformShell />} />
+      <Route path="/entrar" element={<AuthPage />} />
+      <Route path="/criar-conta" element={<Navigate to="/entrar" replace />} />
+      <Route path="/status-conta" element={<AccountStatusPage />} />
+      <Route path="*" element={<PlatformRoute><PlatformShell /></PlatformRoute>} />
     </Routes>
   );
 }

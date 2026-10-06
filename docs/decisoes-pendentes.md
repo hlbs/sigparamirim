@@ -7,8 +7,8 @@ Este registro reúne definições que não podem ser inventadas. A ausência de 
 | ID | Decisão necessária | Impacto | Gate de resolução |
 | --- | --- | --- | --- |
 | DP-001 | Definir os e-mails dos administradores iniciais e o processo de bootstrap | impede configuração segura do primeiro administrador | antes de promover qualquer usuário a `admin` |
-| DP-002 | Confirmar a política de ativação de novos usuários | altera onboarding, regras e estados de conta | antes de liberar autenticação em produção |
-| DP-003 | Confirmar quais áreas são públicas e quais exigem autenticação | afeta regras, cache, rotas e exposição de conteúdo | antes do primeiro preview público |
+| DP-002 | Encerrada em 2026-10-06: novos usuários entram como `user/pending` e exigem ativação administrativa | mantém onboarding seguro e sem autopromoção | aplicado na versão 0.2.2 |
+| DP-003 | Encerrada em 2026-10-06: somente a entrada e a tela de status ficam fora do shell; conteúdo exige conta ativa | protege rotas e dados da plataforma | aplicado na versão 0.2.2 |
 | DP-004 | Confirmar Hosting Site ID, domínio e domínios autorizados | afeta Auth, redirects, CSP e deploy | antes de configurar ambientes remotos |
 | DP-005 | Confirmar região do `sigparamirimdb`, Functions e Storage | afeta latência, custos e residência dos dados | antes de criar Functions ou recursos dependentes |
 | DP-006 | Confirmar plano de faturamento e orçamento Google Cloud/Firebase | Translation API, Functions, App Check e processamento podem gerar custos | antes de habilitar serviços cobrados |

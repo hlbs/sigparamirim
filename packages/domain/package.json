@@ -1,12 +1,12 @@
 {
   "name": "@sig-paramirim/domain",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "type": "module",
   "exports": "./src/index.ts",
   "scripts": {
-    "test": "vitest run src/editorial.test.ts",
-    "typecheck": "tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution Bundler src/editorial.ts src/editorial.test.ts"
+    "test": "vitest run src/editorial.test.ts src/morphometry.test.ts",
+    "typecheck": "tsc --noEmit --strict --target ES2022 --module ESNext --moduleResolution Bundler src/editorial.ts src/editorial.test.ts src/morphometry.ts src/morphometry.test.ts"
   },
   "devDependencies": {
     "typescript": "^5.9.3",

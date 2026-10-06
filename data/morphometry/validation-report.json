@@ -1,0 +1,203 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "8F8DF0DA5BA294BF1C9A2E5DD00423903562C01B9E306CC8144A53DBE12E4243",
+  "summary": {
+    "metricCount": 55,
+    "recalculatedCount": 19,
+    "verifiedCount": 18,
+    "needsReviewCount": 22,
+    "missingUnitCount": 15
+  },
+  "checks": [
+    {
+      "id": "basin_width",
+      "sourceValue": 66.01,
+      "recalculatedValue": 66.00541334776892,
+      "absoluteDifference": 0.0045866522310831215,
+      "status": "verified"
+    },
+    {
+      "id": "relief",
+      "sourceValue": 1622,
+      "recalculatedValue": 1622,
+      "absoluteDifference": 0,
+      "status": "verified"
+    },
+    {
+      "id": "main_channel_gradient",
+      "sourceValue": 1.48,
+      "recalculatedValue": 1.476923474931443,
+      "absoluteDifference": 0.0030765250685569345,
+      "status": "verified"
+    },
+    {
+      "id": "main_channel_slope_endpoints",
+      "sourceValue": 0.15,
+      "recalculatedValue": 0.1476923474931443,
+      "absoluteDifference": 0.0023076525068556897,
+      "status": "verified"
+    },
+    {
+      "id": "drainage_density",
+      "sourceValue": 0.12,
+      "recalculatedValue": 0.1226093008215429,
+      "absoluteDifference": 0.002609300821542898,
+      "status": "verified"
+    },
+    {
+      "id": "stream_frequency",
+      "sourceValue": 0.01,
+      "recalculatedValue": 0.011657660781988856,
+      "absoluteDifference": 0.0016576607819888556,
+      "status": "verified"
+    },
+    {
+      "id": "drainage_texture",
+      "sourceValue": 0.19,
+      "recalculatedValue": 0.18814942278782606,
+      "absoluteDifference": 0.0018505772121739372,
+      "status": "verified"
+    },
+    {
+      "id": "drainage_intensity",
+      "sourceValue": 0.1,
+      "recalculatedValue": 0.09507974275912813,
+      "absoluteDifference": 0.004920257240871875,
+      "status": "verified"
+    },
+    {
+      "id": "overland_flow_length",
+      "sourceValue": 4.08,
+      "recalculatedValue": 4.077994056321608,
+      "absoluteDifference": 0.0020059436783919082,
+      "status": "verified"
+    },
+    {
+      "id": "channel_maintenance_constant",
+      "sourceValue": 8.16,
+      "recalculatedValue": 8.155988112643216,
+      "absoluteDifference": 0.0040118873567838165,
+      "status": "verified"
+    },
+    {
+      "id": "infiltration_number",
+      "sourceValue": 0,
+      "recalculatedValue": 0.0014293376376943747,
+      "absoluteDifference": 0.0014293376376943747,
+      "status": "precision_loss"
+    },
+    {
+      "id": "mean_stream_length",
+      "sourceValue": 10.52,
+      "recalculatedValue": 10.51748743718593,
+      "absoluteDifference": 0.002512562814070307,
+      "status": "verified"
+    },
+    {
+      "id": "form_factor",
+      "sourceValue": 0.26,
+      "recalculatedValue": 0.255221612202339,
+      "absoluteDifference": 0.004778387797660988,
+      "status": "verified"
+    },
+    {
+      "id": "elongation_ratio",
+      "sourceValue": 0.57,
+      "recalculatedValue": 0.5700510936109854,
+      "absoluteDifference": 0.00005109361098543097,
+      "status": "verified"
+    },
+    {
+      "id": "circularity_ratio",
+      "sourceValue": 0.19,
+      "recalculatedValue": 0.19175696806314388,
+      "absoluteDifference": 0.0017569680631438767,
+      "status": "verified"
+    },
+    {
+      "id": "compactness_coefficient",
+      "sourceValue": 2.28,
+      "recalculatedValue": 2.283623075742433,
+      "absoluteDifference": 0.003623075742433368,
+      "status": "verified"
+    },
+    {
+      "id": "fitness_ratio",
+      "sourceValue": 0.37,
+      "recalculatedValue": 0.36546370796184063,
+      "absoluteDifference": 0.004536292038159362,
+      "status": "verified"
+    },
+    {
+      "id": "ruggedness_number",
+      "sourceValue": 0.2,
+      "recalculatedValue": 0.19887228593254258,
+      "absoluteDifference": 0.0011277140674574304,
+      "status": "verified"
+    },
+    {
+      "id": "massivity_index",
+      "sourceValue": 0.04,
+      "recalculatedValue": 0.043113427281972455,
+      "absoluteDifference": 0.0031134272819724543,
+      "status": "verified"
+    }
+  ],
+  "concentrationTime": {
+    "methodCount": 11,
+    "minimumHours": 8.89,
+    "medianHours": 80.13,
+    "maximumHours": 2617.15,
+    "maxMinRatio": 294.39257592800897,
+    "status": "needs_review"
+  },
+  "issues": [
+    {
+      "severity": "blocking",
+      "code": "MISSING_METHOD_REFERENCES",
+      "message": "A fonte não registra fórmulas, métodos, parâmetros intermediários ou referências com DOI."
+    },
+    {
+      "severity": "blocking",
+      "code": "UNSUPPORTED_INTERPRETATIONS",
+      "message": "As interpretações categóricas da fonte não possuem limiares nem referências verificáveis."
+    },
+    {
+      "severity": "warning",
+      "code": "MISSING_UNITS",
+      "message": "15 indicadores não possuem unidade explícita.",
+      "sourceCells": [
+        "Planilha1!B16",
+        "Planilha1!B25",
+        "Planilha1!B26",
+        "Planilha1!B29",
+        "Planilha1!B30",
+        "Planilha1!B31",
+        "Planilha1!B33",
+        "Planilha1!B35",
+        "Planilha1!B36",
+        "Planilha1!B37",
+        "Planilha1!B38",
+        "Planilha1!B39",
+        "Planilha1!B40",
+        "Planilha1!B41",
+        "Planilha1!B42"
+      ]
+    },
+    {
+      "severity": "warning",
+      "code": "INFILTRATION_PRECISION_LOSS",
+      "message": "O número de infiltração foi gravado como zero, mas o recálculo resulta em valor positivo."
+    },
+    {
+      "severity": "blocking",
+      "code": "CONCENTRATION_TIME_DISPERSION",
+      "message": "As estimativas de Tc variam 294.39 vezes entre o mínimo e o máximo e exigem avaliação de aplicabilidade."
+    },
+    {
+      "severity": "blocking",
+      "code": "HYPSOMETRIC_METHOD_MISSING",
+      "message": "A integral hipsométrica não pode ser reproduzida sem a curva ou o método utilizado."
+    }
+  ]
+}
