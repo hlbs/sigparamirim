@@ -121,6 +121,15 @@ export const concentrationTimeMethods = concentrationContext.map((method) => {
   return { ...method, value: metric.value, unit: metric.unit ?? 'h' };
 });
 
+/**
+ * Única estimativa cuja faixa de calibração publicada contempla a escala
+ * territorial do Paramirim. Isso é compatibilidade de escala, não calibração
+ * hidrológica regional nem autorização automática para dimensionamento.
+ */
+export const compatibleConcentrationTime = concentrationTimeMethods.filter(
+  (method) => method.assessment === 'scale_compatible',
+);
+
 export const scientificReferences = [
   {
     author: 'Horton, R. E.',

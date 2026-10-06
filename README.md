@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O projeto está no marco de pré-lançamento `v0.3.0-beta.3`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A página inicial apresenta uma narrativa morfométrica didática, com leitura integrada da forma, relevo, drenagem, águas superficiais e limitações para inferências subterrâneas. Os 11 tempos de concentração são exibidos exclusivamente como comparação de sensibilidade entre métodos, nunca como valor de projeto.
+O projeto está no marco de pré-lançamento `v0.3.0-beta.4`: PWA responsiva, entrada única com Google, ativação administrativa, proteção integral do shell, perfis, papéis, regras de segurança e fundação do fluxo editorial. A página inicial apresenta uma narrativa morfométrica didática, com leitura integrada da forma, relevo, drenagem, águas superficiais e limitações para inferências subterrâneas. Após revisão das metodologias, a interface mostra somente a estimativa de Giandotti, compatível com a escala territorial publicada para a bacia, sempre condicionada à validação hidrológica regional.
 
 ## Desenvolvimento local
 

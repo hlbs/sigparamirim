@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  concentrationTimeMethods,
+  compatibleConcentrationTime,
   formatMetric,
   narrativeMetric,
   scientificReferences,
@@ -41,39 +41,23 @@ function Citation({ references }: { references: number[] }) {
   );
 }
 
-const assessmentLabel = {
-  scale_compatible: 'Escala de área compatível',
-  extrapolated: 'Fora da escala de origem',
-  insufficient_metadata: 'Método a confirmar',
-} as const;
-
-function ConcentrationTimeChart() {
-  const maximum = Math.max(...concentrationTimeMethods.map((method) => method.value));
+function ConcentrationTimeRecommendation() {
+  const [method] = compatibleConcentrationTime;
+  if (!method) return null;
   return (
-    <figure className="concentration-chart" aria-labelledby="concentration-chart-caption">
-      <div className="concentration-chart-heading">
-        <strong>Onze métodos, respostas muito diferentes</strong>
-        <span>Escala logarítmica · horas</span>
+    <figure className="concentration-recommendation" aria-labelledby="concentration-recommendation-caption">
+      <div className="concentration-recommendation-kicker">Método compatível com a escala territorial</div>
+      <div className="concentration-recommendation-value">
+        <strong>{method.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+        <span>h</span>
       </div>
-      <div className="concentration-methods">
-        {concentrationTimeMethods.map((method) => {
-          const width = Math.max(8, (Math.log10(method.value + 1) / Math.log10(maximum + 1)) * 100);
-          return (
-            <div className="concentration-method" key={method.id}>
-              <div className="concentration-method-label">
-                <strong>{method.method}</strong>
-                <span>{method.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h</span>
-              </div>
-              <span className="concentration-track" aria-hidden="true">
-                <span className={`assessment-${method.assessment}`} style={{ width: `${width}%` }} />
-              </span>
-              <small className={`assessment-label assessment-${method.assessment}`}>{assessmentLabel[method.assessment]}</small>
-            </div>
-          );
-        })}
+      <div className="concentration-recommendation-method">Equação de {method.method}</div>
+      <div className="concentration-rationale">
+        <span className="rationale-icon" aria-hidden="true">✓</span>
+        <p>{method.context}</p>
       </div>
-      <figcaption id="concentration-chart-caption">
-        A comparação mostra sensibilidade metodológica. Nenhum desses valores deve ser adotado isoladamente como tempo de projeto.
+      <figcaption id="concentration-recommendation-caption">
+        Entre as onze metodologias presentes no relatório, esta é a única cuja faixa de calibração publicada contempla a área de 17.070,32 km². A estimativa ainda precisa ser validada com chuva, sub-bacias e hidrogramas observados antes de qualquer dimensionamento.
       </figcaption>
     </figure>
   );
@@ -82,24 +66,32 @@ function ConcentrationTimeChart() {
 function SurfaceGroundwaterVisual() {
   return (
     <figure className="water-cycle-figure" aria-labelledby="water-cycle-caption">
-      <svg viewBox="0 0 680 380" role="img" aria-labelledby="water-cycle-title water-cycle-description">
+      <svg viewBox="0 0 760 470" role="img" aria-labelledby="water-cycle-title water-cycle-description">
         <title id="water-cycle-title">Conexões entre água superficial e subterrânea</title>
-        <desc id="water-cycle-description">Esquema conceitual com chuva, escoamento superficial, infiltração, aquífero e descarga para o rio.</desc>
-        <path className="terrain" d="M20 120 C130 45 220 80 310 145 S500 95 660 170 L660 380 L20 380 Z" />
-        <path className="river" d="M310 145 C370 166 420 185 492 175" />
-        <path className="water-table" d="M55 265 C190 220 300 282 430 238 S560 234 640 218" />
-        <path className="flow-arrow surface-flow" d="M150 107 Q225 115 292 146" />
-        <path className="flow-arrow recharge-flow" d="M225 125 Q226 190 245 234" />
-        <path className="flow-arrow base-flow" d="M445 248 Q465 218 493 183" />
-        <g className="rain"><line x1="110" y1="24" x2="95" y2="58" /><line x1="160" y1="18" x2="145" y2="52" /><line x1="210" y1="31" x2="195" y2="65" /></g>
-        <text x="58" y="88">Chuva</text>
-        <text x="112" y="151">Escoamento</text>
-        <text x="196" y="212">Infiltração</text>
-        <text x="92" y="318">Armazenamento subterrâneo</text>
-        <text x="458" y="278">Descarga de base</text>
-        <text x="500" y="158">Rio</text>
+        <defs>
+          <marker id="water-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
+          <linearGradient id="aquifer-gradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#b3d9e3" stopOpacity=".6" /><stop offset="1" stopColor="#4a86a2" stopOpacity=".85" /></linearGradient>
+        </defs>
+        <path className="terrain" d="M24 165 C125 86 226 95 310 165 S493 110 736 178 L736 414 L24 414 Z" />
+        <path className="bedrock" d="M24 350 C180 330 284 368 410 340 S585 346 736 321 L736 414 L24 414 Z" />
+        <path className="aquifer" d="M24 272 C154 244 250 298 370 269 S579 262 736 244 L736 350 C584 375 472 365 350 380 S157 345 24 366 Z" />
+        <path className="water-table" d="M42 271 C164 238 258 290 372 260 S579 254 718 235" />
+        <path className="river" d="M324 166 C384 188 436 205 504 190 S590 168 648 177" />
+        <path className="flow-arrow surface-flow" d="M128 142 Q223 137 306 169" />
+        <path className="flow-arrow recharge-flow" d="M240 155 Q244 208 268 273" />
+        <path className="flow-arrow groundwater-flow" d="M322 307 Q420 290 523 270" />
+        <path className="flow-arrow base-flow" d="M523 270 Q567 231 608 186" />
+        <g className="rain"><line x1="112" y1="28" x2="94" y2="70" /><line x1="164" y1="20" x2="146" y2="62" /><line x1="216" y1="32" x2="198" y2="74" /></g>
+        <text x="56" y="103">Precipitação</text>
+        <text x="122" y="157">Escoamento superficial</text>
+        <text x="180" y="227">Recarga</text>
+        <text x="48" y="321">Aquífero raso</text>
+        <text x="45" y="397">Rocha / baixa permeabilidade</text>
+        <text x="526" y="300">Fluxo subterrâneo</text>
+        <text x="579" y="226">Descarga de base</text>
+        <text x="650" y="162">Rio</text>
       </svg>
-      <figcaption id="water-cycle-caption">Esquema conceitual: a morfometria sugere controles, mas não mede recarga ou vazão subterrânea.</figcaption>
+      <figcaption id="water-cycle-caption">Modelo conceitual de uma bacia efluente: a chuva pode gerar escoamento, infiltrar-se na zona não saturada, alimentar o aquífero e retornar ao rio como descarga de base. A direção e a espessura das setas são ilustrativas; a morfometria não mede recarga, nível freático ou vazão subterrânea.</figcaption>
     </figure>
   );
 }
@@ -141,12 +133,9 @@ export function HomePage() {
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          observer.unobserve(entry.target);
-        }
+        entry.target.classList.toggle('is-visible', entry.isIntersecting);
       });
-    }, { threshold: 0.14 });
+    }, { threshold: 0.2, rootMargin: '-7% 0px -7% 0px' });
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
   }, []);
@@ -182,8 +171,7 @@ export function HomePage() {
   const compactness = narrativeMetric('compactness_coefficient');
   const ruggedness = narrativeMetric('ruggedness_number');
   const massivity = narrativeMetric('massivity_index');
-  const concentrationMinimum = Math.min(...concentrationTimeMethods.map((method) => method.value));
-  const concentrationMaximum = Math.max(...concentrationTimeMethods.map((method) => method.value));
+  const compatibleTime = compatibleConcentrationTime[0]!;
 
   const elevationPosition = (value: number) => (
     ((value - minimumElevation.value) / (maximumElevation.value - minimumElevation.value)) * 100
@@ -398,30 +386,27 @@ export function HomePage() {
       <NarrativeSection
         id="tempos"
         eyebrow="07 · Resposta à chuva"
-        title="Por que os tempos de concentração divergem tanto?"
+        title="Um tempo de referência compatível com a escala da bacia"
         tone="brand"
         description={<>
           <p>
-            Tempo de concentração é uma forma de estimar quanto demora para a água do ponto hidraulicamente mais distante
-            alcançar a saída da bacia. O relatório apresenta onze estimativas, de {concentrationMinimum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h a {concentrationMaximum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h:
-            uma diferença de aproximadamente 294 vezes.
+            Tempo de concentração é uma estimativa do intervalo necessário para que a água do ponto hidraulicamente mais distante
+            alcance a saída da bacia. Depois de revisar as onze metodologias listadas no relatório, apenas a equação de Giandotti
+            apresentou faixa de calibração publicada compatível com a área do Paramirim. O valor de referência é, portanto, {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h.
           </p>
           <p>
-            Essa amplitude não significa que a bacia tenha onze tempos de resposta simultaneamente. Cada equação foi criada
-            para um conjunto próprio de bacias, escalas, climas e variáveis. Kirpich, Kerby e California Culverts nasceram
-            para situações muito menores; Johnstone–Cross também fica abaixo da área do Paramirim. O valor de Giandotti
-            está dentro da faixa de área publicada, mas ainda depende da definição correta da altura, da trajetória e da
-            validação regional. As demais estimativas não podem ser interpretadas sem recuperar suas fórmulas e unidades.<Citation references={[7, 8, 9, 10, 11]} />
+            As demais foram descartadas para esta leitura pública: algumas foram calibradas em bacias muito menores; outras exigem
+            parâmetros, variantes ou unidades que o relatório não documenta. Isso não significa que sejam “erradas” em qualquer contexto,
+            mas que não são defensáveis como referência para esta bacia sem reconstrução e validação específicas.<Citation references={[7, 8, 9, 10, 11]} />
           </p>
           <p>
-            Para um projeto hidrológico, o próximo passo não é escolher o maior ou o menor número. É reconstruir cada método,
-            dividir a bacia em sub-bacias, incorporar chuva, cobertura, solos e velocidades de escoamento e confrontar os
-            resultados com hidrogramas observados ou regionalizados. O gráfico ao lado é, portanto, uma ferramenta de
-            diagnóstico metodológico — não um valor de projeto.<Citation references={[7, 8, 9, 10]} />
+            Giandotti é uma referência de escala, não uma calibração automática. Em projetos, o valor deve ser refinado por sub-bacias,
+            distribuição espacial da chuva, cobertura, solos, trajetória hidráulica e confronto com hidrogramas observados ou regionalizados.
+            Assim, a plataforma mostra um único número compatível, mas preserva a responsabilidade técnica sobre seu uso.<Citation references={[7, 8, 9, 10]} />
           </p>
         </>}
       >
-        <ConcentrationTimeChart />
+        <ConcentrationTimeRecommendation />
       </NarrativeSection>
 
       <NarrativeSection

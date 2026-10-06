@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.4] - 2026-10-06
+
+### Aprimorado
+
+- seleção metodológica do tempo de concentração revisada: a interface pública exibe somente Giandotti (34,22 h), única metodologia com faixa de calibração publicada compatível com a escala territorial da bacia;
+- esquema superficial–subterrâneo redesenhado com zona não saturada, aquífero, camada de baixa permeabilidade, recarga, fluxo subterrâneo e descarga de base;
+- seções da página inicial passaram a animar entrada e saída durante a rolagem, com transições escalonadas para texto e visual e suporte a `prefers-reduced-motion`.
+
+### Corrigido
+
+- removida a apresentação de valores incompatíveis ou não reproduzíveis como se fossem alternativas equivalentes de tempo de concentração.
+
 ## [0.3.0-beta.3] - 2026-10-06
 
 ### Aprimorado

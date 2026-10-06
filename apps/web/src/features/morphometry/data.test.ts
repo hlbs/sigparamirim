@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatMetric,
   concentrationTimeMethods,
+  compatibleConcentrationTime,
   morphometryDataset,
   narrativeMetric,
   narrativeMetricIds,
@@ -46,5 +47,6 @@ describe('dados narrativos morfométricos', () => {
     expect(Math.max(...concentrationTimeMethods.map((method) => method.value))).toBe(2617.15);
     expect(concentrationTimeMethods.find((method) => method.method === 'Giandotti')?.assessment).toBe('scale_compatible');
     expect(concentrationTimeMethods.every((method) => method.assessment !== undefined)).toBe(true);
+    expect(compatibleConcentrationTime.map((method) => method.method)).toEqual(['Giandotti']);
   });
 });

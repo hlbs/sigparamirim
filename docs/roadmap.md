@@ -81,7 +81,7 @@ Antes de iniciar qualquer fase:
 
 **Release-alvo:** `v0.3.0`
 
-**Estado:** narrativa didática e auditável revisada em `v0.3.0-beta.3`, com comparação metodológica dos tempos de concentração e limites explícitos para inferências subterrâneas; gate científico de dimensionamento ainda aberto.
+**Estado:** narrativa didática e auditável revisada em `v0.3.0-beta.4`, com seleção explícita do único método compatível com a escala publicada, limites para inferências subterrâneas e animações responsivas; gate científico de dimensionamento ainda aberto.
 
 **Objetivos:**
 
