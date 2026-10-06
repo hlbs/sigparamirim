@@ -3,7 +3,7 @@
   "source": {
     "fileName": "relatorio_bacia_paramirim.xlsx",
     "worksheet": "Planilha1",
-    "sha256": "8F8DF0DA5BA294BF1C9A2E5DD00423903562C01B9E306CC8144A53DBE12E4243",
+    "sha256": "89578C40393ABE0E21F8846B78DA50EAA34773AEE141BB92CE6A2B4307982C82",
     "rowCount": 55
   },
   "narrativePolicy": {
@@ -454,5 +454,121 @@
         "basin_area"
       ]
     }
-  ]
+  ],
+  "concentrationTimeComparison": {
+    "mode": "method_sensitivity_only",
+    "designUseAllowed": false,
+    "metrics": [
+      {
+        "id": "concentration_time_kirpich",
+        "labelPtBr": "Tempo de concentração — Kirpich (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Kirpich (Tc)",
+        "value": 80.13,
+        "unit": "h",
+        "sourceCell": "Planilha1!B45",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_kerby",
+        "labelPtBr": "Tempo de concentração — Kerby (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Kerby (Tc)",
+        "value": 8.89,
+        "unit": "h",
+        "sourceCell": "Planilha1!B46",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_giandotti",
+        "labelPtBr": "Tempo de concentração — Giandotti (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Giandotti (Tc)",
+        "value": 34.22,
+        "unit": "h",
+        "sourceCell": "Planilha1!B47",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_temez",
+        "labelPtBr": "Tempo de concentração — Témez (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Témez (Tc)",
+        "value": 95.76,
+        "unit": "h",
+        "sourceCell": "Planilha1!B48",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_usda",
+        "labelPtBr": "Tempo de concentração — USDA (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - USDA (Tc)",
+        "value": 267.41,
+        "unit": "h",
+        "sourceCell": "Planilha1!B49",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_passini",
+        "labelPtBr": "Tempo de concentração — Passini (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Passini (Tc)",
+        "value": 1443.88,
+        "unit": "h",
+        "sourceCell": "Planilha1!B50",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_ventura_heras",
+        "labelPtBr": "Tempo de concentração — Ventura-Heras (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Ventura-Heras (Tc)",
+        "value": 2617.15,
+        "unit": "h",
+        "sourceCell": "Planilha1!B51",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_bransby_williams",
+        "labelPtBr": "Tempo de concentração — Bransby-Williams (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Bransby-Williams (Tc)",
+        "value": 32.79,
+        "unit": "h",
+        "sourceCell": "Planilha1!B52",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_johnstone_cross",
+        "labelPtBr": "Tempo de concentração — Johnstone-Cross (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Johnstone-Cross (Tc)",
+        "value": 46.37,
+        "unit": "h",
+        "sourceCell": "Planilha1!B53",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_clark",
+        "labelPtBr": "Tempo de concentração — Clark (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - Clark (Tc)",
+        "value": 96.5,
+        "unit": "h",
+        "sourceCell": "Planilha1!B54",
+        "reviewStatus": "needs_review"
+      },
+      {
+        "id": "concentration_time_california_culverts",
+        "labelPtBr": "Tempo de concentração — California Culverts (Tc)",
+        "group": "concentration_time",
+        "sourceLabel": "Time of Concentration - California Culverts (Tc)",
+        "value": 53.61,
+        "unit": "h",
+        "sourceCell": "Planilha1!B55",
+        "reviewStatus": "needs_review"
+      }
+    ]
+  }
 }

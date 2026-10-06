@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatMetric,
+  concentrationTimeMethods,
   morphometryDataset,
   narrativeMetric,
   narrativeMetricIds,
@@ -32,10 +33,18 @@ describe('dados narrativos morfométricos', () => {
   });
 
   it('mantém DOI explícito em todas as referências publicadas', () => {
-    expect(scientificReferences).toHaveLength(6);
+    expect(scientificReferences).toHaveLength(14);
     for (const reference of scientificReferences) {
       expect(reference.doi).toMatch(/^10\./);
       expect(reference.url).toContain('doi.org/10.');
     }
+  });
+
+  it('expõe os tempos de concentração apenas como comparação metodológica', () => {
+    expect(concentrationTimeMethods).toHaveLength(11);
+    expect(Math.min(...concentrationTimeMethods.map((method) => method.value))).toBe(8.89);
+    expect(Math.max(...concentrationTimeMethods.map((method) => method.value))).toBe(2617.15);
+    expect(concentrationTimeMethods.find((method) => method.method === 'Giandotti')?.assessment).toBe('scale_compatible');
+    expect(concentrationTimeMethods.every((method) => method.assessment !== undefined)).toBe(true);
   });
 });

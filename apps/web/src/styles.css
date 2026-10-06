@@ -142,19 +142,54 @@ a { color: inherit; }
 .shape-row strong { font-size: 1.55rem; }
 .shape-track { display: block; height: 8px; margin-top: 15px; overflow: hidden; border-radius: 999px; background: var(--surface-muted); }
 .shape-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), #9ca438); }
+.shape-insight { display: grid; gap: 7px; padding: 19px 21px; border-left: 3px solid var(--brand); border-radius: 0 16px 16px 0; background: var(--brand-soft); color: var(--text); line-height: 1.5; }
+.shape-insight strong { font-size: .85rem; }
+.shape-insight span { color: var(--text-muted); font-size: .88rem; }
 .drainage-visual { display: grid; grid-template-columns: 1fr auto 1fr; gap: 30px; align-items: stretch; padding: clamp(28px, 5vw, 52px); border: 1px solid rgba(255,255,255,.2); border-radius: 25px; background: rgba(255,255,255,.1); }
 .drainage-number { display: grid; align-content: center; gap: 13px; min-width: 0; }
 .drainage-number strong { display: flex; flex-wrap: wrap; align-items: baseline; font-size: clamp(2.2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
 .drainage-number span { color: rgba(255,255,255,.72); line-height: 1.5; }
 .drainage-divider { width: 1px; background: rgba(255,255,255,.25); }
+.drainage-support-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.drainage-support-grid .story-metric-card { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); color: #fff; }
+.drainage-support-grid .metric-label { color: rgba(255,255,255,.72); }
 .channel-profile { margin: 0; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--border); border-radius: 24px; background: var(--surface); }
 .channel-profile svg { width: 100%; height: auto; overflow: visible; }
 .channel-profile path { fill: none; stroke: var(--brand); stroke-width: 8; stroke-linecap: round; }
 .channel-profile circle { fill: var(--surface); stroke: var(--brand); stroke-width: 5; }
 .channel-profile text { fill: var(--text); font: 750 18px Inter, sans-serif; }
-.channel-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0 22px; }
+.channel-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 22px; }
 .channel-stats span { padding: 14px; border-radius: 14px; background: var(--surface-muted); color: var(--text-muted); font-size: .8rem; }
 .channel-stats strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 1.25rem; }
+.water-cycle-figure { margin: 0; padding: clamp(18px, 4vw, 34px); border: 1px solid var(--border); border-radius: 24px; background: var(--surface); }
+.water-cycle-figure svg { width: 100%; height: auto; overflow: visible; }
+.water-cycle-figure text { fill: var(--text); font: 700 17px Inter, sans-serif; }
+.water-cycle-figure .terrain { fill: color-mix(in srgb, var(--brand-soft) 72%, var(--surface)); }
+.water-cycle-figure .river { fill: none; stroke: #4f9dc4; stroke-width: 17; stroke-linecap: round; }
+.water-cycle-figure .water-table { fill: none; stroke: #70b7d4; stroke-width: 4; stroke-dasharray: 12 9; }
+.water-cycle-figure .flow-arrow { fill: none; stroke: var(--brand); stroke-width: 4; stroke-linecap: round; }
+.water-cycle-figure .rain { stroke: #4f9dc4; stroke-width: 4; stroke-linecap: round; }
+.water-cycle-figure figcaption { display: block; margin-top: 17px; color: var(--text-muted); font-size: .76rem; line-height: 1.5; }
+.concentration-chart { margin: 0; padding: clamp(22px, 4vw, 38px); border: 1px solid rgba(255,255,255,.2); border-radius: 24px; background: rgba(255,255,255,.08); }
+.concentration-chart-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 15px; margin-bottom: 24px; color: #fff; }
+.concentration-chart-heading strong { font-size: 1.05rem; }
+.concentration-chart-heading span { color: rgba(255,255,255,.65); font-size: .75rem; }
+.concentration-methods { display: grid; gap: 13px; }
+.concentration-method-label { display: flex; justify-content: space-between; gap: 12px; color: rgba(255,255,255,.88); font-size: .79rem; }
+.concentration-method-label strong { color: #fff; }
+.concentration-track { display: block; height: 9px; margin-top: 5px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.15); }
+.concentration-track > span { display: block; height: 100%; border-radius: inherit; }
+.concentration-track .assessment-scale_compatible { background: #dbe678; }
+.concentration-track .assessment-extrapolated { background: #e7aa62; }
+.concentration-track .assessment-insufficient_metadata { background: #d4d4d4; }
+.assessment-label { display: block; margin-top: 3px; font-size: .66rem; }
+.concentration-method .assessment-scale_compatible { color: #eff5b0; }
+.concentration-method .assessment-extrapolated { color: #f5c889; }
+.concentration-method .assessment-insufficient_metadata { color: rgba(255,255,255,.65); }
+.concentration-chart figcaption { margin-top: 22px; color: rgba(255,255,255,.68); font-size: .76rem; line-height: 1.5; }
+.synthesis-visual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+.synthesis-note { grid-column: 1 / -1; display: grid; gap: 7px; padding: 21px; border-left: 3px solid var(--brand); border-radius: 0 16px 16px 0; background: var(--brand-soft); }
+.synthesis-note span { color: var(--text-muted); line-height: 1.5; }
 .method-section { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; padding: clamp(32px, 6vw, 72px); border: 1px solid var(--border); border-radius: 30px; background: var(--surface); }
 .method-section h2, .references-section h2, .story-next h2 { margin: 11px 0 16px; font-size: clamp(2rem, 4vw, 4.2rem); line-height: 1; letter-spacing: -.055em; }
 .method-section p { color: var(--text-muted); line-height: 1.7; }
@@ -312,7 +347,8 @@ a { color: inherit; }
   .elevation-scale { min-height: 330px; }
   .drainage-visual { grid-template-columns: 1fr; gap: 22px; }
   .drainage-divider { width: auto; height: 1px; }
-  .channel-stats, .audit-grid { grid-template-columns: 1fr; }
+  .drainage-support-grid, .channel-stats, .audit-grid, .synthesis-visual { grid-template-columns: 1fr; }
+  .synthesis-note { grid-column: auto; }
   .story-next { align-items: stretch; flex-direction: column; }
   .story-next-actions { display: grid; }
 }

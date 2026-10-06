@@ -109,8 +109,11 @@ const worksheet = workbook.find((sheet) => sheet.sheet === 'Planilha1');
 if (!worksheet) throw new Error('A aba obrigatória "Planilha1" não foi encontrada.');
 
 const [header, ...rows] = worksheet.data;
-const expectedHeader = ['Parameter', 'Value', 'Unit', 'Interpreta'];
-if (JSON.stringify(header) !== JSON.stringify(expectedHeader)) {
+const validHeaders = [
+  ['Parameter', 'Value', 'Unit', 'Interpreta'],
+  ['Parameter', 'Value', 'Unit', 'Interpretation'],
+];
+if (!validHeaders.some((expectedHeader) => JSON.stringify(header) === JSON.stringify(expectedHeader))) {
   throw new Error(`Cabeçalho inesperado: ${JSON.stringify(header)}`);
 }
 if (rows.length !== 55) throw new Error(`Esperados 55 indicadores; encontrados ${rows.length}.`);
@@ -184,6 +187,13 @@ const narrative = {
   metrics: metrics
     .filter((metric) => metric.reviewStatus !== 'needs_review')
     .map(({ sourceInterpretation: _blockedInterpretation, ...metric }) => metric),
+  concentrationTimeComparison: {
+    mode: 'method_sensitivity_only',
+    designUseAllowed: false,
+    metrics: metrics
+      .filter((metric) => metric.group === 'concentration_time')
+      .map(({ sourceInterpretation: _blockedInterpretation, ...metric }) => metric),
+  },
 };
 const validation = {
   schemaVersion: 1,

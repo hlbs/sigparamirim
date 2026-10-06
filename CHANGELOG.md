@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.3] - 2026-10-06
+
+### Aprimorado
+
+- aprofundada a narrativa hidrológica da página inicial, com interpretação didática da escala, forma, relevo, rede de drenagem e canal principal;
+- incluída a leitura integrada entre escoamento superficial e circulação subterrânea, com limites explícitos para não transformar morfometria em diagnóstico hidrogeológico;
+- incluída comparação dos 11 métodos de tempo de concentração, com faixa observada, contexto de aplicação e alerta de sensibilidade metodológica; os valores não são autorizados para dimensionamento.
+
+### Corrigido
+
+- removidos controles de origem do dado e a seção editorial genérica de “dados confiáveis”, mantendo as referências DOI consolidadas ao final da narrativa.
+
 ## [0.3.0-beta.2] - 2026-10-06
 
 ### Aprimorado

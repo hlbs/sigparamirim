@@ -43,4 +43,4 @@ A página inicial consome exclusivamente `narrative.generated.json`. O importado
 
 ## Gate científico ainda pendente
 
-Para promover a versão beta a `v0.3.0`, ainda é necessário registrar fórmulas, parâmetros intermediários, unidade, aplicabilidade e referência conferida para os indicadores bloqueados, além da revisão técnica e editorial final. Esses indicadores continuam ausentes da narrativa pública.
+Os tempos de concentração possuem um tratamento deliberadamente separado: `narrative.generated.json` publica `concentrationTimeComparison` apenas como comparação de sensibilidade entre métodos (`mode: method_sensitivity_only`, `designUseAllowed: false`). Isso permite explicar ao leitor por que os resultados divergem sem transformar uma fórmula não validada regionalmente em parâmetro de projeto. Para uso em dimensionamento, ainda são necessários domínio de calibração, fórmula, unidades, dados de chuva, cobertura, solos, subdivisão da bacia e validação com hidrogramas observados.
