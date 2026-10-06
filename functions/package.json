@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/functions",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -10,7 +10,9 @@
     "test": "node --test",
     "lint": "tsc --noEmit --pretty false"
   },
-  "engines": { "node": "22" },
+  "engines": {
+    "node": "22"
+  },
   "dependencies": {
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.4.0",

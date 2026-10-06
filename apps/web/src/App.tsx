@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { LanguageCode, usePreferences } from './stores/preferences';
+import { useAuth } from './features/auth';
+import { AuthLoading } from './components/AuthLoading';
+import { UserAvatar } from './components/UserAvatar';
+import { ProtectedRoute, RoleRoute } from './components/RouteGuards';
+import { AuthPage } from './pages/AuthPage';
+import { AccessDeniedPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 
 const navigation = [
   { path: '/', label: 'Início', icon: '⌂' },
   { path: '/mapa', label: 'Mapa', icon: '◇' },
   { path: '/observatorio', label: 'Observatório', icon: '▤' },
   { path: '/ajuda', label: 'Ajuda', icon: '?' },
-  { path: '/administracao', label: 'Administração', icon: '⚙' },
 ];
 
 const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
@@ -78,8 +83,9 @@ function Home() {
   );
 }
 
-export function App() {
+function PlatformShell() {
   const { theme, setTheme, language, setLanguage, sidebarOpen, setSidebarOpen } = usePreferences();
+  const { user, loading } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const firebaseConfigured = Boolean(
     import.meta.env.VITE_FIREBASE_API_KEY
@@ -93,11 +99,14 @@ export function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }, [theme]);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = resolvedTheme;
-    document.documentElement.lang = language === 'PT' ? 'pt-BR' : language.toLowerCase();
-    document.documentElement.dir = language === 'AR' ? 'rtl' : 'ltr';
-  }, [language, resolvedTheme]);
+  if (loading) return <AuthLoading />;
+
+  const roleNavigation = user?.role === 'admin'
+    ? [{ path: '/editorial', label: 'Área editorial', icon: '✎' }, { path: '/administracao', label: 'Administração', icon: '⚙' }]
+    : user?.role === 'editor'
+      ? [{ path: '/editorial', label: 'Área editorial', icon: '✎' }]
+      : [];
+  const visibleNavigation = [...navigation, ...roleNavigation];
 
   return (
     <div className="app-shell">
@@ -147,13 +156,19 @@ export function App() {
             )}
           </div>
 
-          <button className="avatar" aria-label="Abrir perfil do usuário">SP</button>
+          {user ? (
+            <NavLink className="avatar-link" to="/perfil" aria-label="Abrir perfil do usuário">
+              <UserAvatar name={user.displayName} email={user.email} photoURL={user.photoURL} />
+            </NavLink>
+          ) : (
+            <NavLink className="login-link" to="/entrar">Entrar</NavLink>
+          )}
         </div>
       </header>
 
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`} aria-label="Navegação principal">
         <nav>
-          {navigation.map((item) => (
+          {visibleNavigation.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -179,7 +194,10 @@ export function App() {
           <Route path="/mapa" element={<Placeholder title="Mapa e dashboard" description="O catálogo geoespacial e o motor OpenLayers serão conectados após a validação das camadas iniciais." />} />
           <Route path="/observatorio" element={<Placeholder title="Observatório Científico Paramirim" description="Acervo pesquisável de publicações, fontes e estudos sobre a bacia." />} />
           <Route path="/ajuda" element={<Placeholder title="Central de ajuda" description="Abertura e acompanhamento de tickets com histórico e anexos protegidos." />} />
-          <Route path="/administracao" element={<Placeholder title="Administração" description="Gestão de usuários, conteúdo, aprovações, camadas e atendimento." />} />
+          <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+          <Route path="/editorial" element={<RoleRoute allowed={['editor', 'admin']}><EditorialPage /></RoleRoute>} />
+          <Route path="/administracao" element={<RoleRoute allowed={['admin']}><AdminPage /></RoleRoute>} />
+          <Route path="/acesso-restrito" element={<ProtectedRoute><AccessDeniedPage /></ProtectedRoute>} />
         </Routes>
       </main>
 
@@ -192,5 +210,27 @@ export function App() {
         ))}
       </nav>
     </div>
+  );
+}
+
+export function App() {
+  const { theme, language } = usePreferences();
+  const resolvedTheme = useMemo(() => {
+    if (theme !== 'system') return theme;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.lang = language === 'PT' ? 'pt-BR' : language.toLowerCase();
+    document.documentElement.dir = language === 'AR' ? 'rtl' : 'ltr';
+  }, [language, resolvedTheme]);
+
+  return (
+    <Routes>
+      <Route path="/entrar" element={<AuthPage mode="login" />} />
+      <Route path="/criar-conta" element={<AuthPage mode="register" />} />
+      <Route path="*" element={<PlatformShell />} />
+    </Routes>
   );
 }

@@ -10,16 +10,16 @@ service cloud.firestore {
       return signedIn() && request.auth.token.accountStatus == 'active';
     }
 
+    function self(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
     function admin() {
       return active() && request.auth.token.role == 'admin';
     }
 
     function editor() {
       return active() && request.auth.token.role in ['editor', 'admin'];
-    }
-
-    function owner(uid) {
-      return active() && request.auth.uid == uid;
     }
 
     function published() {
@@ -37,22 +37,23 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if owner(uid) || admin();
-      allow create, delete: if false;
-      allow update: if owner(uid)
+      allow read: if self(uid) || admin();
+      allow create: if false;
+      allow delete: if false;
+      allow update: if self(uid)
         && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt']);
+          .hasOnly(['displayName', 'photoURL', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt', 'providerIds']);
 
       match /notifications/{notificationId} {
-        allow read: if owner(uid);
+        allow read: if self(uid);
         allow create, delete: if false;
-        allow update: if owner(uid)
+        allow update: if self(uid)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt']);
       }
 
       match /devices/{deviceId} {
-        allow read: if owner(uid);
-        allow create, update, delete: if owner(uid);
+        allow read: if self(uid);
+        allow create, update, delete: if self(uid);
       }
     }
 
@@ -116,4 +117,3 @@ service cloud.firestore {
     }
   }
 }
-

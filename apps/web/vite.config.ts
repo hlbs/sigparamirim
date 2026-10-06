@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['sig-logo.png'],
       manifest: {
         name: 'SIG Paramirim',
@@ -32,4 +32,3 @@ export default defineConfig({
     }),
   ],
 });
-

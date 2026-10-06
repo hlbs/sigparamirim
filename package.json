@@ -1,6 +1,6 @@
 {
   "name": "sig-paramirim",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Plataforma científica e WebGIS da Bacia Hidrográfica do Rio Paramirim.",
   "workspaces": [
@@ -13,6 +13,7 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:rules": "vitest run tests/firestore.rules.test.ts",
     "lint": "npm run lint --workspaces --if-present"
   },
   "engines": {
@@ -22,5 +23,8 @@
     "@grpc/grpc-js": "1.14.5",
     "retry-request": "9.0.1"
   },
-  "packageManager": "npm@11.1.0"
+  "packageManager": "npm@11.1.0",
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2"
+  }
 }

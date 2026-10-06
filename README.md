@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O projeto está no marco `v0.1.0`: baseline arquitetural, shell responsiva e inventário técnico inicial. Integrações Firebase, autenticação, ingestão geoespacial e publicação serão habilitadas progressivamente após validação em emuladores e ambientes de prévia.
+O projeto está no marco `v0.2.0`: PWA responsiva, autenticação social, perfis, papéis, regras de segurança e fundação do fluxo editorial. A ingestão geoespacial, o WebGIS e os demais módulos serão habilitados progressivamente após validação em emuladores e ambientes de prévia.
 
 ## Desenvolvimento local
 
