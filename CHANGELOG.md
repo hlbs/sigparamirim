@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.16] - 2026-10-07
+
+### Refinado
+
+- rede de partículas do login recebeu maior densidade, conexões mais longas e contraste elevado para reproduzir uma malha tecnológica visível no painel escuro.
+
 ## [0.3.0-beta.15] - 2026-10-07
 
 ### Refinado

@@ -36,7 +36,7 @@ export function AuthPage() {
       container.dataset.initialized = 'true';
       try {
         window.particlesJS('auth-particles', {
-          particles: { number: { value: 50, density: { enable: true, value_area: 720 } }, color: { value: '#c4d86c' }, opacity: { value: .46, random: true }, size: { value: 2.1, random: true }, line_linked: { enable: true, distance: 175, color: '#c4d86c', opacity: .5, width: 1.15 }, move: { enable: true, speed: .32, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
+          particles: { number: { value: 78, density: { enable: true, value_area: 420 } }, color: { value: '#d7e77a' }, opacity: { value: .6, random: true }, size: { value: 2.3, random: true }, line_linked: { enable: true, distance: 220, color: '#d7e77a', opacity: .82, width: 1.35 }, move: { enable: true, speed: .28, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
           interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
           retina_detect: true,
         });
