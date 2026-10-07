@@ -30,6 +30,18 @@ Na primeira execução, o gate permanece bloqueado de propósito: os arquivos es
 íntegros, mas as decisões DP-011, DP-012, DP-016 e DP-017 ainda precisam ser
 resolvidas. Nenhum original é copiado, regravado ou convertido pelo validador.
 
+O planejamento dos derivados é gerado separadamente com:
+
+```bash
+npm run plan:geospatial
+```
+
+O manifesto em `docs/catalogo-ingestao-manifest.json` classifica cada camada
+como `direct`, `worker`, `partitioned-geojson` ou `cog`, registra parâmetros
+reprodutíveis (blocos, overviews, NoData transparente e carregamento sob
+demanda) e propaga os bloqueios do relatório. Ele não cria derivados ainda:
+isso só será executado depois da resolução das decisões pendentes.
+
 ## Resumo
 
 - 20 arquivos GeoJSON presentes, todos válidos como `FeatureCollection`.

@@ -2,10 +2,19 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.28] - 2026-10-07
+
+### Planejamento de derivados geoespaciais
+
+- adicionado `scripts/plan-geospatial-derivatives.ts` para gerar planos reprodutíveis de GeoJSON direto, worker, particionamento e COG;
+- criado `docs/catalogo-ingestao-manifest.json`, propagando automaticamente os bloqueios da auditoria para cada camada;
+- incluídos testes para garantir que camadas grandes usem processamento assíncrono e que rasters permaneçam bloqueados enquanto NoData não for confirmado.
+
 ## [0.3.0-beta.27] - 2026-10-07
 
 ### Catálogo geoespacial e gate de ingestão
 
+- adicionado manifesto reprodutível de derivados em `docs/catalogo-ingestao-manifest.json`, com estratégia para GeoJSON direto, worker, particionamento e COG;
 - criada a auditoria executável em `scripts/validate-geospatial-catalog.ts`;
 - validação real dos 20 GeoJSON (hash, FeatureCollection, CRS, geometrias, contagem e extensão) e dos 4 GeoTIFF (dimensões, banda, tipo, NoData, compressão e overviews);
 - gerado relatório rastreável em `docs/catalogo-camadas-quality.json` e testes automatizados em `tests/geospatial-catalog.test.ts`;

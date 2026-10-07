@@ -52,6 +52,28 @@ export type GeospatialCatalogQualityReport = {
   };
 };
 
+export type DerivationFormat = 'geojson-direct' | 'geojson-worker' | 'partitioned-geojson' | 'cog';
+
+export type DerivationPlan = {
+  id: string;
+  sourceFile?: string;
+  sourceStatus: LayerStatus;
+  publicationStatus: 'planned' | 'blocked' | 'ready';
+  format?: DerivationFormat;
+  outputPath?: string;
+  parameters: Record<string, string | number | boolean | string[]>;
+  blockers: string[];
+};
+
+export type GeospatialIngestionManifest = {
+  manifestVersion: string;
+  generatedAt: string;
+  sourceCatalog: string;
+  qualityReport: string;
+  immutableSourcePolicy: string;
+  plans: DerivationPlan[];
+};
+
 export function isPublishable(layer: LayerValidation): boolean {
   return layer.status !== 'planned' && layer.issues.every((issue) => issue.severity !== 'error');
 }

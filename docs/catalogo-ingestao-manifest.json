@@ -1,0 +1,676 @@
+{
+  "manifestVersion": "0.1.0",
+  "generatedAt": "2026-10-07T18:23:28.647Z",
+  "sourceCatalog": "docs/catalogo-camadas-inicial.json",
+  "qualityReport": "docs/catalogo-camadas-quality.json",
+  "immutableSourcePolicy": "Os arquivos em sig/ são somente leitura; derivados recebem novo caminho, checksum e revisão.",
+  "plans": [
+    {
+      "id": "bacia-hidrografica-paramirim",
+      "sourceFile": "bacia_hidrografica/bacia_hidrografica_paramirim.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/bacia-hidrografica-paramirim/bacia-hidrografica-paramirim.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "hidrografia",
+      "sourceFile": "bacia_hidrografica/hidrografia.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/hidrografia/hidrografia.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "imovel-rural-app",
+      "sourceFile": "imoveis_rurais/imovel_rural_APP.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/imovel-rural-app/imovel-rural-app.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "imovel-rural-areas-degradadas-app",
+      "sourceFile": "imoveis_rurais/imovel_rural_areas_degradas_em_APP.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/imovel-rural-areas-degradadas-app/imovel-rural-areas-degradadas-app.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "imovel-rural-areas-degradadas-reserva-legal",
+      "sourceFile": "imoveis_rurais/imovel_rural_areas_degradas_em_reserva_legal.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/imovel-rural-areas-degradadas-reserva-legal/imovel-rural-areas-degradadas-reserva-legal.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "imovel-rural-limites-propriedades",
+      "sourceFile": "imoveis_rurais/imovel_rural_limites_de_propriedades.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "partitioned-geojson",
+      "outputPath": "data/geospatial/derived/imovel-rural-limites-propriedades/z{z}/x{x}/y{y}.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "imovel-rural-reserva-legal",
+      "sourceFile": "imoveis_rurais/imovel_rural_reserva_legal.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "partitioned-geojson",
+      "outputPath": "data/geospatial/derived/imovel-rural-reserva-legal/z{z}/x{x}/y{y}.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "cidades",
+      "sourceFile": "limites_territoriais/cidades.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/cidades/cidades.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "limites-municipais",
+      "sourceFile": "limites_territoriais/limites_municipais.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-worker",
+      "outputPath": "data/geospatial/derived/limites-municipais/limites-municipais.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "territorios-identidade",
+      "sourceFile": "limites_territoriais/territorios_de_identidade.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-worker",
+      "outputPath": "data/geospatial/derived/territorios-identidade/territorios-identidade.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "limites-estaduais",
+      "sourceFile": "limites_territoriais/unidade_federacao.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-worker",
+      "outputPath": "data/geospatial/derived/limites-estaduais/limites-estaduais.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "pocos-siagas",
+      "sourceFile": "pocos/pocos_SIAGAS.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/pocos-siagas/pocos-siagas.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "extracao-mineral-pontos",
+      "sourceFile": "producao/extracao_mineral_(pontos).geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/extracao-mineral-pontos/extracao-mineral-pontos.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "geologia",
+      "sourceFile": "recursos_naturais/geologia.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/geologia/geologia.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "geomorfologia",
+      "sourceFile": "recursos_naturais/geomorfologia.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/geomorfologia/geomorfologia.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "vegetacao",
+      "sourceFile": "recursos_naturais/vegetacao.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "partitioned-geojson",
+      "outputPath": "data/geospatial/derived/vegetacao/z{z}/x{x}/y{y}.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": true,
+        "loadOnDemand": true,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "areas-quilombolas",
+      "sourceFile": "sociedade_e_cultura/areas_quilombolas.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/areas-quilombolas/areas-quilombolas.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "sitios-arqueologicos",
+      "sourceFile": "sociedade_e_cultura/sitios_arqueologicos.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/sitios-arqueologicos/sitios-arqueologicos.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "unidade-conservacao-estadual",
+      "sourceFile": "sociedade_e_cultura/unidades_de_conservacao_estadual.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/unidade-conservacao-estadual/unidade-conservacao-estadual.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "unidade-conservacao-municipal",
+      "sourceFile": "sociedade_e_cultura/unidades_de_conservacao_municipal.geojson",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "geojson-direct",
+      "outputPath": "data/geospatial/derived/unidade-conservacao-municipal/unidade-conservacao-municipal.geojson",
+      "parameters": {
+        "immutableSource": true,
+        "parseInWorker": false,
+        "loadOnDemand": false,
+        "canonicalCrs": "EPSG:4674",
+        "geometrySimplification": "deferred-until-scale-policy"
+      },
+      "blockers": [
+        "license-metadata-missing"
+      ]
+    },
+    {
+      "id": "mde",
+      "sourceFile": "tif/mde.tif",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "cog",
+      "outputPath": "data/geospatial/derived/mde/mde.cog.tif",
+      "parameters": {
+        "immutableSource": true,
+        "compression": "DEFLATE",
+        "blockSize": 256,
+        "overviews": [
+          "2x",
+          "4x",
+          "8x",
+          "16x"
+        ],
+        "resampling": "bilinear",
+        "noDataColor": "transparent",
+        "classes": 10,
+        "interpolation": "discrete",
+        "labelPrecision": 2
+      },
+      "blockers": [
+        "license-metadata-missing",
+        "source-metadata-missing",
+        "nodata-semantics-unconfirmed",
+        "raster-unit-unconfirmed"
+      ]
+    },
+    {
+      "id": "nivel-dinamico",
+      "sourceFile": "tif/nivel_dinamico.tif",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "cog",
+      "outputPath": "data/geospatial/derived/nivel-dinamico/nivel-dinamico.cog.tif",
+      "parameters": {
+        "immutableSource": true,
+        "compression": "DEFLATE",
+        "blockSize": 256,
+        "overviews": [
+          "2x",
+          "4x",
+          "8x",
+          "16x"
+        ],
+        "resampling": "bilinear",
+        "noDataColor": "transparent",
+        "classes": 10,
+        "interpolation": "discrete",
+        "labelPrecision": 2
+      },
+      "blockers": [
+        "license-metadata-missing",
+        "source-metadata-missing",
+        "nodata-semantics-unconfirmed",
+        "raster-unit-unconfirmed"
+      ]
+    },
+    {
+      "id": "nivel-estatico",
+      "sourceFile": "tif/nivel_estatico.tif",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "cog",
+      "outputPath": "data/geospatial/derived/nivel-estatico/nivel-estatico.cog.tif",
+      "parameters": {
+        "immutableSource": true,
+        "compression": "DEFLATE",
+        "blockSize": 256,
+        "overviews": [
+          "2x",
+          "4x",
+          "8x",
+          "16x"
+        ],
+        "resampling": "bilinear",
+        "noDataColor": "transparent",
+        "classes": 10,
+        "interpolation": "discrete",
+        "labelPrecision": 2
+      },
+      "blockers": [
+        "license-metadata-missing",
+        "source-metadata-missing",
+        "nodata-semantics-unconfirmed",
+        "raster-unit-unconfirmed"
+      ]
+    },
+    {
+      "id": "profundidade",
+      "sourceFile": "tif/profundidade.tif",
+      "sourceStatus": "present",
+      "publicationStatus": "blocked",
+      "format": "cog",
+      "outputPath": "data/geospatial/derived/profundidade/profundidade.cog.tif",
+      "parameters": {
+        "immutableSource": true,
+        "compression": "DEFLATE",
+        "blockSize": 256,
+        "overviews": [
+          "2x",
+          "4x",
+          "8x",
+          "16x"
+        ],
+        "resampling": "bilinear",
+        "noDataColor": "transparent",
+        "classes": 10,
+        "interpolation": "discrete",
+        "labelPrecision": 2
+      },
+      "blockers": [
+        "license-metadata-missing",
+        "source-metadata-missing",
+        "nodata-semantics-unconfirmed",
+        "raster-unit-unconfirmed"
+      ]
+    },
+    {
+      "id": "estacoes-fluviometricas-rhn",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "estacoes-pluviometricas-rhn",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "unidade-conservacao-federal",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "solos",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "aquiferos-porosos",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "aquiferos-carsticos",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "aquiferos-fraturados",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "rodovias",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "ferrovias",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "aeroportos",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "linhas-transmissao",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "subestacoes",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "barragens",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "usina-eolica",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "usina-solar",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "usina-biomassa",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    },
+    {
+      "id": "usina-hidreletrica",
+      "sourceStatus": "planned",
+      "publicationStatus": "planned",
+      "parameters": {
+        "immutableSource": true
+      },
+      "blockers": [
+        "planned-layer"
+      ]
+    }
+  ]
+}

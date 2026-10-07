@@ -106,8 +106,8 @@ O incremento beta publica apenas afirmações factuais, métricas permitidas por
 
 **Release-alvo:** `v0.3.5`
 
-**Estado:** auditoria executável de integridade e metadados implementada em
-`v0.3.0-beta.27`; o gate de publicação permanece bloqueado até resolver as
+**Estado:** auditoria executável de integridade e manifesto de derivados implementados em
+`v0.3.0-beta.28`; o gate de publicação permanece bloqueado até resolver as
 decisões DP-011, DP-012, DP-016 e DP-017.
 
 **Objetivos:**
