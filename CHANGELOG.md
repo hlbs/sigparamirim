@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.15] - 2026-10-07
+
+### Refinado
+
+- logo SVG da abertura passou a respeitar limites responsivos, sem estourar a área visível;
+- partículas do login receberam maior densidade de conexões, distância e contraste para formar uma rede tecnológica legível;
+- loading passou a exibir somente o GIF ampliado, sem moldura, onda ou spinner adicional;
+- GIFs de loading foram tratados para remover o fundo claro conectado às bordas e preservar transparência sobre os dois temas.
+
 ## [0.3.0-beta.14] - 2026-10-07
 
 ### Aprimorado
