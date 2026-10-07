@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.11] - 2026-10-07
+
+### Corrigido
+
+- versão exibida no header passou a ser lida diretamente do `package.json` do workspace, evitando publicação de números antigos;
+- bundle e service worker regenerados para invalidar a interface anterior;
+- heightmap suavizado e reamostrado para reduzir serrilhamento e picos artificiais;
+- exagero vertical da malha 3D reduzido para uma leitura geomorfológica mais proporcional.
+
 ## [0.3.0-beta.10] - 2026-10-07
 
 ### Aprimorado

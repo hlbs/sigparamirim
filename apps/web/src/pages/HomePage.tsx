@@ -112,7 +112,7 @@ function TerrainModelVisual() {
       const index = (x: number, y: number) => y * cols + x;
       for (let y = 0; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
         const p = index(x, y) * 4; const h = (pixels[p] ?? 0) / 255; const px = (x / (cols - 1) - .5) * 4.8; const pz = (y / (rows - 1) - .5) * 7.2;
-        positions.push(px, h * 1.55, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
+        positions.push(px, h * .62, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
       }
       for (let y = 0; y < rows - 1; y += 1) for (let x = 0; x < cols - 1; x += 1) { const a = index(x, y); const b = index(x + 1, y); const c = index(x + 1, y + 1); const d = index(x, y + 1); indices.push(a, b, d, b, c, d); }
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); geometry.setIndex(indices); geometry.computeVertexNormals();
