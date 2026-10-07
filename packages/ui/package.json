@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/ui",
-  "version": "0.3.0-beta.32",
+  "version": "0.3.0-beta.33",
   "private": true,
   "type": "module",
   "exports": "./src/index.ts"

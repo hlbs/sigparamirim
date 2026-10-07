@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/web",
-  "version": "0.3.0-beta.32",
+  "version": "0.3.0-beta.33",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,6 +17,7 @@
     "firebase": "^12.3.0",
     "ol": "^10.6.1",
     "particles.js": "^2.0.0",
+    "proj4": "^2.22.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",

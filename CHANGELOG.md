@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.33] - 2026-10-07
+
+### Interface WebGIS refeita
+
+- substituída a página longa de apresentação por uma estação de trabalho com abas Mapa e Dashboards e mapa em tela inteira;
+- criado painel lateral direito com catálogo pesquisável de mapas base, vetores e rasters, além de painéis de legenda e ferramentas;
+- implementadas identificação por clique, medição de distância e área, opacidade das camadas, vista inicial, limpeza e impressão;
+- adicionadas miniaturas reais de referência visual para cada mapa base e estados visuais de seleção/visibilidade;
+- corrigidos o dimensionamento do canvas, o CSS do OpenLayers e o registro dos CRS EPSG:4674 e EPSG:31983 usados pelos dados;
+- atualização e seleção de camadas preservam a vista atual e removem do mapa as camadas desativadas.
+
 ## [0.3.0-beta.32] - 2026-10-07
 
 ### WebGIS funcional

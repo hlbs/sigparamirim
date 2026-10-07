@@ -18,69 +18,90 @@ type CatalogLayer = {
   height?: number;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
   visibleByDefault?: boolean;
-  fields?: Record<string, string[]>;
 };
 
-type CatalogDocument = { version: string; generatedAt: string; layers: CatalogLayer[] };
-type LayerFilter = 'all' | 'present' | 'planned';
+type CatalogDocument = { version: string; layers: CatalogLayer[] };
+type MainTab = 'map' | 'dashboards';
+type SideTab = 'layers' | 'legend' | 'tools';
+type LayerKindFilter = 'all' | 'basemap' | 'vector' | 'raster';
+type MapTool = 'identify' | 'measure-length' | 'measure-area';
+type BaseMapChoice = { id: MapBaseMap; title: string; attribution: string; thumb: string };
 
-const fallbackLayers: CatalogLayer[] = [
+const baseMaps: BaseMapChoice[] = [
+  { id: 'osm', title: 'OpenStreetMap', attribution: 'Ruas e localidades', thumb: 'roads' },
+  { id: 'carto-light', title: 'Carto Claro', attribution: 'Fundo claro', thumb: 'light' },
+  { id: 'carto-dark', title: 'Carto Escuro', attribution: 'Fundo escuro', thumb: 'dark' },
+  { id: 'esri-imagery', title: 'Imagem de satélite', attribution: 'Esri World Imagery', thumb: 'imagery' },
+  { id: 'esri-topo', title: 'Topográfico', attribution: 'Esri World Topo', thumb: 'topo' },
+];
+
+const initialLayers: CatalogLayer[] = [
   { id: 'bacia-hidrografica-paramirim', title: 'Bacia Hidrográfica do Rio Paramirim', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/bacia_hidrografica_paramirim.geojson', visibleByDefault: true },
   { id: 'hidrografia', title: 'Hidrografia', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/hidrografia.geojson', visibleByDefault: true },
 ];
 
-const baseMaps: Array<{ id: MapBaseMap; title: string; description: string; thumb: string }> = [
-  { id: 'osm', title: 'Ruas', description: 'OpenStreetMap', thumb: 'thumb-roads' },
-  { id: 'carto-light', title: 'Claro', description: 'Carto Light', thumb: 'thumb-light' },
-  { id: 'carto-dark', title: 'Escuro', description: 'Carto Dark', thumb: 'thumb-dark' },
-  { id: 'esri-imagery', title: 'Imagem', description: 'Esri World Imagery', thumb: 'thumb-imagery' },
-  { id: 'esri-topo', title: 'Topográfico', description: 'Esri World Topo', thumb: 'thumb-topo' },
-];
-
 function formatBytes(bytes = 0) {
   if (!bytes) return '';
-  if (bytes > 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
-  if (bytes > 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
+  if (bytes > 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+  if (bytes > 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   return `${bytes} B`;
 }
 
-function layerDetail(layer: CatalogLayer) {
-  if (layer.status === 'planned') return 'Camada planejada; arquivo ainda não está disponível no acervo local.';
-  if (layer.kind === 'raster') return `${layer.width ?? '—'} × ${layer.height ?? '—'} px${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
-  const geometries = layer.geometryTypes ? Object.entries(layer.geometryTypes).map(([name, count]) => `${count} ${name}`).join(' · ') : '';
-  return `${layer.featureCount?.toLocaleString('pt-BR') ?? '—'} feições${geometries ? ` · ${geometries}` : ''}${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
+function layerMetadata(layer: CatalogLayer) {
+  if (layer.status === 'planned') return 'Planejada';
+  if (layer.kind === 'raster') return `${layer.width?.toLocaleString('pt-BR') ?? '—'} × ${layer.height?.toLocaleString('pt-BR') ?? '—'} px${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
+  const geometry = layer.geometryTypes ? Object.keys(layer.geometryTypes).join(', ') : 'Vetorial';
+  return `${layer.featureCount?.toLocaleString('pt-BR') ?? '—'} feições · ${geometry}${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
+}
+
+function displayValue(value: unknown) {
+  if (value === null || value === undefined || value === '') return '—';
+  return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 
 export function MapPage() {
-  const [catalog, setCatalog] = useState<CatalogLayer[]>(fallbackLayers);
-  const [catalogVersion, setCatalogVersion] = useState('local');
-  const [filter, setFilter] = useState<LayerFilter>('all');
+  const [catalog, setCatalog] = useState<CatalogLayer[]>(initialLayers);
+  const [version, setVersion] = useState('');
+  const [tab, setTab] = useState<MainTab>('map');
+  const [sideTab, setSideTab] = useState<SideTab>('layers');
   const [baseMap, setBaseMap] = useState<MapBaseMap>('osm');
-  const [selectedIds, setSelectedIds] = useState<string[]>(fallbackLayers.filter((layer) => layer.visibleByDefault).map((layer) => layer.id));
+  const [activeBase, setActiveBase] = useState('osm');
+  const [selectedIds, setSelectedIds] = useState<string[]>(initialLayers.map((layer) => layer.id));
+  const [filter, setFilter] = useState<LayerKindFilter>('all');
+  const [search, setSearch] = useState('');
   const [selection, setSelection] = useState<MapFeatureSelection | null>(null);
+  const [opacity, setOpacity] = useState<Record<string, number>>({});
+  const [toolsOpen, setToolsOpen] = useState(true);
+  const [tool, setTool] = useState<MapTool>('identify');
+  const [measure, setMeasure] = useState<{ value: number; unit: 'm' | 'km' | 'm²' | 'km²' } | null>(null);
+  const [homeToken, setHomeToken] = useState(0);
+  const powerBiUrl = import.meta.env.VITE_POWERBI_DASHBOARD_URL;
 
   useEffect(() => {
     let cancelled = false;
     fetch('/geospatial/catalog.json', { headers: { Accept: 'application/json' } })
-      .then((response) => response.ok ? response.json() as Promise<CatalogDocument> : Promise.reject(new Error('catálogo indisponível')))
+      .then((response) => response.ok ? response.json() as Promise<CatalogDocument> : Promise.reject(new Error('catalog')))
       .then((document) => {
         if (cancelled || !Array.isArray(document.layers)) return;
         setCatalog(document.layers);
-        setCatalogVersion(document.version);
+        setVersion(document.version);
         const defaults = document.layers.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id);
-        if (defaults.length > 0) setSelectedIds(defaults);
+        if (defaults.length) setSelectedIds(defaults);
       })
       .catch(() => undefined);
     return () => { cancelled = true; };
   }, []);
 
-  const visibleLayers = useMemo(() => filter === 'all' ? catalog : catalog.filter((layer) => layer.status === filter), [catalog, filter]);
-  const activeLayers = useMemo<MapLayerDefinition[]>(() => catalog
-    .filter((layer) => layer.status === 'present' && selectedIds.includes(layer.id) && layer.url)
-    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, statistics: layer.statistics })), [catalog, selectedIds]);
-  const presentCount = catalog.filter((layer) => layer.status === 'present').length;
-  const plannedCount = catalog.filter((layer) => layer.status === 'planned').length;
-  const powerBiUrl = import.meta.env.VITE_POWERBI_DASHBOARD_URL;
+  const featureLayers = useMemo(() => catalog.filter((layer) => layer.status === 'present'), [catalog]);
+  const selectedLayers = useMemo<MapLayerDefinition[]>(() => featureLayers
+    .filter((layer) => selectedIds.includes(layer.id) && layer.url)
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, statistics: layer.statistics, noData: 0, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1) })), [featureLayers, opacity, selectedIds]);
+  const filteredCatalog = useMemo(() => catalog.filter((layer) => {
+    if (layer.status !== 'present' || !layer.url) return false;
+    const matchesSearch = `${layer.title} ${layer.group}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));
+    const matchesKind = filter === 'all' || (filter === 'basemap' ? false : layer.kind === filter);
+    return matchesSearch && matchesKind;
+  }), [catalog, filter, search]);
   const handleFeatureSelect = useCallback((next: MapFeatureSelection | null) => setSelection(next), []);
 
   const toggleLayer = (layer: CatalogLayer) => {
@@ -89,38 +110,59 @@ export function MapPage() {
   };
 
   return (
-    <section className="catalog-page webgis-page" aria-labelledby="catalog-title">
-      <header className="catalog-hero webgis-hero">
-        <div>
-          <span className="eyebrow">WebGIS · Bacia do Rio Paramirim</span>
-          <h1 id="catalog-title">Explore o território em camadas.</h1>
-          <p>Mapas base, vetores e rasters do acervo geoespacial em uma interface para consultar, comparar e identificar informações da bacia.</p>
-        </div>
-        <div className="webgis-actions">
-          {powerBiUrl ? <a className="webgis-dashboard-link" href={powerBiUrl} target="_blank" rel="noreferrer"><i className="fa-solid fa-chart-line" aria-hidden="true" /> Abrir dashboard Power BI <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></a> : <span className="webgis-dashboard-link is-disabled" title="Configure VITE_POWERBI_DASHBOARD_URL para habilitar o dashboard"><i className="fa-solid fa-chart-line" aria-hidden="true" /> Dashboard Power BI indisponível</span>}
-          <a className="webgis-references-link" href="/geospatial/references.csv" target="_blank" rel="noreferrer"><i className="fa-solid fa-book-open" aria-hidden="true" /> Referências do acervo (CSV)</a>
-          <span className="webgis-catalog-version"><i className="fa-solid fa-database" aria-hidden="true" /> Catálogo {catalogVersion}</span>
-        </div>
-      </header>
-
-      <div className="catalog-summary webgis-summary" aria-label="Resumo do WebGIS">
-        <div><strong>{presentCount}</strong><span>camadas disponíveis</span></div>
-        <div><strong>{selectedIds.length}</strong><span>camadas no mapa</span></div>
-        <div><strong>{plannedCount}</strong><span>camadas planejadas</span></div>
+    <section className="webgis-workspace" aria-label="WebGIS Paramirim">
+      <div className="webgis-topbar">
+        <nav className="webgis-main-tabs" role="tablist" aria-label="Visualização WebGIS">
+          <button role="tab" aria-selected={tab === 'map'} className={tab === 'map' ? 'is-active' : ''} onClick={() => setTab('map')}><i className="fa-solid fa-map" aria-hidden="true" /> Mapa</button>
+          <button role="tab" aria-selected={tab === 'dashboards'} className={tab === 'dashboards' ? 'is-active' : ''} onClick={() => setTab('dashboards')}><i className="fa-solid fa-chart-column" aria-hidden="true" /> Dashboards</button>
+        </nav>
+        <div className="webgis-topbar-meta"><span><i className="fa-solid fa-layer-group" aria-hidden="true" /> {selectedIds.length} camadas ativas</span>{version && <span className="webgis-version">Dados {version}</span>}</div>
       </div>
 
-      <section className="catalog-map-panel webgis-map-panel" aria-labelledby="catalog-map-title">
-        <div className="catalog-map-heading"><div><span className="eyebrow">Visualização cartográfica</span><h2 id="catalog-map-title">Mapa da bacia</h2></div><span className="catalog-map-state"><i className="fa-solid fa-hand-pointer" aria-hidden="true" /> Clique em uma feição para identificar</span></div>
-        <MapCanvas layers={activeLayers} baseMap={baseMap} onFeatureSelect={handleFeatureSelect} />
-        <div className="webgis-map-legend" aria-label="Legenda das camadas ativas"><span className="eyebrow">Legenda</span>{activeLayers.length === 0 ? <span className="webgis-legend-empty">Nenhuma camada ativa</span> : activeLayers.map((layer) => <span className={`webgis-legend-item ${layer.kind}`} key={layer.id}><i aria-hidden="true" />{layer.title}</span>)}</div>
-        {selection && <aside className="map-identify-panel" aria-label="Informações da feição selecionada"><div className="map-identify-heading"><div><span className="eyebrow">Identificação</span><strong>{selection.layerTitle}</strong></div><button type="button" onClick={() => setSelection(null)} aria-label="Fechar identificação"><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div><dl>{Object.entries(selection.properties).slice(0, 12).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—')}</dd></div>)}</dl></aside>}
-      </section>
+      {tab === 'map' ? <div className="webgis-map-layout">
+        <main className="webgis-map-area" aria-label="Mapa da Bacia do Rio Paramirim">
+          <MapCanvas layers={selectedLayers} baseMap={baseMap} tool={tool} homeToken={homeToken} onMeasure={setMeasure} onFeatureSelect={handleFeatureSelect} />
+          {selection && <section className="webgis-identify-card" aria-label="Feição identificada"><header><div><small>Identificar feição</small><strong>{selection.layerTitle}</strong></div><button type="button" aria-label="Fechar identificação" onClick={() => setSelection(null)}><i className="fa-solid fa-xmark" /></button></header><dl>{Object.entries(selection.properties).slice(0, 14).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{displayValue(value)}</dd></div>)}</dl></section>}
+          <div className="webgis-scale-note">SIG Paramirim <span>·</span> EPSG:3857 <span>·</span> {selectedLayers.length} camada(s)</div>
+        </main>
 
-      <section className="webgis-base-section" aria-labelledby="base-map-title"><div className="catalog-toolbar"><div><span className="eyebrow">Mapas base</span><h2 id="base-map-title">Escolha o contexto visual</h2></div></div><div className="webgis-base-grid">{baseMaps.map((base) => <button key={base.id} type="button" className={`webgis-base-card ${baseMap === base.id ? 'is-active' : ''}`} onClick={() => setBaseMap(base.id)}><span className={`webgis-base-thumb ${base.thumb}`} aria-hidden="true" /><span><strong>{base.title}</strong><small>{base.description}</small></span>{baseMap === base.id && <i className="fa-solid fa-circle-check" aria-hidden="true" />}</button>)}</div></section>
+        <aside className={`webgis-tools-panel ${toolsOpen ? '' : 'is-collapsed'}`} aria-label="Ferramentas e catálogo de camadas">
+          {!toolsOpen && <button type="button" className="webgis-panel-expand" onClick={() => setToolsOpen(true)} aria-label="Expandir painel do WebGIS"><i className="fa-solid fa-chevron-left" /></button>}
+          <nav className="webgis-side-tabs" role="tablist" aria-label="Painel do mapa">
+            <button role="tab" aria-selected={sideTab === 'layers'} className={sideTab === 'layers' ? 'is-active' : ''} onClick={() => setSideTab('layers')} title="Camadas"><i className="fa-solid fa-layer-group" /><span>Camadas</span></button>
+            <button role="tab" aria-selected={sideTab === 'legend'} className={sideTab === 'legend' ? 'is-active' : ''} onClick={() => setSideTab('legend')} title="Legenda"><i className="fa-solid fa-list" /><span>Legenda</span></button>
+            <button role="tab" aria-selected={sideTab === 'tools'} className={sideTab === 'tools' ? 'is-active' : ''} onClick={() => setSideTab('tools')} title="Ferramentas"><i className="fa-solid fa-screwdriver-wrench" /><span>Ferramentas</span></button>
+          </nav>
 
-      <div className="catalog-toolbar webgis-layer-toolbar"><div><span className="eyebrow">Camadas geoespaciais</span><h2>Dados disponíveis</h2></div><div className="catalog-filters" role="group" aria-label="Filtrar camadas">{(['all', 'present', 'planned'] as const).map((option) => <button key={option} type="button" className={filter === option ? 'is-active' : ''} onClick={() => setFilter(option)}>{option === 'all' ? 'Todas' : option === 'present' ? 'Disponíveis' : 'Planejadas'}</button>)}</div></div>
+          {sideTab === 'layers' && <div className="webgis-side-content">
+            <div className="webgis-panel-title"><div><small>Conteúdo do mapa</small><h2>Catálogo de camadas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>
+            <label className="webgis-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar camada" /></label>
+            <div className="webgis-layer-kind-tabs" role="group" aria-label="Filtrar tipo de camada">
+              {(['all', 'basemap', 'vector', 'raster'] as const).map((kind) => <button key={kind} type="button" className={filter === kind ? 'is-active' : ''} onClick={() => setFilter(kind)}>{kind === 'all' ? 'Todas' : kind === 'basemap' ? 'Base' : kind === 'vector' ? 'Vetoriais' : 'Rasters'}</button>)}
+            </div>
 
-      <div className="catalog-grid webgis-layer-grid">{visibleLayers.map((layer) => { const active = selectedIds.includes(layer.id); return <article className={`catalog-layer-card status-${layer.status} ${active ? 'is-selected' : ''}`} key={layer.id}><div className="catalog-layer-topline"><span className="catalog-layer-group">{layer.group}</span><span className="catalog-status"><i className={`fa-solid ${layer.status === 'present' ? 'fa-circle-check' : 'fa-clock'}`} aria-hidden="true" />{layer.status === 'present' ? 'Disponível' : 'Planejada'}</span></div><h3>{layer.title}</h3><p>{layerDetail(layer)}</p><span className="catalog-format"><i className={`fa-solid ${layer.kind === 'raster' ? 'fa-image' : 'fa-draw-polygon'}`} aria-hidden="true" /> {layer.kind === 'raster' ? 'Raster' : 'Vetorial'}{layer.observation ? ` · ${layer.observation}` : ''}</span>{layer.source && <small className="webgis-layer-source">Fonte: {layer.source}</small>}<button type="button" className="webgis-layer-toggle" disabled={layer.status !== 'present' || !layer.url} onClick={() => toggleLayer(layer)}><i className={`fa-solid ${active ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" /> {active ? 'Ocultar do mapa' : 'Exibir no mapa'}</button></article>; })}</div>
+            {(filter === 'all' || filter === 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-map" /> Mapas base</strong><span>{baseMaps.length}</span></header><div className="webgis-basemap-list">{baseMaps.map((base) => <button type="button" className={`webgis-basemap-row ${activeBase === base.id ? 'is-active' : ''}`} key={base.id} onClick={() => { setBaseMap(base.id); setActiveBase(base.id); }}><span className={`webgis-basemap-thumb thumb-${base.thumb}`} /><span><strong>{base.title}</strong><small>{base.attribution}</small></span><i className={`fa-solid ${activeBase === base.id ? 'fa-circle-check' : 'fa-circle'}`} /></button>)}</div></section>}
+
+            {(filter !== 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-draw-polygon" /> Camadas vetoriais</strong><span>{featureLayers.filter((layer) => layer.kind === 'vector').length}</span></header>{filteredCatalog.filter((layer) => layer.kind === 'vector').map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</section>}
+            {(filter !== 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-image" /> Camadas raster</strong><span>{featureLayers.filter((layer) => layer.kind === 'raster').length}</span></header>{filteredCatalog.filter((layer) => layer.kind === 'raster').map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</section>}
+            {filter === 'basemap' && <p className="webgis-panel-hint">Selecione um mapa base. As miniaturas mostram o tipo de referência cartográfica.</p>}
+          </div>}
+
+          {sideTab === 'legend' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Simbologia ativa</small><h2>Legenda</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>{selectedLayers.length === 0 ? <p className="webgis-panel-hint">Ative uma camada no catálogo para ver sua legenda.</p> : selectedLayers.map((layer) => <div className="webgis-legend-row" key={layer.id}><span className={`webgis-legend-symbol ${layer.kind} layer-${layer.id}`} /><div><strong>{layer.title}</strong><small>{layer.kind === 'raster' ? `Baixo: ${layer.statistics?.p2 ?? layer.statistics?.min ?? '—'} · Alto: ${layer.statistics?.p98 ?? layer.statistics?.max ?? '—'}` : layer.group}</small></div></div>)}</div>}
+
+          {sideTab === 'tools' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Navegação e consulta</small><h2>Ferramentas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div><div className="webgis-tool-grid"><button type="button" className={tool === 'identify' ? 'is-active' : ''} onClick={() => { setTool('identify'); setSelection(null); }}><i className="fa-solid fa-arrow-pointer" /><span>Identificar</span></button><button type="button" className={tool === 'measure-length' ? 'is-active' : ''} onClick={() => { setTool('measure-length'); setMeasure(null); }}><i className="fa-solid fa-ruler" /><span>Medir distância</span></button><button type="button" className={tool === 'measure-area' ? 'is-active' : ''} onClick={() => { setTool('measure-area'); setMeasure(null); }}><i className="fa-solid fa-draw-polygon" /><span>Medir área</span></button><button type="button" onClick={() => window.print()}><i className="fa-solid fa-print" /><span>Imprimir mapa</span></button><button type="button" onClick={() => setSelectedIds([])}><i className="fa-solid fa-eye-slash" /><span>Limpar camadas</span></button><button type="button" onClick={() => { setSelectedIds(catalog.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id)); setBaseMap('osm'); setActiveBase('osm'); setHomeToken((current) => current + 1); }}><i className="fa-solid fa-house" /><span>Vista inicial</span></button></div>{tool !== 'identify' && <div className="webgis-measure-status"><span>{tool === 'measure-length' ? 'Distância' : 'Área'}</span>{measure ? <strong>{measure.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {measure.unit}</strong> : <small>Desenhe no mapa; dê duplo clique para concluir.</small>}<button type="button" onClick={() => { setTool('identify'); setMeasure(null); }}><i className="fa-solid fa-trash-can" /> Limpar medição</button></div>}<div className="webgis-tool-section"><h3>Transparência</h3>{selectedLayers.map((layer) => <label className="webgis-opacity-row" key={layer.id}><span>{layer.title}</span><input type="range" min="0.1" max="1" step="0.05" value={opacity[layer.id] ?? (layer.kind === 'raster' ? .82 : 1)} onChange={(event) => setOpacity((current) => ({ ...current, [layer.id]: Number(event.target.value) }))} /></label>)}</div></div>}
+        </aside>
+      </div> : <DashboardPanel url={powerBiUrl} />}
     </section>
   );
+}
+
+function LayerRow({ layer, active, onToggle }: { layer: CatalogLayer; active: boolean; onToggle: () => void }) {
+  const available = layer.status === 'present' && Boolean(layer.url);
+  return <div className={`webgis-layer-row ${active ? 'is-active' : ''} ${available ? '' : 'is-planned'}`}><button type="button" className="webgis-layer-check" aria-label={`${active ? 'Ocultar' : 'Mostrar'} ${layer.title}`} aria-pressed={active} disabled={!available} onClick={onToggle}><i className={`fa-solid ${active ? 'fa-square-check' : 'fa-square'}`} /></button><span className={`webgis-layer-swatch ${layer.kind} layer-${layer.id}`} /><div className="webgis-layer-row-copy"><strong title={layer.title}>{layer.title}</strong><small>{layerMetadata(layer)}</small></div>{layer.kind === 'raster' && <i className="fa-solid fa-image webgis-layer-kind-icon" title="Raster" />}</div>;
+}
+
+function DashboardPanel({ url }: { url?: string }) {
+  if (!url) return <div className="webgis-dashboard-empty"><span><i className="fa-solid fa-chart-column" /></span><h2>Dashboards territoriais</h2><p>O painel Power BI abrirá aqui quando a URL do dashboard for configurada para o ambiente.</p><button type="button" disabled>Dashboard não configurado</button></div>;
+  return <div className="webgis-dashboard-view"><header><div><small>Inteligência territorial</small><h2>Dashboards</h2></div><a href={url} target="_blank" rel="noreferrer"><i className="fa-solid fa-arrow-up-right-from-square" /> Abrir em nova aba</a></header><iframe title="Dashboard Power BI do SIG Paramirim" src={url} allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></div>;
 }

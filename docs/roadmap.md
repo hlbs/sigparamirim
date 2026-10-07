@@ -131,6 +131,8 @@ O incremento beta publica apenas afirmações factuais, métricas permitidas por
 
 **Release-alvo:** `v0.4.0`
 
+**Estado:** interface de estação de trabalho com abas Mapa/Dashboards e catálogo lateral de mapas base, vetores e rasters entregue em `v0.3.0-beta.33`; identificação, legenda, medição básica, opacidade e navegação já funcionam. Próximas entregas desta fase: filtros temáticos, tabela de atributos, ligação confirmada ao dashboard fornecido e compositor de exportação.
+
 **Objetivos:**
 
 - implementar mapa OpenLayers, catálogo, identificação e legenda;
