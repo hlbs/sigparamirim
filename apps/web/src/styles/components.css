@@ -32,18 +32,19 @@
 @keyframes popover-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } to { opacity: 1; transform: none; } }
 
 .terrain-figure { margin: 0; padding: clamp(18px, 4vw, 34px); border: 1px solid var(--border); border-radius: 24px; background: var(--surface); }
-.terrain-stage { position: relative; min-height: 390px; display: grid; place-items: center; overflow: hidden; perspective: 1100px; border-radius: 18px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--brand-soft) 72%, var(--surface)), var(--surface-muted)); cursor: grab; touch-action: none; }
-.terrain-stage:active { cursor: grabbing; }
+.terrain-stage { position: relative; min-height: 390px; display: grid; place-items: center; overflow: hidden; perspective: 1100px; border-radius: 18px; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--brand-soft) 72%, var(--surface)), var(--surface-muted)); touch-action: none; overscroll-behavior: contain; }
 .terrain-canvas { position: absolute; inset: 0; }
 .terrain-canvas canvas { display: block; width: 100%; height: 100%; }
 .terrain-orbit { width: 82%; transform-style: preserve-3d; transform-origin: center; filter: drop-shadow(0 24px 20px rgba(23, 28, 2, .28)); transition: transform 120ms ease-out; }
 .terrain-orbit::after { position: absolute; inset: 8% -3% -12%; z-index: -1; border-radius: 35%; background: color-mix(in srgb, var(--brand-strong) 26%, transparent); box-shadow: 0 28px 0 color-mix(in srgb, var(--brand-strong) 23%, transparent), 0 55px 0 color-mix(in srgb, var(--brand-strong) 18%, transparent); content: ''; transform: translateZ(-22px); }
 .terrain-orbit img { display: block; width: 100%; border: 2px solid rgba(255,255,255,.5); border-radius: 24px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
-.terrain-north { position: absolute; top: 15px; right: 16px; display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid var(--border); border-radius: 50%; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--text); font-size: .7rem; font-weight: 900; }
-.terrain-controls { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
-.terrain-controls button { min-width: 34px; min-height: 32px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); cursor: pointer; font-weight: 800; }
-.terrain-controls button:first-child { padding-inline: 12px; font-size: .72rem; }
-.terrain-controls button:hover { border-color: var(--brand); background: var(--brand-soft); }
+.terrain-toolbar { position: absolute; top: 14px; right: 14px; z-index: 2; display: grid; gap: 7px; justify-items: center; }
+.terrain-north { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 50%; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--text); font-size: .68rem; font-weight: 900; }
+.terrain-north-arrow { display: grid; place-items: center; width: 22px; height: 22px; color: var(--brand-strong); transform-origin: center; }
+.terrain-north-arrow i { font-size: .9rem; }
+.terrain-north b { position: absolute; margin-top: -3px; font-size: .55rem; }
+.terrain-toolbar button { display: grid; place-items: center; width: 36px; height: 32px; border: 1px solid var(--border); border-radius: 9px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--text); cursor: pointer; }
+.terrain-toolbar button:hover { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-strong); }
 .terrain-legend { display: grid; grid-template-columns: minmax(120px, 1fr) auto auto auto; align-items: center; gap: 9px; margin: 16px 0 4px; color: var(--text-muted); font-size: .72rem; }
 .terrain-gradient { height: 11px; border-radius: 99px; background: linear-gradient(90deg, #153d8a 0%, #1fa187 35%, #9dc53e 62%, #f4b942 82%, #a73526 100%); }
 .terrain-figure figcaption { display: block; margin-top: 15px; color: var(--text-muted); font-size: .76rem; line-height: 1.55; }
@@ -53,3 +54,19 @@
 .territory-context-grid i { color: var(--brand-strong); font-size: 1.2rem; }
 .territory-context-grid strong { font-size: .98rem; }
 .territory-context-grid span { color: var(--text-muted); font-size: .82rem; line-height: 1.5; }
+.territory-tabs { display: grid; gap: 15px; }
+.territory-tab-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+.territory-tab-list button { display: grid; gap: 7px; min-height: 74px; place-items: center; padding: 10px 7px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); color: var(--text-muted); cursor: pointer; font: 700 .7rem/1.2 inherit; text-align: center; transition: all 180ms var(--ease-premium); }
+.territory-tab-list button:hover, .territory-tab-list button.is-active { border-color: var(--brand); background: var(--brand); color: #fff; transform: translateY(-2px); }
+.territory-tab-list i { font-size: 1rem; }
+.territory-tab-panel { padding: clamp(18px, 3vw, 28px); border: 1px solid var(--border); border-radius: 18px; background: var(--surface); animation: popover-in 220ms ease; }
+.territory-tab-panel h3 { margin: 8px 0 10px; font-size: clamp(1.25rem, 2vw, 1.7rem); }
+.territory-tab-panel > p { margin: 0 0 18px; color: var(--text-muted); line-height: 1.65; }
+.territory-tab-items { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.territory-tab-items div { display: grid; gap: 6px; padding: 13px; border-radius: 12px; background: var(--surface-muted); }
+.territory-tab-items strong { font-size: .78rem; color: var(--brand-strong); }
+.territory-tab-items span { color: var(--text-muted); font-size: .75rem; line-height: 1.45; }
+@media (max-width: 680px) {
+  .territory-tab-list { grid-template-columns: repeat(2, 1fr); }
+  .territory-tab-items { grid-template-columns: 1fr; }
+}

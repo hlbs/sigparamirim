@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import {
   compatibleConcentrationTime,
   concentrationTimeMethods,
@@ -80,25 +81,33 @@ function ConcentrationTimeRecommendation() {
 
 function TerrainModelVisual() {
   const stageRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState({ x: -0.9, y: -0.35 });
-  const dragRef = useRef<{ x: number; y: number; rotation: { x: number; y: number } } | null>(null);
-  const groupRef = useRef<THREE.Group | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+  const northRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return undefined;
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-    camera.position.set(0, 2.2, 4.4);
+    const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+    camera.position.set(0, 2.6, 6.2);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
     stage.appendChild(renderer.domElement);
     const group = new THREE.Group();
-    groupRef.current = group;
     scene.add(group);
     scene.add(new THREE.HemisphereLight(0xf5f4d8, 0x1f260c, 2.1));
     const light = new THREE.DirectionalLight(0xffffff, 2.8); light.position.set(-2, 5, 3); scene.add(light);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = .075;
+    controls.enablePan = true;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 2.3;
+    controls.maxDistance = 13;
+    controls.minPolarAngle = .18;
+    controls.maxPolarAngle = Math.PI * .48;
+    controls.target.set(0, .2, 0);
+    controlsRef.current = controls;
     let disposed = false;
     const resize = () => { const rect = stage.getBoundingClientRect(); renderer.setSize(rect.width, rect.height, false); camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix(); };
     const observer = new ResizeObserver(resize); observer.observe(stage); resize();
@@ -119,40 +128,66 @@ function TerrainModelVisual() {
       const material = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, roughness: .9, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(geometry, material); group.add(mesh);
     };
-    const animate = () => { if (disposed) return; renderer.render(scene, camera); requestAnimationFrame(animate); }; animate();
-    return () => { disposed = true; observer.disconnect(); renderer.dispose(); renderer.domElement.remove(); };
+    const animate = () => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; renderer.render(scene, camera); requestAnimationFrame(animate); }; animate();
+    return () => { disposed = true; observer.disconnect(); controls.dispose(); controlsRef.current = null; renderer.dispose(); renderer.domElement.remove(); };
   }, []);
-  useEffect(() => { if (!groupRef.current) return; groupRef.current.rotation.x = rotation.x; groupRef.current.rotation.y = rotation.y; groupRef.current.scale.setScalar(zoom); }, [rotation, zoom]);
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, rotation }; };
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => { if (!dragRef.current) return; setRotation({ x: Math.max(-1.35, Math.min(-.25, dragRef.current.rotation.x + (event.clientY - dragRef.current.y) * .006)), y: dragRef.current.rotation.y + (event.clientX - dragRef.current.x) * .008 }); };
-  const handlePointerUp = () => { dragRef.current = null; };
   return (
-    <figure className="terrain-figure" aria-labelledby="terrain-caption">
+    <figure className="terrain-figure" aria-label="Modelo tridimensional do relevo da Bacia do Rio Paramirim">
       <div
         className="terrain-stage"
         role="application"
-        aria-label="Modelo tridimensional interativo derivado do MDE da Bacia do Rio Paramirim. Arraste para girar e use a roda do mouse ou os controles para aproximar."
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
-        onWheel={(event) => { event.preventDefault(); setZoom((current) => Math.max(.78, Math.min(1.35, current - event.deltaY * .001))); }}
+        aria-label="Modelo tridimensional do relevo da Bacia do Rio Paramirim"
       >
         <div ref={stageRef} className="terrain-canvas" />
-        <div className="terrain-north">N</div>
-      </div>
-      <div className="terrain-controls" aria-label="Controles do modelo">
-        <button type="button" onClick={() => setRotation({ x: 54, y: -12 })}>Repor vista</button>
-        <button type="button" onClick={() => setZoom((current) => Math.min(1.35, current + .1))}>+</button>
-        <button type="button" onClick={() => setZoom((current) => Math.max(.78, current - .1))}>−</button>
+        <div className="terrain-toolbar" aria-label="Controles do relevo">
+          <span className="terrain-north" title="Orientação norte"><span ref={northRef} className="terrain-north-arrow"><i className="fa-solid fa-location-arrow" /></span><b>N</b></span>
+          <button type="button" title="Repor vista" aria-label="Repor vista" onClick={() => controlsRef.current?.reset()}><i className="fa-solid fa-rotate-left" /></button>
+          <button type="button" title="Aproximar" aria-label="Aproximar" onClick={() => { controlsRef.current?.dollyIn(1.18); controlsRef.current?.update(); }}><i className="fa-solid fa-plus" /></button>
+          <button type="button" title="Afastar" aria-label="Afastar" onClick={() => { controlsRef.current?.dollyOut(1.18); controlsRef.current?.update(); }}><i className="fa-solid fa-minus" /></button>
+        </div>
       </div>
       <div className="terrain-legend" aria-label="Legenda hipsométrica da falsa-cor">
         <span className="terrain-gradient" aria-hidden="true" />
         <span>420 m</span><span>900 m</span><span>1.417 m</span>
       </div>
-      <figcaption id="terrain-caption">Modelo exploratório derivado do MDE da bacia, com valores nulos (0) transparentes, relevo sombreado e falsa-cor hipsométrica. Arraste para girar e use a roda do mouse ou os controles para aproximar.</figcaption>
     </figure>
   );
+}
+
+function TerritoryContextTabs() {
+  const [active, setActive] = useState('clima');
+  const tabs = {
+    clima: {
+      label: 'Clima e água', icon: 'fa-cloud-sun', title: 'O pulso sazonal da bacia',
+      body: 'A bacia está inserida no semiárido baiano, onde a disponibilidade de água é marcada pela concentração sazonal das chuvas e por longos intervalos de estiagem. O contraste entre chuva intensa, armazenamento e perdas por evapotranspiração organiza os períodos de cheia e de recessão.',
+      items: [['Cheias', 'Responder a eventos intensos exige séries de chuva, nível e vazão; a morfometria sozinha não define a magnitude da cheia.'], ['Estiagem', 'A redução das vazões evidencia o papel de nascentes, reservatórios, solos e aquíferos na sustentação do escoamento de base.'], ['Temperatura média', 'O indicador será calculado por estação, período e método de agregação antes de ser publicado; um valor sem janela temporal seria enganoso.']],
+    },
+    vegetacao: {
+      label: 'Vegetação e solo', icon: 'fa-leaf', title: 'Cobertura, infiltração e erosão',
+      body: 'A paisagem combina formações de Caatinga com transições locais associadas ao relevo e à disponibilidade de água. A cobertura vegetal, a textura do solo e o manejo interferem na infiltração, na erosão e no tempo que a água permanece no terreno.',
+      items: [['Vegetação', 'A camada de vegetação da plataforma será lida com escala e data de mapeamento, evitando comparar classes de anos diferentes como se fossem uma fotografia única.'], ['Solos', 'O mapa de solos orienta hipóteses sobre infiltração e armazenamento, mas deve ser cruzado com campo, litologia e uso da terra.'], ['Risco de erosão', 'Encostas, solo exposto e concentração de escoamento podem formar áreas prioritárias para monitoramento e conservação.']],
+    },
+    sociedade: {
+      label: 'Sociedade e cultura', icon: 'fa-people-group', title: 'Água como território vivido',
+      body: 'A bacia não é apenas uma superfície drenada: é espaço de comunidades, patrimônio, trabalho e memória. A leitura pública deve aproximar mapas de áreas quilombolas, sítios arqueológicos, unidades de conservação, sedes municipais e infraestrutura hídrica.',
+      items: [['Comunidades', 'Camadas sociais precisam ser apresentadas com cuidado, escala adequada e respeito à proteção de dados sensíveis.'], ['Patrimônio', 'Sítios arqueológicos e referências culturais ajudam a contar como as pessoas ocupam e interpretam o território.'], ['Segurança hídrica', 'Acesso à água e distância de fontes devem ser analisados junto com sazonalidade, infraestrutura e desigualdades locais.']],
+    },
+    economia: {
+      label: 'Economia territorial', icon: 'fa-chart-line', title: 'Produção, infraestrutura e resiliência',
+      body: 'A economia regional depende da combinação entre água disponível, produção rural, serviços, estradas e infraestrutura de armazenamento. A plataforma vai relacionar vocações econômicas e pressão sobre os recursos hídricos sem transformar correlação espacial em causalidade.',
+      items: [['Uso da terra', 'Agricultura, pecuária e áreas urbanizadas devem ser comparadas por período para revelar expansão, permanência e mudança.'], ['Infraestrutura', 'Barragens, poços, adutoras e pontos de captação organizam a resiliência durante a estiagem e a exposição durante cheias.'], ['Planejamento', 'Indicadores econômicos só são úteis quando acompanhados de escala, fonte, data e incerteza.']],
+    },
+  } as const;
+  const current = tabs[active as keyof typeof tabs];
+  return <div className="territory-tabs">
+    <div className="territory-tab-list" role="tablist" aria-label="Contexto territorial">
+      {Object.entries(tabs).map(([key, tab]) => <button key={key} type="button" role="tab" aria-selected={active === key} className={active === key ? 'is-active' : ''} onClick={() => setActive(key)}><i className={`fa-solid ${tab.icon}`} />{tab.label}</button>)}
+    </div>
+    <article className="territory-tab-panel" role="tabpanel">
+      <span className="eyebrow">{current.label}</span><h3>{current.title}</h3><p>{current.body}</p>
+      <div className="territory-tab-items">{current.items.map(([label, text]) => <div key={label}><strong>{label}</strong><span>{text}</span></div>)}</div>
+    </article>
+  </div>;
 }
 
 function NarrativeSection({
@@ -403,13 +438,17 @@ export function HomePage() {
         </>}
       >
         <figure className="channel-profile" aria-labelledby="channel-caption">
-          <svg viewBox="0 0 640 240" role="img" aria-labelledby="channel-svg-title channel-svg-description">
+          <svg viewBox="0 0 680 300" role="img" aria-labelledby="channel-svg-title channel-svg-description">
             <title id="channel-svg-title">Perfil simplificado do canal principal</title>
             <desc id="channel-svg-description">Linha descendente entre 979,89 e 409 metros ao longo de 386,54 quilômetros.</desc>
-            <path d="M40 48 C180 70 230 120 340 135 S500 172 600 194" />
-            <circle cx="40" cy="48" r="7" /><circle cx="600" cy="194" r="7" />
-            <text x="40" y="28">{formatMetric(channelStart)}</text>
-            <text x="600" y="224" textAnchor="end">{formatMetric(channelEnd)}</text>
+            <defs><linearGradient id="channel-gradient" x1="0" x2="1"><stop offset="0" stopColor="#dce67a" /><stop offset="1" stopColor="#5a5e0b" /></linearGradient></defs>
+            <g className="channel-grid"><path d="M56 54H632M56 112H632M56 170H632M56 228H632" /><path d="M56 30V246M200 30V246M344 30V246M488 30V246M632 30V246" /></g>
+            <path className="channel-area" d="M56 54 C180 72 236 126 344 145 S510 188 632 228 L632 246 L56 246Z" />
+            <path className="channel-line" d="M56 54 C180 72 236 126 344 145 S510 188 632 228" />
+            <circle className="channel-point" cx="56" cy="54" r="8" /><circle className="channel-point" cx="632" cy="228" r="8" />
+            <text className="channel-axis-label" x="18" y="40">altitude (m)</text><text className="channel-axis-label" x="632" y="276" textAnchor="end">percurso do canal (km)</text>
+            <text className="channel-value-label" x="56" y="30">{formatMetric(channelStart)}</text><text className="channel-value-label" x="632" y="218" textAnchor="end">{formatMetric(channelEnd)}</text>
+            <text className="channel-end-label" x="56" y="267">nascente</text><text className="channel-end-label" x="632" y="267" textAnchor="end">jusante</text>
           </svg>
           <div className="channel-stats">
             <span><strong>{formatMetric(channelGradient)}</strong> gradiente</span>
@@ -494,35 +533,20 @@ export function HomePage() {
           <MetricCard metric={relief} />
           <MetricCard metric={ruggedness} />
           <MetricCard metric={massivity} />
-          <div className="synthesis-note"><strong>Leitura integrada</strong><span>Forma, relevo, drenagem, chuva, solo e subsolo precisam ser analisados juntos.</span></div>
+          <MetricCard metric={channelMaintenance} />
         </div>
       </NarrativeSection>
 
       <NarrativeSection
         id="territorio"
         eyebrow="09 · Contexto territorial"
-        title="Uma bacia é também clima, paisagem e vida social"
+        title="Clima, paisagem e vida social"
         tone="soft"
         description={<>
-          <p>
-            A leitura hidrológica ganha sentido quando o mapa físico é relacionado ao cotidiano. A documentação pública do INEMA
-            situa as bacias dos rios Paramirim e Santo Onofre no semiárido nordestino, afluentes do São Francisco, com diferenças
-            locais de relevo, disponibilidade hídrica e cobertura vegetal. Essas transições ajudam a explicar por que uma mesma chuva
-            pode produzir respostas distintas entre as cabeceiras, os vales e os setores de jusante.
-          </p>
-          <p>
-            Para a plataforma, clima, vegetação, ocupação do solo, economia e cultura serão incorporados como camadas e textos
-            documentados: cada afirmação deverá indicar escala, período, fonte e DOI quando houver publicação científica. Assim,
-            divulgação e rigor caminham juntos, sem transformar hipótese regional em diagnóstico automático.<Citation references={[5, 6, 12, 13]} />
-          </p>
+          <p>Conhecer a bacia é acompanhar o pulso da água e as pessoas que vivem com ele. As abas organizam os principais contextos ambientais e sociais que precisam ser lidos junto da morfometria.</p>
         </>}
       >
-        <div className="territory-context-grid">
-          <article><i className="fa-solid fa-cloud-sun" /><strong>Clima e chuva</strong><span>Variabilidade sazonal e eventos intensos controlam a alternância entre déficit hídrico e resposta rápida.</span></article>
-          <article><i className="fa-solid fa-leaf" /><strong>Vegetação e solo</strong><span>Cobertura, crostas e propriedades do solo modulam infiltração, erosão e armazenamento local.</span></article>
-          <article><i className="fa-solid fa-people-group" /><strong>Sociedade e cultura</strong><span>Água, produção rural e modos de vida dependem da regularidade dos rios, nascentes e reservatórios.</span></article>
-          <article><i className="fa-solid fa-chart-line" /><strong>Economia territorial</strong><span>Infraestrutura hídrica e uso da terra devem ser avaliados com recorte temporal e evidência verificável.</span></article>
-        </div>
+        <TerritoryContextTabs />
       </NarrativeSection>
 
       <section className="references-section" aria-labelledby="references-title">

@@ -25,11 +25,25 @@ export function AuthPage() {
   const destination = (location.state as { from?: string } | null)?.from || '/';
 
   useEffect(() => {
-    window.particlesJS?.('auth-particles', {
-      particles: { number: { value: 34, density: { enable: true, value_area: 900 } }, color: { value: '#eef4a2' }, opacity: { value: .23, random: true }, size: { value: 2.4, random: true }, line_linked: { enable: true, distance: 145, color: '#e6ed95', opacity: .12, width: 1 }, move: { enable: true, speed: .65, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
-      interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
-      retina_detect: true,
+    let frame = 0;
+    frame = window.requestAnimationFrame(() => {
+      const container = document.getElementById('auth-particles');
+      if (!container || !window.particlesJS || container.dataset.initialized === 'true') return;
+      container.dataset.initialized = 'true';
+      try {
+        window.particlesJS('auth-particles', {
+          particles: { number: { value: 34, density: { enable: true, value_area: 900 } }, color: { value: '#eef4a2' }, opacity: { value: .23, random: true }, size: { value: 2.4, random: true }, line_linked: { enable: true, distance: 145, color: '#e6ed95', opacity: .12, width: 1 }, move: { enable: true, speed: .65, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
+          interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
+          retina_detect: true,
+        });
+      } catch { container.dataset.initialized = 'false'; }
     });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      const container = document.getElementById('auth-particles');
+      container?.querySelector('canvas')?.remove();
+      if (container) container.dataset.initialized = 'false';
+    };
   }, []);
 
   if (loading) return <AuthLoading label="Verificando sua sessão" />;

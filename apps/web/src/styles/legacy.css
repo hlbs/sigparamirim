@@ -158,9 +158,14 @@ a { color: inherit; }
 .drainage-support-grid .metric-label { color: rgba(255,255,255,.72); }
 .channel-profile { margin: 0; padding: clamp(22px, 4vw, 38px); border: 1px solid var(--border); border-radius: 24px; background: var(--surface); }
 .channel-profile svg { width: 100%; height: auto; overflow: visible; }
-.channel-profile path { fill: none; stroke: var(--brand); stroke-width: 8; stroke-linecap: round; }
-.channel-profile circle { fill: var(--surface); stroke: var(--brand); stroke-width: 5; }
-.channel-profile text { fill: var(--text); font: 750 18px Inter, sans-serif; }
+.channel-grid path { fill: none; stroke: var(--border); stroke-width: 1; stroke-dasharray: 4 6; }
+.channel-area { fill: color-mix(in srgb, var(--brand-soft) 70%, transparent); }
+.channel-line { fill: none; stroke: url(#channel-gradient); stroke-width: 8; stroke-linecap: round; }
+.channel-point { fill: var(--surface); stroke: var(--brand); stroke-width: 5; }
+.channel-profile text { fill: var(--text); font-family: Inter, sans-serif; }
+.channel-axis-label { font-size: 12px; font-weight: 650; fill: var(--text-muted) !important; }
+.channel-value-label { font-size: 16px; font-weight: 800; }
+.channel-end-label { font-size: 13px; font-weight: 700; fill: var(--brand-strong) !important; }
 .channel-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 22px; }
 .channel-stats span { padding: 14px; border-radius: 14px; background: var(--surface-muted); color: var(--text-muted); font-size: .8rem; }
 .channel-stats strong { display: block; margin-bottom: 4px; color: var(--text); font-size: 1.25rem; }

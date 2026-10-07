@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.12] - 2026-10-07
+
+### Aprimorado
+
+- navegação do terreno migrada para OrbitControls, com órbita contínua, pan, damping, limites de distância e captura de zoom no canvas;
+- seta de norte passou a acompanhar o azimute real da câmera, com botões Font Awesome de reset, zoom e afastamento abaixo da bússola;
+- removido texto instrucional de desenvolvedor da visualização pública do MDE;
+- contexto territorial refeito em abas de clima e água, vegetação e solo, sociedade e cultura, e economia territorial;
+- seção 08 ganhou o indicador de constante de manutenção do canal e perdeu o bloco editorial redundante;
+- perfil do canal principal recebeu grade, área de elevação, linha graduada, marcadores de nascente/jusante e eixo de percurso;
+- particles.js do login passou a inicializar com verificação de DOM, proteção contra duplicação e limpeza ao desmontar.
+
 ## [0.3.0-beta.11] - 2026-10-07
 
 ### Corrigido
