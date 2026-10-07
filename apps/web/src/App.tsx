@@ -165,7 +165,7 @@ function PlatformShell() {
             <NavLink
               key={item.path}
               to={item.path}
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => { if (window.innerWidth <= 980) setSidebarOpen(false); }}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
               <span aria-hidden="true"><UiIcon name={item.icon as IconName} /></span>

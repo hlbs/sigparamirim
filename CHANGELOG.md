@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.21] - 2026-10-07
+
+### Corrigido
+
+- navegação no menu expandido deixou de recolher a barra lateral ao selecionar uma página; o recolhimento automático permanece apenas no fluxo móvel.
+
 ## [0.3.0-beta.20] - 2026-10-07
 
 ### Aprimorado
