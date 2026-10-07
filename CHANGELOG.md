@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.26] - 2026-10-07
+
+### Refinamento do menu lateral
+
+- removida a moldura translúcida do ícone dentro do item ativo;
+- o ícone passou a ser centralizado geometricamente no item recolhido, sem interferência do texto oculto do link.
+
 ## [0.3.0-beta.25] - 2026-10-07
 
 ### Correção de navegação
