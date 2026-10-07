@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.32] - 2026-10-07
+
+### WebGIS funcional
+
+- substituído o catálogo estático por um mapa OpenLayers conectado ao catálogo runtime e aos arquivos reais staged em `public/geospatial`;
+- adicionados mapas base OSM, Carto e Esri com miniaturas, troca instantânea, legenda, identificação por clique e controles de navegação;
+- habilitado carregamento de vetores GeoJSON e rasters GeoTIFF com estilos iniciais, transparência de NoData e paletas para elevação e variáveis hidrogeológicas;
+- adicionada ativação/ocultação por camada, resumo de camadas no mapa e acesso às referências CSV do acervo;
+- criada configuração `VITE_POWERBI_DASHBOARD_URL` para abrir o dashboard em nova aba sem inventar uma URL ausente no repositório;
+- staging passou a copiar o CSV de referências junto com as camadas, mantendo os originais fora do Git.
+
 ## [0.3.0-beta.31] - 2026-10-07
 
 ### Interação cartográfica

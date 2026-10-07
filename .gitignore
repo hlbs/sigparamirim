@@ -17,6 +17,6 @@ ui-debug.log*
 functions/lib/
 apps/web/vite.config.js
 apps/web/vite.config.d.ts
+apps/web/public/geospatial/
 .DS_Store
 Thumbs.db
-

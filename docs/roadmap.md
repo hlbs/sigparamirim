@@ -106,9 +106,8 @@ O incremento beta publica apenas afirmações factuais, métricas permitidas por
 
 **Release-alvo:** `v0.3.5`
 
-**Estado:** auditoria executável, manifesto de derivados, catálogo WebGIS e motor OpenLayers com navegação implementados em
-`v0.3.0-beta.31`; o gate de publicação permanece bloqueado até resolver as
-decisões DP-011, DP-012, DP-016 e DP-017.
+**Estado:** auditoria executável, manifesto de derivados, staging dos originais e WebGIS funcional com mapas base, camadas GeoJSON/GeoTIFF, identificação e legenda implementados em
+`v0.3.0-beta.32`. O compositor, a tabela virtualizada, filtros avançados e o dashboard Power BI continuam no escopo da Fase 4; o botão Power BI aguarda a URL pública configurada em `VITE_POWERBI_DASHBOARD_URL`.
 
 **Objetivos:**
 

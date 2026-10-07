@@ -1,90 +1,126 @@
-import { useMemo, useState } from 'react';
-import { MapCanvas, type MapLayerDefinition } from '../features/gis/MapCanvas';
-
-type LayerStatus = 'blocked' | 'planned' | 'ready';
-type LayerFormat = 'COG' | 'GeoJSON direto' | 'GeoJSON em Worker' | 'GeoJSON particionado';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MapCanvas, type MapBaseMap, type MapFeatureSelection, type MapLayerDefinition } from '../features/gis/MapCanvas';
 
 type CatalogLayer = {
   id: string;
   title: string;
   group: string;
-  status: LayerStatus;
-  format?: LayerFormat;
-  detail: string;
-  blocker?: string;
+  status: 'present' | 'planned';
+  kind: 'vector' | 'raster';
+  url?: string | null;
+  file?: string;
+  source?: string;
+  observation?: string;
+  featureCount?: number;
+  geometryTypes?: Record<string, number>;
+  sizeBytes?: number;
+  width?: number;
+  height?: number;
+  statistics?: { min?: number; max?: number; p2?: number; p98?: number };
+  visibleByDefault?: boolean;
+  fields?: Record<string, string[]>;
 };
 
-const layers: CatalogLayer[] = [
-  { id: 'mde', title: 'Modelo Digital de Elevação', group: 'Rasters', status: 'blocked', format: 'COG', detail: '5.057 × 7.567 px · EPSG:31983 · 10 classes hipsométricas', blocker: 'Confirmar NoData, fonte e licença.' },
-  { id: 'hidrografia', title: 'Hidrografia', group: 'Bacia hidrográfica', status: 'blocked', format: 'GeoJSON direto', detail: '199 feições · MultiLineString · EPSG:4674', blocker: 'Registrar licença e atribuição.' },
-  { id: 'vegetacao', title: 'Vegetação', group: 'Recursos naturais', status: 'blocked', format: 'GeoJSON particionado', detail: '6.721 feições · 132,42 MiB · EPSG:4674', blocker: 'Registrar licença e política de recorte.' },
-  { id: 'imovel-rural-limites-propriedades', title: 'Limites de propriedade', group: 'Imóveis rurais', status: 'blocked', format: 'GeoJSON particionado', detail: '58.620 feições · 43,31 MiB · EPSG:4674', blocker: 'Definir campos públicos e licença.' },
-  { id: 'pocos-siagas', title: 'Poços — SIAGAS', group: 'Poços', status: 'blocked', format: 'GeoJSON em Worker', detail: '935 feições pontuais · EPSG:4674', blocker: 'Revisar atributos potencialmente sensíveis.' },
-  { id: 'geologia', title: 'Geologia', group: 'Recursos naturais', status: 'blocked', format: 'GeoJSON direto', detail: '231 feições · MultiPolygon · EPSG:4674', blocker: 'Registrar escala, licença e atribuição.' },
-  { id: 'nivel-dinamico', title: 'Nível dinâmico', group: 'Rasters', status: 'blocked', format: 'COG', detail: '1.433 × 2.078 px · EPSG:4674', blocker: 'Confirmar unidade, significado e NoData.' },
-  { id: 'nivel-estatico', title: 'Nível estático', group: 'Rasters', status: 'blocked', format: 'COG', detail: '1.433 × 2.078 px · EPSG:4674', blocker: 'Confirmar unidade, significado e NoData.' },
-  { id: 'profundidade', title: 'Profundidade', group: 'Rasters', status: 'blocked', format: 'COG', detail: '1.433 × 2.078 px · EPSG:4674', blocker: 'Confirmar unidade, significado e NoData.' },
-  { id: 'solos', title: 'Solos', group: 'Planejadas', status: 'planned', detail: 'Nenhum arquivo original foi submetido ao catálogo.', blocker: 'Aguardando fonte oficial e arquivo validável.' },
-  { id: 'rodovias', title: 'Rodovias', group: 'Planejadas', status: 'planned', detail: 'Nenhum arquivo original foi submetido ao catálogo.', blocker: 'Aguardando fonte oficial e arquivo validável.' },
-  { id: 'barragens', title: 'Barragens', group: 'Planejadas', status: 'planned', detail: 'Nenhum arquivo original foi submetido ao catálogo.', blocker: 'Aguardando fonte oficial e arquivo validável.' },
+type CatalogDocument = { version: string; generatedAt: string; layers: CatalogLayer[] };
+type LayerFilter = 'all' | 'present' | 'planned';
+
+const fallbackLayers: CatalogLayer[] = [
+  { id: 'bacia-hidrografica-paramirim', title: 'Bacia Hidrográfica do Rio Paramirim', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/bacia_hidrografica_paramirim.geojson', visibleByDefault: true },
+  { id: 'hidrografia', title: 'Hidrografia', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/hidrografia.geojson', visibleByDefault: true },
 ];
 
-// O pipeline preenche esta lista somente depois que o gate de publicação passar.
-const publishedMapLayers: MapLayerDefinition[] = [];
+const baseMaps: Array<{ id: MapBaseMap; title: string; description: string; thumb: string }> = [
+  { id: 'osm', title: 'Ruas', description: 'OpenStreetMap', thumb: 'thumb-roads' },
+  { id: 'carto-light', title: 'Claro', description: 'Carto Light', thumb: 'thumb-light' },
+  { id: 'carto-dark', title: 'Escuro', description: 'Carto Dark', thumb: 'thumb-dark' },
+  { id: 'esri-imagery', title: 'Imagem', description: 'Esri World Imagery', thumb: 'thumb-imagery' },
+  { id: 'esri-topo', title: 'Topográfico', description: 'Esri World Topo', thumb: 'thumb-topo' },
+];
 
-const statusLabel: Record<LayerStatus, string> = { blocked: 'Bloqueada', planned: 'Planejada', ready: 'Pronta' };
+function formatBytes(bytes = 0) {
+  if (!bytes) return '';
+  if (bytes > 1024 ** 2) return `${(bytes / 1024 ** 2).toFixed(1)} MiB`;
+  if (bytes > 1024) return `${(bytes / 1024).toFixed(0)} KiB`;
+  return `${bytes} B`;
+}
+
+function layerDetail(layer: CatalogLayer) {
+  if (layer.status === 'planned') return 'Camada planejada; arquivo ainda não está disponível no acervo local.';
+  if (layer.kind === 'raster') return `${layer.width ?? '—'} × ${layer.height ?? '—'} px${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
+  const geometries = layer.geometryTypes ? Object.entries(layer.geometryTypes).map(([name, count]) => `${count} ${name}`).join(' · ') : '';
+  return `${layer.featureCount?.toLocaleString('pt-BR') ?? '—'} feições${geometries ? ` · ${geometries}` : ''}${layer.sizeBytes ? ` · ${formatBytes(layer.sizeBytes)}` : ''}`;
+}
 
 export function MapPage() {
-  const [filter, setFilter] = useState<'all' | LayerStatus>('all');
-  const visibleLayers = useMemo(() => filter === 'all' ? layers : layers.filter((layer) => layer.status === filter), [filter]);
+  const [catalog, setCatalog] = useState<CatalogLayer[]>(fallbackLayers);
+  const [catalogVersion, setCatalogVersion] = useState('local');
+  const [filter, setFilter] = useState<LayerFilter>('all');
+  const [baseMap, setBaseMap] = useState<MapBaseMap>('osm');
+  const [selectedIds, setSelectedIds] = useState<string[]>(fallbackLayers.filter((layer) => layer.visibleByDefault).map((layer) => layer.id));
+  const [selection, setSelection] = useState<MapFeatureSelection | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/geospatial/catalog.json', { headers: { Accept: 'application/json' } })
+      .then((response) => response.ok ? response.json() as Promise<CatalogDocument> : Promise.reject(new Error('catálogo indisponível')))
+      .then((document) => {
+        if (cancelled || !Array.isArray(document.layers)) return;
+        setCatalog(document.layers);
+        setCatalogVersion(document.version);
+        const defaults = document.layers.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id);
+        if (defaults.length > 0) setSelectedIds(defaults);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  const visibleLayers = useMemo(() => filter === 'all' ? catalog : catalog.filter((layer) => layer.status === filter), [catalog, filter]);
+  const activeLayers = useMemo<MapLayerDefinition[]>(() => catalog
+    .filter((layer) => layer.status === 'present' && selectedIds.includes(layer.id) && layer.url)
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, statistics: layer.statistics })), [catalog, selectedIds]);
+  const presentCount = catalog.filter((layer) => layer.status === 'present').length;
+  const plannedCount = catalog.filter((layer) => layer.status === 'planned').length;
+  const powerBiUrl = import.meta.env.VITE_POWERBI_DASHBOARD_URL;
+  const handleFeatureSelect = useCallback((next: MapFeatureSelection | null) => setSelection(next), []);
+
+  const toggleLayer = (layer: CatalogLayer) => {
+    if (layer.status !== 'present' || !layer.url) return;
+    setSelectedIds((current) => current.includes(layer.id) ? current.filter((id) => id !== layer.id) : [...current, layer.id]);
+  };
 
   return (
-    <section className="catalog-page" aria-labelledby="catalog-title">
-      <header className="catalog-hero">
+    <section className="catalog-page webgis-page" aria-labelledby="catalog-title">
+      <header className="catalog-hero webgis-hero">
         <div>
-          <span className="eyebrow">Catálogo geoespacial · Fase 3.5</span>
-          <h1 id="catalog-title">Camadas com rastreabilidade antes do mapa.</h1>
-          <p>O catálogo organiza as fontes da Bacia do Rio Paramirim e só libera uma camada depois que CRS, licença, unidade e qualidade foram confirmados.</p>
+          <span className="eyebrow">WebGIS · Bacia do Rio Paramirim</span>
+          <h1 id="catalog-title">Explore o território em camadas.</h1>
+          <p>Mapas base, vetores e rasters do acervo geoespacial em uma interface para consultar, comparar e identificar informações da bacia.</p>
         </div>
-        <div className="catalog-gate" role="status">
-          <span className="catalog-gate-icon"><i className="fa-solid fa-shield-halved" aria-hidden="true" /></span>
-          <div><strong>Gate de publicação</strong><span>Conteúdo em validação</span></div>
+        <div className="webgis-actions">
+          {powerBiUrl ? <a className="webgis-dashboard-link" href={powerBiUrl} target="_blank" rel="noreferrer"><i className="fa-solid fa-chart-line" aria-hidden="true" /> Abrir dashboard Power BI <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true" /></a> : <span className="webgis-dashboard-link is-disabled" title="Configure VITE_POWERBI_DASHBOARD_URL para habilitar o dashboard"><i className="fa-solid fa-chart-line" aria-hidden="true" /> Dashboard Power BI indisponível</span>}
+          <a className="webgis-references-link" href="/geospatial/references.csv" target="_blank" rel="noreferrer"><i className="fa-solid fa-book-open" aria-hidden="true" /> Referências do acervo (CSV)</a>
+          <span className="webgis-catalog-version"><i className="fa-solid fa-database" aria-hidden="true" /> Catálogo {catalogVersion}</span>
         </div>
       </header>
 
-      <div className="catalog-summary" aria-label="Resumo do catálogo">
-        <div><strong>24</strong><span>camadas bloqueadas</span></div>
-        <div><strong>17</strong><span>camadas planejadas</span></div>
-        <div><strong>0</strong><span>publicadas sem validação</span></div>
+      <div className="catalog-summary webgis-summary" aria-label="Resumo do WebGIS">
+        <div><strong>{presentCount}</strong><span>camadas disponíveis</span></div>
+        <div><strong>{selectedIds.length}</strong><span>camadas no mapa</span></div>
+        <div><strong>{plannedCount}</strong><span>camadas planejadas</span></div>
       </div>
 
-      <section className="catalog-map-panel" aria-labelledby="catalog-map-title">
-        <div className="catalog-map-heading"><div><span className="eyebrow">Motor cartográfico</span><h2 id="catalog-map-title">Enquadramento da bacia</h2></div><span className="catalog-map-state"><i className="fa-solid fa-circle-pause" aria-hidden="true" /> Aguardando camadas</span></div>
-        <MapCanvas layers={publishedMapLayers} />
+      <section className="catalog-map-panel webgis-map-panel" aria-labelledby="catalog-map-title">
+        <div className="catalog-map-heading"><div><span className="eyebrow">Visualização cartográfica</span><h2 id="catalog-map-title">Mapa da bacia</h2></div><span className="catalog-map-state"><i className="fa-solid fa-hand-pointer" aria-hidden="true" /> Clique em uma feição para identificar</span></div>
+        <MapCanvas layers={activeLayers} baseMap={baseMap} onFeatureSelect={handleFeatureSelect} />
+        <div className="webgis-map-legend" aria-label="Legenda das camadas ativas"><span className="eyebrow">Legenda</span>{activeLayers.length === 0 ? <span className="webgis-legend-empty">Nenhuma camada ativa</span> : activeLayers.map((layer) => <span className={`webgis-legend-item ${layer.kind}`} key={layer.id}><i aria-hidden="true" />{layer.title}</span>)}</div>
+        {selection && <aside className="map-identify-panel" aria-label="Informações da feição selecionada"><div className="map-identify-heading"><div><span className="eyebrow">Identificação</span><strong>{selection.layerTitle}</strong></div><button type="button" onClick={() => setSelection(null)} aria-label="Fechar identificação"><i className="fa-solid fa-xmark" aria-hidden="true" /></button></div><dl>{Object.entries(selection.properties).slice(0, 12).map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{typeof value === 'object' ? JSON.stringify(value) : String(value ?? '—')}</dd></div>)}</dl></aside>}
       </section>
 
-      <div className="catalog-toolbar">
-        <div><span className="eyebrow">Inventário inicial</span><h2>Fontes e derivados previstos</h2></div>
-        <div className="catalog-filters" role="group" aria-label="Filtrar camadas">
-          {(['all', 'blocked', 'planned', 'ready'] as const).map((option) => (
-            <button key={option} type="button" className={filter === option ? 'is-active' : ''} onClick={() => setFilter(option)}>{option === 'all' ? 'Todas' : statusLabel[option]}</button>
-          ))}
-        </div>
-      </div>
+      <section className="webgis-base-section" aria-labelledby="base-map-title"><div className="catalog-toolbar"><div><span className="eyebrow">Mapas base</span><h2 id="base-map-title">Escolha o contexto visual</h2></div></div><div className="webgis-base-grid">{baseMaps.map((base) => <button key={base.id} type="button" className={`webgis-base-card ${baseMap === base.id ? 'is-active' : ''}`} onClick={() => setBaseMap(base.id)}><span className={`webgis-base-thumb ${base.thumb}`} aria-hidden="true" /><span><strong>{base.title}</strong><small>{base.description}</small></span>{baseMap === base.id && <i className="fa-solid fa-circle-check" aria-hidden="true" />}</button>)}</div></section>
 
-      <div className="catalog-grid">
-        {visibleLayers.map((layer) => (
-          <article className={`catalog-layer-card status-${layer.status}`} key={layer.id}>
-            <div className="catalog-layer-topline"><span className="catalog-layer-group">{layer.group}</span><span className="catalog-status"><i className={`fa-solid ${layer.status === 'blocked' ? 'fa-lock' : layer.status === 'planned' ? 'fa-clock' : 'fa-circle-check'}`} aria-hidden="true" />{statusLabel[layer.status]}</span></div>
-            <h3>{layer.title}</h3>
-            <p>{layer.detail}</p>
-            {layer.format && <span className="catalog-format"><i className="fa-solid fa-layer-group" aria-hidden="true" /> Derivado: {layer.format}</span>}
-            <div className="catalog-blocker"><i className="fa-solid fa-circle-info" aria-hidden="true" /><span>{layer.blocker}</span></div>
-          </article>
-        ))}
-      </div>
+      <div className="catalog-toolbar webgis-layer-toolbar"><div><span className="eyebrow">Camadas geoespaciais</span><h2>Dados disponíveis</h2></div><div className="catalog-filters" role="group" aria-label="Filtrar camadas">{(['all', 'present', 'planned'] as const).map((option) => <button key={option} type="button" className={filter === option ? 'is-active' : ''} onClick={() => setFilter(option)}>{option === 'all' ? 'Todas' : option === 'present' ? 'Disponíveis' : 'Planejadas'}</button>)}</div></div>
 
-      <footer className="catalog-footer-note"><i className="fa-solid fa-code-branch" aria-hidden="true" /><span>Manifesto de ingestão `v0.1.0` · originais preservados · nenhuma camada é copiada ou publicada automaticamente.</span></footer>
+      <div className="catalog-grid webgis-layer-grid">{visibleLayers.map((layer) => { const active = selectedIds.includes(layer.id); return <article className={`catalog-layer-card status-${layer.status} ${active ? 'is-selected' : ''}`} key={layer.id}><div className="catalog-layer-topline"><span className="catalog-layer-group">{layer.group}</span><span className="catalog-status"><i className={`fa-solid ${layer.status === 'present' ? 'fa-circle-check' : 'fa-clock'}`} aria-hidden="true" />{layer.status === 'present' ? 'Disponível' : 'Planejada'}</span></div><h3>{layer.title}</h3><p>{layerDetail(layer)}</p><span className="catalog-format"><i className={`fa-solid ${layer.kind === 'raster' ? 'fa-image' : 'fa-draw-polygon'}`} aria-hidden="true" /> {layer.kind === 'raster' ? 'Raster' : 'Vetorial'}{layer.observation ? ` · ${layer.observation}` : ''}</span>{layer.source && <small className="webgis-layer-source">Fonte: {layer.source}</small>}<button type="button" className="webgis-layer-toggle" disabled={layer.status !== 'present' || !layer.url} onClick={() => toggleLayer(layer)}><i className={`fa-solid ${active ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" /> {active ? 'Ocultar do mapa' : 'Exibir no mapa'}</button></article>; })}</div>
     </section>
   );
 }
