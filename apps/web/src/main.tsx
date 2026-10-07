@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import './styles.css';
 import '@fortawesome/fontawesome-free/css/all.min.css';
-import 'particles.js/particles.js';
 
 const queryClient = new QueryClient({
   defaultOptions: {

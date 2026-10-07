@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.17] - 2026-10-07
+
+### Corrigido
+
+- particles.js passou a ser carregado explicitamente como asset público antes da aplicação React, garantindo que a malha de linhas e pontos seja inicializada no login em produção.
+
 ## [0.3.0-beta.16] - 2026-10-07
 
 ### Refinado
