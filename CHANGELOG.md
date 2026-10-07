@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.9] - 2026-10-07
+
+### Aprimorado
+
+- MDE regenerado com valores zero tratados como nulos transparentes, sombreamento de relevo e falsa-cor hipsométrica contínua;
+- visual do relevo agora permite arrastar para girar, usar zoom pelo mouse e controles de reposição, aproximação e afastamento;
+- removida a simulação artificial de fluxo que não representava uma drenagem hidrologicamente calculada;
+- menu lateral passou a alternar de forma efetiva entre expandido e compacto, com transição responsiva em desktop e mobile;
+- ícones de ações do header refinados sem molduras redundantes, com indicador de perfil em Font Awesome;
+- espaçamento do resultado de Giandotti corrigido para separar claramente valor, unidade e nome do método;
+- adicionada seção editorial de contexto territorial para integrar clima, vegetação, sociedade, cultura e economia com rastreabilidade de fontes.
+
 ## [0.3.0-beta.8] - 2026-10-07
 
 ### Aprimorado

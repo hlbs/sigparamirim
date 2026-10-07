@@ -11,6 +11,8 @@
 .brand span { letter-spacing: -.035em; }
 .version { padding: 5px 9px; color: var(--brand-strong); background: var(--brand-soft); border-color: transparent; font-weight: 800; }
 .topbar-actions { gap: 9px; }
+.topbar-actions > .icon-button, .topbar-actions .notification-anchor > .icon-button { border-color: transparent; background: transparent; box-shadow: none; }
+.topbar-actions > .icon-button:hover, .topbar-actions .notification-anchor > .icon-button:hover { border-color: transparent; background: var(--brand-soft); box-shadow: none; }
 .icon-button, .compact-select, .login-link {
   min-width: 42px;
   min-height: 42px;
@@ -37,11 +39,23 @@
 .sidebar-socials { grid-column: 2; display: flex; gap: 6px; }
 .sidebar-socials a { display: inline-grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); font-size: .68rem; font-weight: 900; text-decoration: none; transition: all 180ms var(--ease-premium); }
 .sidebar-socials a:hover { border-color: var(--brand); background: var(--brand); color: #fff; transform: translateY(-2px); }
-.main-content { padding-left: 300px; padding-top: 110px; }
+.main-content { padding-left: 300px; padding-top: 110px; transition: padding-left 240ms var(--ease-premium); }
+.main-content-expanded { padding-left: 112px; }
+.sidebar { transition: width 240ms var(--ease-premium), transform 240ms var(--ease-premium), padding 240ms var(--ease-premium); overflow-x: hidden; }
+.sidebar-collapsed { width: 84px; padding-inline: 10px; }
+.sidebar-collapsed .nav-item { justify-content: center; padding-inline: 0; }
+.sidebar-collapsed .nav-item > span { margin: 0; }
+.sidebar-collapsed .nav-item { font-size: 0; }
+.sidebar-collapsed .sidebar-footer { grid-template-columns: 1fr; justify-items: center; padding-inline: 0; }
+.sidebar-collapsed .sidebar-author, .sidebar-collapsed .sidebar-socials { display: none; }
 
 @media (max-width: 980px) {
   .sidebar { top: 78px; }
-  .main-content { padding-left: 24px; }
+  .main-content, .main-content-expanded { padding-left: 24px; }
+  .sidebar-collapsed { width: 266px; padding-inline: 16px; }
+  .sidebar-collapsed .nav-item { justify-content: flex-start; padding-inline: 15px; font-size: .9rem; }
+  .sidebar-collapsed .sidebar-footer { grid-template-columns: auto 1fr; justify-items: stretch; padding-inline: 10px; }
+  .sidebar-collapsed .sidebar-author, .sidebar-collapsed .sidebar-socials { display: flex; }
 }
 
 @media (max-width: 680px) {

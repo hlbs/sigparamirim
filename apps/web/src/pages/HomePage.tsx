@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   compatibleConcentrationTime,
@@ -78,17 +78,50 @@ function ConcentrationTimeRecommendation() {
 }
 
 function TerrainModelVisual() {
+  const [rotation, setRotation] = useState({ x: 54, y: -12 });
+  const [zoom, setZoom] = useState(1);
+  const dragRef = useRef<{ x: number; y: number; rotation: { x: number; y: number } } | null>(null);
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { x: event.clientX, y: event.clientY, rotation };
+  };
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragRef.current) return;
+    setRotation({
+      x: Math.max(28, Math.min(72, dragRef.current.rotation.x - (event.clientY - dragRef.current.y) * 0.18)),
+      y: dragRef.current.rotation.y + (event.clientX - dragRef.current.x) * 0.22,
+    });
+  };
+  const handlePointerUp = () => { dragRef.current = null; };
+
   return (
     <figure className="terrain-figure" aria-labelledby="terrain-caption">
-      <div className="terrain-stage" role="img" aria-label="Modelo tridimensional rotativo derivado do MDE da Bacia do Rio Paramirim, com falsa-cor hipsométrica">
-        <div className="terrain-orbit"><img src="/mde-terrain.png" alt="Modelo hipsométrico da bacia do Rio Paramirim" /></div>
-        <span className="terrain-flow terrain-flow-one" aria-hidden="true" />
-        <span className="terrain-flow terrain-flow-two" aria-hidden="true" />
-        <span className="terrain-flow terrain-flow-three" aria-hidden="true" />
+      <div
+        className="terrain-stage"
+        role="application"
+        aria-label="Modelo tridimensional interativo derivado do MDE da Bacia do Rio Paramirim. Arraste para girar e use a roda do mouse ou os controles para aproximar."
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onWheel={(event) => { event.preventDefault(); setZoom((current) => Math.max(.78, Math.min(1.35, current - event.deltaY * .001))); }}
+      >
+        <div className="terrain-orbit" style={{ transform: `rotateX(${rotation.x}deg) rotateZ(${rotation.y}deg) scale(${zoom})` }}>
+          <img src="/mde-terrain.png" alt="Modelo hipsométrico da bacia do Rio Paramirim" draggable="false" />
+        </div>
         <div className="terrain-north">N</div>
       </div>
-      <div className="terrain-legend"><span><i className="legend-low" /> menor altitude</span><span><i className="legend-mid" /> altitude intermediária</span><span><i className="legend-high" /> maior altitude</span></div>
-      <figcaption id="terrain-caption">Modelo exploratório derivado do MDE da bacia, reamostrado para visualização e colorido por elevação relativa. A rotação é uma leitura visual; as linhas azuis simulam trajetórias preferenciais de fluxo e não substituem uma análise hidrológica distribuída.</figcaption>
+      <div className="terrain-controls" aria-label="Controles do modelo">
+        <button type="button" onClick={() => setRotation({ x: 54, y: -12 })}>Repor vista</button>
+        <button type="button" onClick={() => setZoom((current) => Math.min(1.35, current + .1))}>+</button>
+        <button type="button" onClick={() => setZoom((current) => Math.max(.78, current - .1))}>−</button>
+      </div>
+      <div className="terrain-legend" aria-label="Legenda hipsométrica da falsa-cor">
+        <span className="terrain-gradient" aria-hidden="true" />
+        <span>420 m</span><span>900 m</span><span>1.417 m</span>
+      </div>
+      <figcaption id="terrain-caption">Modelo exploratório derivado do MDE da bacia, com valores nulos (0) transparentes, relevo sombreado e falsa-cor hipsométrica. Arraste para girar e use a roda do mouse ou os controles para aproximar.</figcaption>
     </figure>
   );
 }
@@ -433,6 +466,33 @@ export function HomePage() {
           <MetricCard metric={ruggedness} />
           <MetricCard metric={massivity} />
           <div className="synthesis-note"><strong>Leitura integrada</strong><span>Forma, relevo, drenagem, chuva, solo e subsolo precisam ser analisados juntos.</span></div>
+        </div>
+      </NarrativeSection>
+
+      <NarrativeSection
+        id="territorio"
+        eyebrow="09 · Contexto territorial"
+        title="Uma bacia é também clima, paisagem e vida social"
+        tone="soft"
+        description={<>
+          <p>
+            A leitura hidrológica ganha sentido quando o mapa físico é relacionado ao cotidiano. A documentação pública do INEMA
+            situa as bacias dos rios Paramirim e Santo Onofre no semiárido nordestino, afluentes do São Francisco, com diferenças
+            locais de relevo, disponibilidade hídrica e cobertura vegetal. Essas transições ajudam a explicar por que uma mesma chuva
+            pode produzir respostas distintas entre as cabeceiras, os vales e os setores de jusante.
+          </p>
+          <p>
+            Para a plataforma, clima, vegetação, ocupação do solo, economia e cultura serão incorporados como camadas e textos
+            documentados: cada afirmação deverá indicar escala, período, fonte e DOI quando houver publicação científica. Assim,
+            divulgação e rigor caminham juntos, sem transformar hipótese regional em diagnóstico automático.<Citation references={[5, 6, 12, 13]} />
+          </p>
+        </>}
+      >
+        <div className="territory-context-grid">
+          <article><i className="fa-solid fa-cloud-sun" /><strong>Clima e chuva</strong><span>Variabilidade sazonal e eventos intensos controlam a alternância entre déficit hídrico e resposta rápida.</span></article>
+          <article><i className="fa-solid fa-leaf" /><strong>Vegetação e solo</strong><span>Cobertura, crostas e propriedades do solo modulam infiltração, erosão e armazenamento local.</span></article>
+          <article><i className="fa-solid fa-people-group" /><strong>Sociedade e cultura</strong><span>Água, produção rural e modos de vida dependem da regularidade dos rios, nascentes e reservatórios.</span></article>
+          <article><i className="fa-solid fa-chart-line" /><strong>Economia territorial</strong><span>Infraestrutura hídrica e uso da terra devem ser avaliados com recorte temporal e evidência verificável.</span></article>
         </div>
       </NarrativeSection>
 

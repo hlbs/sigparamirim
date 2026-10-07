@@ -18,12 +18,12 @@ const navigation = [
 
 const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
 
-type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings';
+type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron';
 function UiIcon({ name }: { name: IconName }) {
   const classes: Record<IconName, string> = {
     home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', help: 'fa-solid fa-circle-question',
     menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
-    edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear',
+    edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear', chevron: 'fa-solid fa-chevron-down',
   };
   return <i className={classes[name]} aria-hidden="true" />;
 }
@@ -133,7 +133,7 @@ function PlatformShell() {
             <div className="profile-menu-anchor" ref={profileMenuRef}>
               <button className="profile-trigger" type="button" aria-label="Menu do usuário" aria-expanded={profileMenuOpen} onClick={() => setProfileMenuOpen((open) => !open)}>
                 <UserAvatar name={user.displayName} email={user.email} photoURL={user.photoURL} />
-                <span className="profile-trigger-caret" aria-hidden="true">⌄</span>
+                <UiIcon name="chevron" />
               </button>
               {profileMenuOpen && (
                 <div className="profile-popover" role="menu">
@@ -152,7 +152,7 @@ function PlatformShell() {
         </div>
       </header>
 
-      <aside id="main-sidebar" className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`} aria-label="Navegação principal">
+      <aside id="main-sidebar" className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`} aria-label="Navegação principal">
         <nav>
           {visibleNavigation.map((item) => (
             <NavLink
@@ -182,7 +182,7 @@ function PlatformShell() {
 
       {sidebarOpen && <button className="backdrop" aria-label="Fechar menu" onClick={() => setSidebarOpen(false)} />}
 
-      <main className="main-content">
+      <main className={`main-content ${sidebarOpen ? '' : 'main-content-expanded'}`}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/mapa" element={<Placeholder title="Mapa e dashboard" description="O catálogo geoespacial e o motor OpenLayers serão conectados após a validação das camadas iniciais." />} />
