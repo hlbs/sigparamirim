@@ -34,7 +34,7 @@ describe('dados narrativos morfométricos', () => {
   });
 
   it('mantém DOI explícito em todas as referências publicadas', () => {
-    expect(scientificReferences).toHaveLength(14);
+    expect(scientificReferences).toHaveLength(18);
     for (const reference of scientificReferences) {
       expect(reference.doi).toMatch(/^10\./);
       expect(reference.url).toContain('doi.org/10.');

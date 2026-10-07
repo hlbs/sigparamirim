@@ -229,4 +229,32 @@ export const scientificReferences = [
     doi: '10.5194/esurf-10-1-2022',
     url: 'https://doi.org/10.5194/esurf-10-1-2022',
   },
+  {
+    author: 'Gomes, M. C. R. et al.',
+    year: 2021,
+    title: 'Análise geoquímica das águas subterrâneas no município de Boquira, no semiárido baiano',
+    doi: '10.21715/GB2358-2812.2021351007',
+    url: 'https://doi.org/10.21715/GB2358-2812.2021351007',
+  },
+  {
+    author: 'Souza, M. D. B.; Santos, A. R.',
+    year: 2024,
+    title: 'O Território de Identidade Bacia do Paramirim: aspectos educacionais de um território em desenvolvimento',
+    doi: '10.56839/bd.v34i1.a8',
+    url: 'https://doi.org/10.56839/bd.v34i1.a8',
+  },
+  {
+    author: 'Rocha, A. R. O.; Nogueira, E. M. S.',
+    year: 2024,
+    title: 'Construction of Decolonial Education in the Paramirim Basin: case study on Quilombola School Education',
+    doi: '10.31496/rpd.v24i49.1639',
+    url: 'https://doi.org/10.31496/rpd.v24i49.1639',
+  },
+  {
+    author: 'Oliveira, G. G.; Marques, J. B.; Bomfim, E. P.',
+    year: 2022,
+    title: 'Mapeamento dos conflitos da mineração na Bahia',
+    doi: '10.48075/amb.v4i1.28230',
+    url: 'https://doi.org/10.48075/amb.v4i1.28230',
+  },
 ] as const;

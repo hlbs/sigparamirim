@@ -31,7 +31,7 @@ function MetricValue({ metric, digits = 2 }: { metric: NarrativeMetric; digits?:
   );
 }
 
-function Citation({ references }: { references: number[] }) {
+function Citation({ references }: { references: readonly number[] }) {
   return (
     <sup className="citation" aria-label={`Referências ${references.join(', ')}`}>
       {references.map((reference, index) => (
@@ -109,6 +109,9 @@ function TerrainModelVisual() {
     controls.target.set(0, .2, 0);
     controlsRef.current = controls;
     let disposed = false;
+    let animationFrame = 0;
+    const flowMarkers: Array<{ mesh: THREE.Mesh; offset: number }> = [];
+    let mainDrape: THREE.Vector3[] = [];
     const resize = () => { const rect = stage.getBoundingClientRect(); renderer.setSize(rect.width, rect.height, false); camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix(); };
     const observer = new ResizeObserver(resize); observer.observe(stage); resize();
     const image = new Image(); image.src = '/mde-height.png';
@@ -121,15 +124,23 @@ function TerrainModelVisual() {
       const index = (x: number, y: number) => y * cols + x;
       for (let y = 0; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
         const p = index(x, y) * 4; const h = (pixels[p] ?? 0) / 255; const px = (x / (cols - 1) - .5) * 4.8; const pz = (y / (rows - 1) - .5) * 7.2;
-        positions.push(px, h * .62, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
+        positions.push(px, h * .38, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
       }
       for (let y = 0; y < rows - 1; y += 1) for (let x = 0; x < cols - 1; x += 1) { const a = index(x, y); const b = index(x + 1, y); const c = index(x + 1, y + 1); const d = index(x, y + 1); indices.push(a, b, d, b, c, d); }
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); geometry.setIndex(indices); geometry.computeVertexNormals();
       const material = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, roughness: .9, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
       const mesh = new THREE.Mesh(geometry, material); group.add(mesh);
+      fetch('/hidrografia-3d.json').then((response) => response.json() as Promise<{ lines: number[][][]; main: number[][] }>).then((hydrography) => {
+        if (disposed) return;
+        const drape = (line: number[][]) => line.map(([x = 0, z = 0]) => { const ix = Math.max(0, Math.min(cols - 1, Math.round(((x + 2.4) / 4.8) * (cols - 1)))); const iy = Math.max(0, Math.min(rows - 1, Math.round(((z + 3.6) / 7.2) * (rows - 1)))); const h = (pixels[(iy * cols + ix) * 4] ?? 0) / 255; return new THREE.Vector3(x, h * .38 + .025, z); });
+        hydrography.lines.forEach((line) => { const points = drape(line); if (points.length < 2) return; const lineGeometry = new THREE.BufferGeometry().setFromPoints(points); group.add(new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0x54c8de, transparent: true, opacity: .68 }))); });
+        mainDrape = drape(hydrography.main);
+        const markerGeometry = new THREE.SphereGeometry(.035, 8, 8); const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xa9f4ff });
+        for (let i = 0; i < 14; i += 1) { const marker = new THREE.Mesh(markerGeometry, markerMaterial); group.add(marker); flowMarkers.push({ mesh: marker, offset: i / 14 }); }
+      }).catch(() => undefined);
     };
-    const animate = () => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; renderer.render(scene, camera); requestAnimationFrame(animate); }; animate();
-    return () => { disposed = true; observer.disconnect(); controls.dispose(); controlsRef.current = null; renderer.dispose(); renderer.domElement.remove(); };
+    const animate = (time: number) => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; if (mainDrape.length > 1) flowMarkers.forEach(({ mesh, offset }) => { const progress = ((time * .000035 + offset) % 1) * (mainDrape.length - 1); const a = Math.floor(progress); const start = mainDrape[a] ?? mainDrape[0]; const end = mainDrape[Math.min(a + 1, mainDrape.length - 1)] ?? start; if (start && end) mesh.position.lerpVectors(start, end, progress - a); }); renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);
+    return () => { disposed = true; cancelAnimationFrame(animationFrame); observer.disconnect(); controls.dispose(); controlsRef.current = null; renderer.dispose(); renderer.domElement.remove(); };
   }, []);
   return (
     <figure className="terrain-figure" aria-label="Modelo tridimensional do relevo da Bacia do Rio Paramirim">
@@ -159,22 +170,22 @@ function TerritoryContextTabs() {
   const tabs = {
     clima: {
       label: 'Clima e água', icon: 'fa-cloud-sun', title: 'O pulso sazonal da bacia',
-      body: 'A bacia está inserida no semiárido baiano, onde a disponibilidade de água é marcada pela concentração sazonal das chuvas e por longos intervalos de estiagem. O contraste entre chuva intensa, armazenamento e perdas por evapotranspiração organiza os períodos de cheia e de recessão.',
+      body: 'O diagnóstico do Macrozoneamento Ecológico-Econômico do São Francisco descreve o Vale do Paramirim no domínio semiárido, com precipitação anual entre 650 e 1.250 mm concentrada em cerca de quatro meses do verão e temperaturas médias anuais entre 23 e 25 °C. A classificação regional varia com o relevo: áreas baixas são mais secas, enquanto serras e transições próximas à Chapada Diamantina são mais úmidas.', refs: [] as number[],
       items: [['Cheias', 'Responder a eventos intensos exige séries de chuva, nível e vazão; a morfometria sozinha não define a magnitude da cheia.'], ['Estiagem', 'A redução das vazões evidencia o papel de nascentes, reservatórios, solos e aquíferos na sustentação do escoamento de base.'], ['Temperatura média', 'O indicador será calculado por estação, período e método de agregação antes de ser publicado; um valor sem janela temporal seria enganoso.']],
     },
     vegetacao: {
       label: 'Vegetação e solo', icon: 'fa-leaf', title: 'Cobertura, infiltração e erosão',
-      body: 'A paisagem combina formações de Caatinga com transições locais associadas ao relevo e à disponibilidade de água. A cobertura vegetal, a textura do solo e o manejo interferem na infiltração, na erosão e no tempo que a água permanece no terreno.',
+      body: 'O estudo florístico da sub-bacia registra um gradiente entre formações serranas mais conservadas, áreas de transição e Caatinga arbustivo-arbórea nas porções mais baixas. A análise da água subterrânea em Boquira mostra por que geologia, solos e qualidade da água precisam acompanhar a leitura da cobertura vegetal.', refs: [15],
       items: [['Vegetação', 'A camada de vegetação da plataforma será lida com escala e data de mapeamento, evitando comparar classes de anos diferentes como se fossem uma fotografia única.'], ['Solos', 'O mapa de solos orienta hipóteses sobre infiltração e armazenamento, mas deve ser cruzado com campo, litologia e uso da terra.'], ['Risco de erosão', 'Encostas, solo exposto e concentração de escoamento podem formar áreas prioritárias para monitoramento e conservação.']],
     },
     sociedade: {
       label: 'Sociedade e cultura', icon: 'fa-people-group', title: 'Água como território vivido',
-      body: 'A bacia não é apenas uma superfície drenada: é espaço de comunidades, patrimônio, trabalho e memória. A leitura pública deve aproximar mapas de áreas quilombolas, sítios arqueológicos, unidades de conservação, sedes municipais e infraestrutura hídrica.',
+      body: 'A pesquisa sobre o Território de Identidade Bacia do Paramirim reúne indicadores educacionais, demográficos e socioeconômicos de 2011 a 2022. Estudos sobre educação quilombola reforçam que território, memória e identidade não são camadas decorativas: são dimensões concretas da gestão da água e da divulgação científica.', refs: [16, 17],
       items: [['Comunidades', 'Camadas sociais precisam ser apresentadas com cuidado, escala adequada e respeito à proteção de dados sensíveis.'], ['Patrimônio', 'Sítios arqueológicos e referências culturais ajudam a contar como as pessoas ocupam e interpretam o território.'], ['Segurança hídrica', 'Acesso à água e distância de fontes devem ser analisados junto com sazonalidade, infraestrutura e desigualdades locais.']],
     },
     economia: {
       label: 'Economia territorial', icon: 'fa-chart-line', title: 'Produção, infraestrutura e resiliência',
-      body: 'A economia regional depende da combinação entre água disponível, produção rural, serviços, estradas e infraestrutura de armazenamento. A plataforma vai relacionar vocações econômicas e pressão sobre os recursos hídricos sem transformar correlação espacial em causalidade.',
+      body: 'A economia regional combina agropecuária, serviços, infraestrutura hídrica e atividades minerais. O estudo sobre conflitos da mineração na Bahia inclui ocorrências no Território Bacia do Paramirim e ajuda a enquadrar a vocação econômica junto de seus passivos, disputas e efeitos ambientais, sem confundir potencial mineral com desenvolvimento social automático.', refs: [18],
       items: [['Uso da terra', 'Agricultura, pecuária e áreas urbanizadas devem ser comparadas por período para revelar expansão, permanência e mudança.'], ['Infraestrutura', 'Barragens, poços, adutoras e pontos de captação organizam a resiliência durante a estiagem e a exposição durante cheias.'], ['Planejamento', 'Indicadores econômicos só são úteis quando acompanhados de escala, fonte, data e incerteza.']],
     },
   } as const;
@@ -184,7 +195,7 @@ function TerritoryContextTabs() {
       {Object.entries(tabs).map(([key, tab]) => <button key={key} type="button" role="tab" aria-selected={active === key} className={active === key ? 'is-active' : ''} onClick={() => setActive(key)}><i className={`fa-solid ${tab.icon}`} />{tab.label}</button>)}
     </div>
     <article className="territory-tab-panel" role="tabpanel">
-      <span className="eyebrow">{current.label}</span><h3>{current.title}</h3><p>{current.body}</p>
+      <span className="eyebrow">{current.label}</span><h3>{current.title}</h3><p>{current.body}{current.refs.length > 0 && <Citation references={current.refs} />}</p>
       <div className="territory-tab-items">{current.items.map(([label, text]) => <div key={label}><strong>{label}</strong><span>{text}</span></div>)}</div>
     </article>
   </div>;

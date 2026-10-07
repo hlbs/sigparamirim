@@ -64,7 +64,9 @@ export function AuthPage() {
   return (
     <div className="auth-page">
       <section className="auth-story" aria-label="Sobre o SIG Paramirim">
-        <div id="auth-particles" className="auth-particles" aria-hidden="true" />
+        <div id="auth-particles" className="auth-particles" aria-hidden="true">
+          {Array.from({ length: 28 }, (_, index) => <span key={index} className="auth-particle" style={{ left: `${(index * 37) % 100}%`, top: `${(index * 61) % 100}%`, animationDelay: `-${(index * .27).toFixed(2)}s` }} />)}
+        </div>
         <NavLink className="auth-brand" to="/">
           <img src="/sig-logo.png" alt="" />
           <span>SIG Paramirim</span>

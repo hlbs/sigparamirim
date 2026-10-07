@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.13] - 2026-10-07
+
+### Aprimorado
+
+- seção 09 passou a apresentar dados territoriais específicos: regime semiárido, faixa de precipitação, concentração sazonal das chuvas, temperaturas médias regionais, gradiente de vegetação, indicadores socioeconômicos, educação quilombola e conflitos da mineração;
+- adicionadas quatro referências DOI verificadas para água subterrânea, território, cultura e economia mineral;
+- hidrografia real do GeoJSON inicial foi simplificada, reprojetada e incorporada ao modelo 3D;
+- rede de drenagem agora é drapeada sobre o relevo e possui marcadores luminosos animados ao longo do canal principal;
+- exagero vertical reduzido para uma leitura mais próxima da proporção territorial;
+- partículas visuais receberam fallback CSS para permanecerem visíveis mesmo quando a inicialização do particles.js falhar.
+
 ## [0.3.0-beta.12] - 2026-10-07
 
 ### Aprimorado
