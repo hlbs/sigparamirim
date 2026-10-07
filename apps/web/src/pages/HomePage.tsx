@@ -294,7 +294,7 @@ export function HomePage() {
       <section className="story-hero" aria-labelledby="home-title">
         <ThemeDetail className="story-detail" />
         <div className="story-hero-copy">
-          <BrandLogo kind="logo" alt="SIG Paramirim" className="story-hero-logo" />
+          <BrandLogo kind="logo" variant="dark" alt="SIG Paramirim" className="story-hero-logo" />
           <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
           <h1 id="home-title">Uma leitura territorial construída com dados rastreáveis.</h1>
           <p>

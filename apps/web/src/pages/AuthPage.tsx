@@ -50,7 +50,7 @@ export function AuthPage() {
       <section className="auth-story" aria-label="Sobre o SIG Paramirim">
           <ThemeDetail className="auth-detail" />
           <NavLink className="auth-brand" to="/">
-          <BrandLogo kind="logo" alt="SIG Paramirim" />
+          <BrandLogo kind="logo" variant="dark" alt="SIG Paramirim" />
         </NavLink>
         <div>
           <span className="eyebrow">Ciência territorial acessível</span>

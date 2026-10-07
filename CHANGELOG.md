@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.24] - 2026-10-07
+
+### Ajustes de contraste e marca
+
+- texto diretamente sobre os painéis verdes do modo claro passou a ser branco;
+- cards internos claros mantêm tipografia escura para preservar hierarquia e legibilidade;
+- cards verdes e o bloco de marca da entrada usam explicitamente `logo_b.svg`;
+- `BrandLogo` passou a aceitar variante explícita, evitando seleção ambígua de arquivo SVG.
+
 ## [0.3.0-beta.23] - 2026-10-07
 
 ### Ajustes visuais
