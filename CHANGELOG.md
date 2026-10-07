@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.30] - 2026-10-07
+
+### Motor cartográfico inicial
+
+- integrado um canvas OpenLayers na rota `/mapa`;
+- adicionado ciclo de vida seguro para criação e desmontagem do mapa;
+- preparado o registro de camadas publicadas sem habilitar basemap ou dados antes das decisões de licença e atribuição.
+
 ## [0.3.0-beta.29] - 2026-10-07
 
 ### Catálogo WebGIS inicial

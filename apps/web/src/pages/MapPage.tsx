@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { MapCanvas } from '../features/gis/MapCanvas';
 
 type LayerStatus = 'blocked' | 'planned' | 'ready';
 type LayerFormat = 'COG' | 'GeoJSON direto' | 'GeoJSON em Worker' | 'GeoJSON particionado';
@@ -53,6 +54,11 @@ export function MapPage() {
         <div><strong>17</strong><span>camadas planejadas</span></div>
         <div><strong>0</strong><span>publicadas sem validação</span></div>
       </div>
+
+      <section className="catalog-map-panel" aria-labelledby="catalog-map-title">
+        <div className="catalog-map-heading"><div><span className="eyebrow">Motor cartográfico</span><h2 id="catalog-map-title">Enquadramento da bacia</h2></div><span className="catalog-map-state"><i className="fa-solid fa-circle-pause" aria-hidden="true" /> Aguardando camadas</span></div>
+        <MapCanvas />
+      </section>
 
       <div className="catalog-toolbar">
         <div><span className="eyebrow">Inventário inicial</span><h2>Fontes e derivados previstos</h2></div>
