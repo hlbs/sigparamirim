@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, NavLink, useLocation } from 'react-router-dom';
 import { signInWithGoogle, useAuth } from '../features/auth';
 import { AuthLoading } from '../components/AuthLoading';
@@ -24,6 +24,14 @@ export function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const destination = (location.state as { from?: string } | null)?.from || '/';
 
+  useEffect(() => {
+    window.particlesJS?.('auth-particles', {
+      particles: { number: { value: 34, density: { enable: true, value_area: 900 } }, color: { value: '#eef4a2' }, opacity: { value: .23, random: true }, size: { value: 2.4, random: true }, line_linked: { enable: true, distance: 145, color: '#e6ed95', opacity: .12, width: 1 }, move: { enable: true, speed: .65, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
+      interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
+      retina_detect: true,
+    });
+  }, []);
+
   if (loading) return <AuthLoading label="Verificando sua sessão" />;
   if (user && !canAccessPlatform) return <Navigate to="/status-conta" replace />;
   if (user) return <Navigate to={destination} replace />;
@@ -42,14 +50,15 @@ export function AuthPage() {
   return (
     <div className="auth-page">
       <section className="auth-story" aria-label="Sobre o SIG Paramirim">
+        <div id="auth-particles" className="auth-particles" aria-hidden="true" />
         <NavLink className="auth-brand" to="/">
           <img src="/sig-logo.png" alt="" />
           <span>SIG Paramirim</span>
         </NavLink>
         <div>
           <span className="eyebrow">Ciência territorial acessível</span>
-          <h1>Dados confiáveis para decisões que atravessam a bacia.</h1>
-          <p>Mapas, indicadores e conhecimento científico reunidos em um ambiente seguro e colaborativo.</p>
+          <h1>Geoinformação para compreender o território.</h1>
+          <p>Explore mapas, indicadores hidrológicos e pesquisas que transformam conhecimento científico em leitura acessível da Bacia do Rio Paramirim.</p>
         </div>
         <small>Plataforma de inteligência geográfica da Bacia do Rio Paramirim</small>
       </section>
@@ -59,7 +68,7 @@ export function AuthPage() {
           <span className="auth-mobile-brand"><img src="/sig-logo.png" alt="" /> SIG Paramirim</span>
           <span className="eyebrow">Bem-vindo</span>
           <h2>Acesse a plataforma</h2>
-          <p>No primeiro acesso, sua conta será criada automaticamente e encaminhada para aprovação.</p>
+          <p>Entre com sua conta Google para explorar mapas, dados territoriais e conteúdos científicos da Bacia do Rio Paramirim. O acesso é criado automaticamente.</p>
 
           <div className="provider-list">
             <button
@@ -67,7 +76,7 @@ export function AuthPage() {
               disabled={pending}
               onClick={() => void handleGoogle()}
             >
-              <span aria-hidden="true">G</span>
+              <span aria-hidden="true"><i className="fa-brands fa-google" /></span>
               {pending ? 'Conectando…' : 'Continuar com Google'}
             </button>
           </div>

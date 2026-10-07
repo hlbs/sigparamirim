@@ -29,3 +29,6 @@
 }
 
 body { font-family: var(--font-display); letter-spacing: .002em; }
+button, input, select, textarea { font: inherit; }
+.story-description p, .auth-card > p, .auth-story p, .profile-field, .account-heading p { letter-spacing: .006em; }
+.story-description p { margin-bottom: 1.35em; }

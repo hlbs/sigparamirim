@@ -64,7 +64,7 @@ function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
 export const healthcheck = onCall({ enforceAppCheck: appCheckEnabled }, (request) => {
   const auth = requireAuthentication(request.auth);
   logger.info('Verificação de integridade concluída.', { uid: auth.uid });
-  return { status: 'ok', version: '0.3.0-beta.7' };
+  return { status: 'ok', version: '0.3.0-beta.8' };
 });
 
 export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
@@ -83,7 +83,7 @@ export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, asy
     photoURL: identity.photoURL ?? null,
     providerIds,
     role: 'user' as const,
-    accountStatus: 'pending' as const,
+    accountStatus: 'active' as const,
     language: 'pt-BR',
     theme: 'system',
     createdAt: FieldValue.serverTimestamp(),
@@ -96,8 +96,9 @@ export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, asy
     if (existing.exists) {
       const data = existing.data() ?? {};
       const role = roleSchema.catch('user').parse(data.role);
-      const accountStatus = accountStatusSchema.catch('pending').parse(data.accountStatus);
-      transaction.update(userRef, { providerIds, updatedAt: FieldValue.serverTimestamp() });
+      const existingStatus = accountStatusSchema.catch('pending').parse(data.accountStatus);
+      const accountStatus = existingStatus === 'pending' ? 'active' as const : existingStatus;
+      transaction.update(userRef, { providerIds, accountStatus, updatedAt: FieldValue.serverTimestamp() });
       return { created: false, role, accountStatus };
     }
 

@@ -77,35 +77,18 @@ function ConcentrationTimeRecommendation() {
   );
 }
 
-function SurfaceGroundwaterVisual() {
+function TerrainModelVisual() {
   return (
-    <figure className="water-cycle-figure" aria-labelledby="water-cycle-caption">
-      <svg viewBox="0 0 760 470" role="img" aria-labelledby="water-cycle-title water-cycle-description">
-        <title id="water-cycle-title">Conexões entre água superficial e subterrânea</title>
-        <defs>
-          <marker id="water-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" /></marker>
-          <linearGradient id="aquifer-gradient" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#b3d9e3" stopOpacity=".6" /><stop offset="1" stopColor="#4a86a2" stopOpacity=".85" /></linearGradient>
-        </defs>
-        <path className="terrain" d="M24 165 C125 86 226 95 310 165 S493 110 736 178 L736 414 L24 414 Z" />
-        <path className="bedrock" d="M24 350 C180 330 284 368 410 340 S585 346 736 321 L736 414 L24 414 Z" />
-        <path className="aquifer" d="M24 272 C154 244 250 298 370 269 S579 262 736 244 L736 350 C584 375 472 365 350 380 S157 345 24 366 Z" />
-        <path className="water-table" d="M42 271 C164 238 258 290 372 260 S579 254 718 235" />
-        <path className="river" d="M324 166 C384 188 436 205 504 190 S590 168 648 177" />
-        <path className="flow-arrow surface-flow" d="M128 142 Q223 137 306 169" />
-        <path className="flow-arrow recharge-flow" d="M240 155 Q244 208 268 273" />
-        <path className="flow-arrow groundwater-flow" d="M322 307 Q420 290 523 270" />
-        <path className="flow-arrow base-flow" d="M523 270 Q567 231 608 186" />
-        <g className="rain"><line x1="112" y1="28" x2="94" y2="70" /><line x1="164" y1="20" x2="146" y2="62" /><line x1="216" y1="32" x2="198" y2="74" /></g>
-        <text x="56" y="103">Precipitação</text>
-        <text x="122" y="157">Escoamento superficial</text>
-        <text x="180" y="227">Recarga</text>
-        <text x="48" y="321">Aquífero raso</text>
-        <text x="45" y="397">Rocha / baixa permeabilidade</text>
-        <text x="526" y="300">Fluxo subterrâneo</text>
-        <text x="579" y="226">Descarga de base</text>
-        <text x="650" y="162">Rio</text>
-      </svg>
-      <figcaption id="water-cycle-caption">Modelo conceitual de uma bacia efluente: a chuva pode gerar escoamento, infiltrar-se na zona não saturada, alimentar o aquífero e retornar ao rio como descarga de base. A direção e a espessura das setas são ilustrativas; a morfometria não mede recarga, nível freático ou vazão subterrânea.</figcaption>
+    <figure className="terrain-figure" aria-labelledby="terrain-caption">
+      <div className="terrain-stage" role="img" aria-label="Modelo tridimensional rotativo derivado do MDE da Bacia do Rio Paramirim, com falsa-cor hipsométrica">
+        <div className="terrain-orbit"><img src="/mde-terrain.png" alt="Modelo hipsométrico da bacia do Rio Paramirim" /></div>
+        <span className="terrain-flow terrain-flow-one" aria-hidden="true" />
+        <span className="terrain-flow terrain-flow-two" aria-hidden="true" />
+        <span className="terrain-flow terrain-flow-three" aria-hidden="true" />
+        <div className="terrain-north">N</div>
+      </div>
+      <div className="terrain-legend"><span><i className="legend-low" /> menor altitude</span><span><i className="legend-mid" /> altitude intermediária</span><span><i className="legend-high" /> maior altitude</span></div>
+      <figcaption id="terrain-caption">Modelo exploratório derivado do MDE da bacia, reamostrado para visualização e colorido por elevação relativa. A rotação é uma leitura visual; as linhas azuis simulam trajetórias preferenciais de fluxo e não substituem uma análise hidrológica distribuída.</figcaption>
     </figure>
   );
 }
@@ -394,7 +377,7 @@ export function HomePage() {
           </p>
         </>}
       >
-        <SurfaceGroundwaterVisual />
+        <TerrainModelVisual />
       </NarrativeSection>
 
       <NarrativeSection

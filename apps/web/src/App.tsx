@@ -20,19 +20,21 @@ const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
 
 type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings';
 function UiIcon({ name }: { name: IconName }) {
-  const paths: Record<IconName, string> = {
-    home: 'M3 10.5 12 3l9 7.5M5.5 9v10h13V9M9 19v-5h6v5',
-    map: 'M4 6.5 9 4l6 2.5L20 4v13.5L15 20l-6-2.5L4 20zM9 4v13.5M15 6.5V20',
-    chart: 'M4 19V5m0 14h16M8 16v-4m4 4V8m4 8v-7',
-    help: 'M9.4 9a2.7 2.7 0 1 1 4.4 2.1c-1.3 1-1.8 1.4-1.8 3M12 18h.01M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
-    menu: 'M4 7h16M4 12h16M4 17h16',
-    moon: 'M20 15.2A8 8 0 0 1 8.8 4 8.1 8.1 0 1 0 20 15.2Z',
-    sun: 'M12 3v2m0 14v2M3 12h2m14 0h2m-3.4-6.6 1.4-1.4M6.4 17.6 5 19m0-14 1.4 1.4m11.2 11.2 1.4 1.4M12 16a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z',
-    bell: 'M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',
-    edit: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
-    settings: 'M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Zm0-12 1 2.1 2.3.5 1.8-1.4 1.7 1.7-1.4 1.8.5 2.3 2.1 1 2.1-2.1 1-.5 2.3 1.4 1.8-1.7 1.7-1.8-1.4-2.3.5-1 2.1h-2l-1-2.1-2.3-.5-1.8 1.4-1.7-1.7 1.4-1.8-.5-2.3-2.1-1v-2l2.1-1 .5-2.3-1.4-1.8 1.7-1.7 1.8 1.4 2.3-.5 1-2.1h2Z',
+  const classes: Record<IconName, string> = {
+    home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', help: 'fa-solid fa-circle-question',
+    menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
+    edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear',
   };
-  return <svg className="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d={paths[name]} /></svg>;
+  return <i className={classes[name]} aria-hidden="true" />;
+}
+
+function ThemeSwitch({ theme, onChange }: { theme: 'light' | 'dark'; onChange: () => void }) {
+  return (
+    <label className="theme-switch" title={theme === 'light' ? 'Ativar modo escuro' : 'Ativar modo claro'}>
+      <input type="checkbox" checked={theme === 'dark'} onChange={onChange} aria-label="Alternar modo claro e escuro" />
+      <span className="theme-switch-track"><span className="theme-switch-thumb"><UiIcon name={theme === 'light' ? 'sun' : 'moon'} /></span></span>
+    </label>
+  );
 }
 
 function Placeholder({ title, description }: { title: string; description: string }) {
@@ -88,7 +90,7 @@ function PlatformShell() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <button className="icon-button menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label="Abrir menu">
+        <button type="button" className="icon-button menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={sidebarOpen} aria-controls="main-sidebar">
           <UiIcon name="menu" />
         </button>
         <NavLink className="brand" to="/" aria-label="SIG Paramirim — início">
@@ -107,13 +109,7 @@ function PlatformShell() {
             {languages.map((code) => <option key={code}>{code}</option>)}
           </select>
 
-          <button
-            className="icon-button"
-            aria-label={`Alterar tema. Tema atual: ${resolvedTheme}`}
-            onClick={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')}
-          >
-            <UiIcon name={resolvedTheme === 'light' ? 'moon' : 'sun'} />
-          </button>
+          <ThemeSwitch theme={resolvedTheme} onChange={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')} />
 
           <div className="notification-anchor">
             <button
@@ -156,7 +152,7 @@ function PlatformShell() {
         </div>
       </header>
 
-      <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`} aria-label="Navegação principal">
+      <aside id="main-sidebar" className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`} aria-label="Navegação principal">
         <nav>
           {visibleNavigation.map((item) => (
             <NavLink
@@ -174,7 +170,7 @@ function PlatformShell() {
           <span className={`connection-dot ${firebaseConfigured ? 'ready' : ''}`} aria-hidden="true" />
           <div className="sidebar-author">
             <span>Desenvolvido por Hermes Santos</span>
-            <small>Inteligência geográfica e ciência territorial</small>
+            <small>Inteligência de dados territoriais</small>
           </div>
           <div className="sidebar-socials" aria-label="Redes do desenvolvedor">
             <a href="#github" aria-label="GitHub (link demonstrativo)">GH</a>

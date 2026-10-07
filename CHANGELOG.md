@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.8] - 2026-10-07
+
+### Aprimorado
+
+- identidade visual consolidada com Font Awesome, tipografia única, estados hover/focus e animações de interface;
+- menu sanduíche funcional, switch de tema claro/escuro com arraste e dropdown profissional do perfil;
+- login com partículas sem interação do mouse, texto editorial de geoinformação e ícone oficial do Google;
+- acesso de novas contas ativado automaticamente, sem etapa manual de aprovação;
+- perfil com foto, zoom, recorte e campos complementares de contato, formação e referências;
+- seção de superfície e subsolo passou a usar visual exploratório derivado do MDE da bacia, com falsa-cor, órbita e fluxo simulado;
+- rodapé do menu atualizado para “Inteligência de dados territoriais” e autoria de Hermes Santos.
+
 ## [0.3.0-beta.7] - 2026-10-06
 
 ### Aprimorado
