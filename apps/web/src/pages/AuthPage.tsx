@@ -93,7 +93,8 @@ export function AuthPage() {
           const distanceSquared = dx * dx + dy * dy;
           if (distanceSquared > maxDistanceSquared) continue;
           const alpha = (1 - Math.sqrt(distanceSquared) / maxDistance) * .24;
-          context.strokeStyle = `rgba(215,231,122,${alpha.toFixed(3)})`;
+          const lineColor = document.documentElement.dataset.theme === 'dark' ? '215,231,122' : '90,94,11';
+          context.strokeStyle = `rgba(${lineColor},${alpha.toFixed(3)})`;
           context.lineWidth = .7;
           context.beginPath();
           context.moveTo(node.x, node.y);
@@ -102,8 +103,9 @@ export function AuthPage() {
         }
       }
       for (const node of nodes) {
-        context.fillStyle = 'rgba(224,239,154,.78)';
-        context.shadowColor = 'rgba(215,231,122,.52)';
+        const darkTheme = document.documentElement.dataset.theme === 'dark';
+        context.fillStyle = darkTheme ? 'rgba(224,239,154,.78)' : 'rgba(90,94,11,.62)';
+        context.shadowColor = darkTheme ? 'rgba(215,231,122,.52)' : 'rgba(90,94,11,.28)';
         context.shadowBlur = 9;
         context.beginPath();
         context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);

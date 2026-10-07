@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.19] - 2026-10-07
+
+### Refinado
+
+- linhas e pontos da rede tecnológica adaptam o contraste ao modo claro ou escuro, mantendo legibilidade sem moldura adicional.
+
 ## [0.3.0-beta.18] - 2026-10-07
 
 ### Refinado
