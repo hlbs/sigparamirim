@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
+import '../../styles/print-map.css';
 
 export type PrintMapLayer = { id: string; title: string; kind: 'vector' | 'raster'; palette?: string; crs?: string };
 
@@ -20,24 +21,29 @@ function renderMapSnapshot(target: HTMLElement) {
   output.height = Math.max(1, Math.round(rect.height * pixelRatio));
   const context = output.getContext('2d');
   if (!context) throw new Error('Não foi possível preparar a imagem do mapa.');
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
   const canvases = target.querySelectorAll<HTMLCanvasElement>('.ol-layer canvas');
   let rendered = 0;
   canvases.forEach((canvas) => {
     if (!canvas.width || !canvas.height) return;
-    const transform = getComputedStyle(canvas).transform;
-    const matrix = new DOMMatrix(transform === 'none' ? undefined : transform);
+    const canvasRect = canvas.getBoundingClientRect();
+    if (!canvasRect.width || !canvasRect.height) return;
     const layer = canvas.parentElement;
     const opacity = Number.parseFloat(layer ? getComputedStyle(layer).opacity : '1');
     const background = layer ? getComputedStyle(layer).backgroundColor : 'transparent';
     context.save();
     context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
-    context.setTransform(pixelRatio * matrix.a, pixelRatio * matrix.b, pixelRatio * matrix.c, pixelRatio * matrix.d, pixelRatio * matrix.e, pixelRatio * matrix.f);
+    // Use the canvas' rendered viewport bounds. OpenLayers moves buffered layer
+    // canvases with CSS transforms; replaying only the transform matrix drops
+    // its layout offset and leaves a large blank strip in the print frame.
+    const x = canvasRect.left - rect.left;
+    const y = canvasRect.top - rect.top;
     if (background && background !== 'rgba(0, 0, 0, 0)') {
       context.fillStyle = background;
-      context.fillRect(0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+      context.fillRect(x, y, canvasRect.width, canvasRect.height);
     }
-    context.drawImage(canvas, 0, 0, canvas.width / pixelRatio, canvas.height / pixelRatio);
+    context.drawImage(canvas, x, y, canvasRect.width, canvasRect.height);
     context.restore();
     rendered += 1;
   });

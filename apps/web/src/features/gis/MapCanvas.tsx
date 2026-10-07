@@ -11,23 +11,54 @@ import WebGLTileLayer from 'ol/layer/WebGLTile.js';
 import XYZ from 'ol/source/XYZ.js';
 import GeoTIFF from 'ol/source/GeoTIFF.js';
 import { register } from 'ol/proj/proj4.js';
+import { unByKey } from 'ol/Observable.js';
 import VectorSource from 'ol/source/Vector.js';
 import Style from 'ol/style/Style.js';
 import Fill from 'ol/style/Fill.js';
 import Stroke from 'ol/style/Stroke.js';
 import CircleStyle from 'ol/style/Circle.js';
+import Text from 'ol/style/Text.js';
+import Feature from 'ol/Feature.js';
+import Point from 'ol/geom/Point.js';
+import LineString from 'ol/geom/LineString.js';
+import Polygon from 'ol/geom/Polygon.js';
 import Draw from 'ol/interaction/Draw.js';
 import { getArea, getLength } from 'ol/sphere.js';
+import ScaleLine from 'ol/control/ScaleLine.js';
+import Graticule from 'ol/layer/Graticule.js';
 
-export type MapBaseMap = 'osm' | 'carto-light' | 'carto-dark';
+export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'osm-de';
+export type RasterRange = { min: number; max: number };
+export type VectorLayerStyle = { stroke?: string; fill?: string; strokeWidth?: number; pointRadius?: number };
+export type FeatureFilter = {
+  field: string;
+  operator: 'equals' | 'contains' | 'gt' | 'gte' | 'lt' | 'lte';
+  value: string | number | boolean;
+};
 export type MapLayerDefinition = {
   id: string; title: string; url: string; kind: 'vector' | 'raster'; group?: string;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
   palette?: string;
   styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string };
+  /** Interactive display range; defaults to p2–p98 and affects colors, not source values. */
+  range?: RasterRange;
+  /** Per-layer vector symbology supplied by the layer controls. */
+  vectorStyle?: VectorLayerStyle;
+  /** A single property predicate; omit to show all features. */
+  featureFilter?: FeatureFilter | null;
+  /** Whether map clicks should open the attribute popup for this vector layer. Defaults to true. */
+  identifyEnabled?: boolean;
   opacity?: number; noData?: number;
 };
 export type MapFeatureSelection = { layerId: string; layerTitle: string; properties: Record<string, unknown> };
+export type MeasurementHistoryEntry = {
+  id: string;
+  kind: 'measure-length' | 'measure-area';
+  value: number;
+  unit: 'm' | 'km' | 'm²' | 'km²';
+  vertices: [number, number][];
+  geometry: Record<string, unknown>;
+};
 type MapCanvasProps = {
   layers?: MapLayerDefinition[];
   baseMap?: MapBaseMap;
@@ -35,6 +66,13 @@ type MapCanvasProps = {
   homeToken?: number;
   onMeasure?: (value: { value: number; unit: 'm' | 'km' | 'm²' | 'km²' } | null) => void;
   onFeatureSelect?: (selection: MapFeatureSelection | null) => void;
+  /** Re-emitted when a layer's controlled display range changes; ranges belong to UI state. */
+  onRasterRangeChange?: (layerId: string, range: RasterRange) => void;
+  /** Features parsed during layer load (and after filtering), for a table without another fetch. */
+  onLayerFeatures?: (layerId: string, rows: Record<string, unknown>[]) => void;
+  /** Persistent in the current browser tab; coordinates are [longitude, latitude] in EPSG:4674. */
+  onMeasurementHistoryChange?: (history: MeasurementHistoryEntry[]) => void;
+  clearMeasurementsToken?: number;
 };
 type RenderedDataLayer = VectorLayer<VectorSource> | WebGLTileLayer;
 
@@ -42,70 +80,132 @@ const INITIAL_CENTER = fromLonLat([-42.6, -12.6]);
 proj4.defs('EPSG:4674', '+proj=longlat +ellps=GRS80 +no_defs +type=crs');
 proj4.defs('EPSG:31983', '+proj=utm +zone=23 +south +ellps=GRS80 +units=m +no_defs +type=crs');
 register(proj4);
-const baseMapSources: Record<MapBaseMap, { url: string; attribution: string }> = {
+export const baseMapSources: Record<MapBaseMap, { url: string; attribution: string }> = {
   osm: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors' },
-  'carto-light': { url: 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', attribution: '© OpenStreetMap © CARTO' },
-  'carto-dark': { url: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', attribution: '© OpenStreetMap © CARTO' },
+  'osm-hot': { url: 'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · Humanitarian style' },
+  opentopomap: { url: 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · SRTM · OpenTopoMap' },
+  cyclosm: { url: 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · CyclOSM' },
+  'osm-de': { url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · OSM DE' },
 };
 
-function vectorStyle(layerId: string) {
+// Firebase Hosting currently returns 200/full-body responses to byte-range requests.
+// Memoize this response in memory per COG so GeoTIFF's block reader does not download it once per range.
+const fullGeoTiffFiles = new globalThis.Map<string, Promise<ArrayBuffer>>();
+async function loadGeoTiff(url: string, requestHeaders: HeadersInit, signal: AbortSignal) {
+  const headers = new Headers(requestHeaders);
+  const range = headers.has('Range');
+  if (!range) return fetch(url, { headers, signal, cache: 'force-cache' });
+  let file = fullGeoTiffFiles.get(url);
+  if (!file) {
+    const fullFileHeaders = new Headers(headers);
+    fullFileHeaders.delete('Range');
+    file = fetch(url, { headers: fullFileHeaders, signal, cache: 'force-cache' }).then(async (response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.arrayBuffer();
+    });
+    fullGeoTiffFiles.set(url, file);
+    file.catch(() => fullGeoTiffFiles.delete(url));
+  }
+  const body = await file;
+  return new Response(body.slice(0), { status: 200, headers: { 'Content-Type': 'image/tiff' } });
+}
+
+function vectorStyle(layerId: string, custom?: VectorLayerStyle) {
   const isHydro = layerId === 'hidrografia';
   const isBasin = layerId === 'bacia-hidrografica-paramirim';
   const colors = ['#9e803b', '#7a9b55', '#855c9c', '#c06d4f', '#477f86', '#b5813f', '#678bba'];
   const hash = [...layerId].reduce((value, char) => value + char.charCodeAt(0), 0);
-  const color = isHydro ? '#168fce' : isBasin ? '#68710a' : colors[hash % colors.length];
+  const color = custom?.stroke ?? (isHydro ? '#168fce' : isBasin ? '#68710a' : colors[hash % colors.length]);
   return new Style({
-    fill: new Fill({ color: isHydro || isBasin ? 'rgba(0,0,0,0)' : `${color}33` }),
-    stroke: new Stroke({ color, width: isHydro ? 1.7 : isBasin ? 2.6 : 1.35 }),
-    image: new CircleStyle({ radius: 4, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 1 }) }),
+    fill: new Fill({ color: custom?.fill ?? (isHydro || isBasin ? 'rgba(0,0,0,0)' : `${color}33`) }),
+    stroke: new Stroke({ color, width: custom?.strokeWidth ?? (isHydro ? 1.7 : isBasin ? 2.6 : 1.35) }),
+    image: new CircleStyle({ radius: custom?.pointRadius ?? 4, fill: new Fill({ color }), stroke: new Stroke({ color: '#fff', width: 1 }) }),
   });
 }
 
-function rasterStyle(layer: MapLayerDefinition) {
-  const min = layer.statistics?.p2 ?? layer.statistics?.min ?? 0;
-  const max = layer.statistics?.p98 ?? layer.statistics?.max ?? min + 1;
-  const span = Math.max(max - min, 1);
-  const palettes: Record<string, string[]> = {
+function rasterRange(layer: MapLayerDefinition): RasterRange {
+  const min = layer.range?.min ?? layer.statistics?.p2 ?? layer.statistics?.min ?? 0;
+  const max = layer.range?.max ?? layer.statistics?.p98 ?? layer.statistics?.max ?? min + 1;
+  return { min, max: Math.max(max, min + Math.max(Math.abs(min) * 1e-9, 1e-9)) };
+}
+
+const rasterPalettes: Record<string, string[]> = {
     hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
     'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
     'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
     'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
-  };
-  const palette = palettes[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? palettes['blue-sequential']!;
+};
+
+export function getRasterPalette(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
+  return rasterPalettes[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPalettes['blue-sequential']!;
+}
+
+export function getRasterGradient(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
+  return `linear-gradient(90deg, ${getRasterPalette(layer).join(', ')})`;
+}
+
+function rasterStyle(layer: MapLayerDefinition) {
+  const { min, max } = rasterRange(layer);
+  const palette = getRasterPalette(layer);
   const classCount = Math.max(1, Math.min(palette.length, layer.styleDefault?.classCount ?? palette.length));
   const classColors = classCount === 1
     ? [palette[0]]
     : Array.from({ length: classCount }, (_, index) => palette[Math.round((index * (palette.length - 1)) / (classCount - 1))]);
   const band: unknown[] = ['band', 1];
   if (layer.styleDefault?.colorInterpolation === 'continuous') {
-    const expression: unknown[] = ['interpolate', ['linear'], band];
-    classColors.forEach((color, index) => expression.push(min + (span * index) / Math.max(1, classColors.length - 1), color));
-    return { color: expression as any };
+    const expression: unknown[] = ['interpolate', ['linear'], band, ['var', 'rangeMin'], classColors[0]];
+    classColors.slice(1).forEach((color, index) => expression.push(['+', ['var', 'rangeMin'], ['*', ['-', ['var', 'rangeMax'], ['var', 'rangeMin']], (index + 1) / Math.max(1, classColors.length - 1)], color]));
+    return { color: expression as any, variables: { rangeMin: min, rangeMax: max } };
   }
   const expression: unknown[] = ['case'];
   classColors.slice(0, -1).forEach((color, index) => {
-    expression.push(['<=', band, min + (span * (index + 1)) / classColors.length], color);
+    const threshold = ['+', ['var', 'rangeMin'], ['*', ['-', ['var', 'rangeMax'], ['var', 'rangeMin']], (index + 1) / classColors.length]];
+    expression.push(['<=', band, threshold], color);
   });
   expression.push(classColors[classColors.length - 1]);
-  return { color: expression as any };
+  return { color: expression as any, variables: { rangeMin: min, rangeMax: max } };
 }
 
-export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', homeToken = 0, onMeasure, onFeatureSelect }: MapCanvasProps) {
+function matchesFeatureFilter(properties: Record<string, unknown>, filter?: FeatureFilter | null) {
+  if (!filter) return true;
+  const raw = properties[filter.field];
+  if (raw == null) return false;
+  const left = typeof raw === 'number' ? raw : String(raw).toLocaleLowerCase();
+  const right = typeof raw === 'number' ? Number(filter.value) : String(filter.value).toLocaleLowerCase();
+  switch (filter.operator) {
+    case 'equals': return left === right;
+    case 'contains': return String(left).includes(String(right));
+    case 'gt': return Number(left) > Number(right);
+    case 'gte': return Number(left) >= Number(right);
+    case 'lt': return Number(left) < Number(right);
+    case 'lte': return Number(left) <= Number(right);
+  }
+}
+
+export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', homeToken = 0, onMeasure, onFeatureSelect, onRasterRangeChange, onLayerFeatures, onMeasurementHistoryChange, clearMeasurementsToken = 0 }: MapCanvasProps) {
   const targetRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const baseLayerRef = useRef<TileLayer<XYZ> | null>(null);
   const dataLayersRef = useRef(new globalThis.Map<string, RenderedDataLayer>());
+  const layerDefinitionsRef = useRef(layers);
+  const rasterRangesRef = useRef(new globalThis.Map<string, RasterRange>());
   const initialExtentRef = useRef<import('ol/extent').Extent | null>(null);
   const callbackRef = useRef(onFeatureSelect);
   const measureCallbackRef = useRef(onMeasure);
+  const rasterRangeCallbackRef = useRef(onRasterRangeChange);
+  const layerFeaturesCallbackRef = useRef(onLayerFeatures);
   const toolRef = useRef(tool);
   const drawRef = useRef<Draw | null>(null);
   const measureLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
+  const measurementSourceRef = useRef<VectorSource | null>(null);
   const aliveRef = useRef(false);
   const [loading, setLoading] = useState(layers.length > 0);
   const [error, setError] = useState<string | null>(null);
+  const [rotation, setRotation] = useState(0);
+  const [measurementHistory, setMeasurementHistory] = useState<MeasurementHistoryEntry[]>([]);
+  const measurementHistoryCallbackRef = useRef(onMeasurementHistoryChange);
 
-  useEffect(() => { callbackRef.current = onFeatureSelect; measureCallbackRef.current = onMeasure; }, [onFeatureSelect, onMeasure]);
+  useEffect(() => { callbackRef.current = onFeatureSelect; measureCallbackRef.current = onMeasure; rasterRangeCallbackRef.current = onRasterRangeChange; layerFeaturesCallbackRef.current = onLayerFeatures; measurementHistoryCallbackRef.current = onMeasurementHistoryChange; layerDefinitionsRef.current = layers; }, [layers, onFeatureSelect, onMeasure, onRasterRangeChange, onLayerFeatures, onMeasurementHistoryChange]);
 
   useEffect(() => {
     if (!targetRef.current) return undefined;
@@ -114,8 +214,51 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       target: targetRef.current,
       layers: [],
       view: new View({ center: INITIAL_CENTER, zoom: 6.5, minZoom: 3, maxZoom: 19 }),
-      controls: [],
+      controls: [new ScaleLine({ units: 'metric', bar: true, steps: 4, text: true, minWidth: 90 })],
     });
+    const graticule = new Graticule({
+      showLabels: false,
+      wrapX: false,
+      strokeStyle: new Stroke({ color: 'rgba(60, 77, 58, .18)', width: 1, lineDash: [2, 5] }),
+      zIndex: 25,
+    });
+    map.addLayer(graticule);
+    const measurementSource = new VectorSource();
+    const measurementLayer = new VectorLayer({
+      source: measurementSource,
+      zIndex: 100,
+      properties: { id: 'measurements', title: 'Medições' },
+      style: (feature) => {
+        const label = feature?.get('measurement:label') as string | undefined;
+        if (label) return new Style({
+          image: new CircleStyle({ radius: 1, fill: new Fill({ color: 'rgba(0,0,0,0)' }), stroke: new Stroke({ color: 'rgba(0,0,0,0)' }) }),
+          text: new Text({ text: label, font: '700 12px Inter, sans-serif', fill: new Fill({ color: '#fff' }), backgroundFill: new Fill({ color: 'rgba(29,38,23,.92)' }), backgroundStroke: new Stroke({ color: 'rgba(255,255,255,.9)', width: 1 }), padding: [5, 8, 5, 8], textAlign: 'center', overflow: true }),
+        });
+        return new Style({ fill: new Fill({ color: 'rgba(225,189,45,.18)' }), stroke: new Stroke({ color: '#bd9e1a', width: 3, lineDash: [8, 5] }), image: new CircleStyle({ radius: 5, fill: new Fill({ color: '#bd9e1a' }), stroke: new Stroke({ color: '#fff', width: 2 }) }) });
+      },
+    });
+    map.addLayer(measurementLayer);
+    measureLayerRef.current = measurementLayer;
+    measurementSourceRef.current = measurementSource;
+    try {
+      const stored = sessionStorage.getItem('sigparamirim-webgis-measurements-v1');
+      const restored = stored ? JSON.parse(stored) as MeasurementHistoryEntry[] : [];
+      if (Array.isArray(restored)) {
+        restored.forEach((entry) => {
+          if (!entry?.geometry || !Array.isArray(entry.vertices)) return;
+          const feature = new GeoJSON().readFeature({ type: 'Feature', properties: { measurementId: entry.id }, geometry: entry.geometry }, { dataProjection: 'EPSG:4674', featureProjection: 'EPSG:3857' });
+          if (!feature || Array.isArray(feature)) return;
+          measurementSource.addFeature(feature);
+          const geometry = feature.getGeometry();
+          const coordinate = entry.kind === 'measure-area' && geometry instanceof Polygon
+            ? geometry.getInteriorPoint().getCoordinates()
+            : geometry instanceof LineString ? geometry.getCoordinateAt(.5) : null;
+          if (coordinate) measurementSource.addFeature(new Feature({ geometry: new Point(coordinate), 'measurement:label': `${entry.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ${entry.unit}` }));
+        });
+        setMeasurementHistory(restored);
+        measurementHistoryCallbackRef.current?.(restored);
+      }
+    } catch { try { sessionStorage.removeItem('sigparamirim-webgis-measurements-v1'); } catch { /* private browsing */ } }
     mapRef.current = map;
     const handleClick = (event: import('ol/MapBrowserEvent').default) => {
       if (toolRef.current !== 'identify') return;
@@ -125,24 +268,67 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         delete properties.geometry;
         selection = { layerId: String(layer?.get('id') ?? ''), layerTitle: String(layer?.get('title') ?? 'Camada'), properties };
         return true;
-      });
+    }, { layerFilter: (layer) => layer.get('kind') === 'vector' && layerDefinitionsRef.current.some((definition) => definition.id === layer.get('id') && definition.identifyEnabled !== false) });
       callbackRef.current?.(selection);
     };
     map.on('singleclick', handleClick);
     const observer = new ResizeObserver(() => map.updateSize());
     observer.observe(targetRef.current);
+    // Middle-button drag rotates around the map center, without taking over left-drag pan.
+    const viewport = map.getViewport()!;
+    let rotationPointerId: number | null = null;
+    let previousAngle = 0;
+    const pointerAngle = (event: PointerEvent) => {
+      const rect = viewport.getBoundingClientRect();
+      return Math.atan2(event.clientY - (rect.top + rect.height / 2), event.clientX - (rect.left + rect.width / 2));
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (rotationPointerId !== event.pointerId) return;
+      const angle = pointerAngle(event);
+      let delta = angle - previousAngle;
+      if (delta > Math.PI) delta -= Math.PI * 2;
+      if (delta < -Math.PI) delta += Math.PI * 2;
+      map.getView().setRotation(map.getView().getRotation() + delta);
+      previousAngle = angle;
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (rotationPointerId !== event.pointerId) return;
+      rotationPointerId = null;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      setRotation(map.getView().getRotation());
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 1) return;
+      event.preventDefault();
+      rotationPointerId = event.pointerId;
+      previousAngle = pointerAngle(event);
+      window.addEventListener('pointermove', onPointerMove);
+      window.addEventListener('pointerup', onPointerUp);
+      window.addEventListener('pointercancel', onPointerUp);
+    };
+    viewport.addEventListener('pointerdown', onPointerDown);
+    const rotationKey = map.getView().on('change:rotation', () => setRotation(map.getView().getRotation()));
     requestAnimationFrame(() => map.updateSize());
     return () => {
       aliveRef.current = false;
       observer.disconnect();
+      viewport.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+      unByKey(rotationKey);
       map.un('singleclick', handleClick);
       map.setTarget(undefined);
       mapRef.current = null;
       baseLayerRef.current = null;
       dataLayersRef.current.clear();
+      rasterRangesRef.current.clear();
       initialExtentRef.current = null;
       drawRef.current = null;
       measureLayerRef.current = null;
+      measurementSourceRef.current = null;
     };
   }, []);
 
@@ -152,32 +338,57 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     toolRef.current = tool;
     if (drawRef.current) map.removeInteraction(drawRef.current);
     drawRef.current = null;
-    if (measureLayerRef.current) map.removeLayer(measureLayerRef.current);
-    measureLayerRef.current = null;
     measureCallbackRef.current?.(null);
     if (tool === 'identify') return;
-    const source = new VectorSource();
-    const measureLayer = new VectorLayer({ source, style: new Style({ fill: new Fill({ color: 'rgba(225, 189, 45, .18)' }), stroke: new Stroke({ color: '#bd9e1a', width: 3, lineDash: [8, 5] }), image: new CircleStyle({ radius: 5, fill: new Fill({ color: '#bd9e1a' }), stroke: new Stroke({ color: '#fff', width: 2 }) }) }) });
-    measureLayerRef.current = measureLayer;
-    map.addLayer(measureLayer);
+    const source = measurementSourceRef.current;
+    if (!source) return;
     const draw = new Draw({ source, type: tool === 'measure-length' ? 'LineString' : 'Polygon' });
     drawRef.current = draw;
     draw.on('drawend', (event) => {
       const geometry = event.feature.getGeometry();
       if (!geometry) return;
       const raw = tool === 'measure-length' ? getLength(geometry) : getArea(geometry);
-      if (tool === 'measure-length') measureCallbackRef.current?.(raw >= 1000 ? { value: raw / 1000, unit: 'km' } : { value: raw, unit: 'm' });
-      else measureCallbackRef.current?.(raw >= 1_000_000 ? { value: raw / 1_000_000, unit: 'km²' } : { value: raw, unit: 'm²' });
+      const kind = tool as MeasurementHistoryEntry['kind'];
+      const measured = kind === 'measure-length'
+        ? raw >= 1000 ? { value: raw / 1000, unit: 'km' as const } : { value: raw, unit: 'm' as const }
+        : raw >= 1_000_000 ? { value: raw / 1_000_000, unit: 'km²' as const } : { value: raw, unit: 'm²' as const };
+      const geographic = geometry.clone().transform('EPSG:3857', 'EPSG:4674');
+      const rawVertices = kind === 'measure-length'
+        ? (geographic as LineString).getCoordinates()
+        : (geographic as Polygon).getCoordinates()[0]?.slice(0, -1) ?? [];
+      const vertices = rawVertices.map(([longitude, latitude]) => [longitude, latitude] as [number, number]);
+      const id = crypto.randomUUID();
+      event.feature.set('measurementId', id, true);
+      const geometryObject = new GeoJSON().writeGeometryObject(geometry, { featureProjection: 'EPSG:3857', dataProjection: 'EPSG:4674' }) as Record<string, unknown>;
+      const entry: MeasurementHistoryEntry = { id, kind, ...measured, vertices, geometry: geometryObject };
+      const labelCoordinate = geometry instanceof Polygon ? geometry.getInteriorPoint().getCoordinates() : geometry instanceof LineString ? geometry.getCoordinateAt(.5) : null;
+      if (labelCoordinate) source.addFeature(new Feature({ geometry: new Point(labelCoordinate), 'measurement:label': `${measured.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ${measured.unit}` }));
+      setMeasurementHistory((current) => {
+        const next = [...current, entry];
+        try { sessionStorage.setItem('sigparamirim-webgis-measurements-v1', JSON.stringify(next)); } catch { /* session storage may be unavailable */ }
+        measurementHistoryCallbackRef.current?.(next);
+        return next;
+      });
+      measureCallbackRef.current?.(measured);
     });
     map.addInteraction(draw);
     return () => { if (mapRef.current) mapRef.current.removeInteraction(draw); };
   }, [tool]);
 
   useEffect(() => {
+    if (!clearMeasurementsToken) return;
+    measurementSourceRef.current?.clear();
+    setMeasurementHistory([]);
+    try { sessionStorage.removeItem('sigparamirim-webgis-measurements-v1'); } catch { /* private browsing */ }
+    measurementHistoryCallbackRef.current?.([]);
+    measureCallbackRef.current?.(null);
+  }, [clearMeasurementsToken]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const base = baseMapSources[baseMap];
-    const layer = new TileLayer({ source: new XYZ({ url: base.url, attributions: base.attribution, crossOrigin: 'anonymous', maxZoom: 19, transition: 150 }), properties: { id: 'base-map', title: 'Mapa base' } });
+    const layer = new TileLayer({ source: new XYZ({ url: base.url, attributions: base.attribution, crossOrigin: 'anonymous', maxZoom: 19, transition: 150 }), properties: { id: 'base-map', title: 'Mapa base' }, zIndex: 0 });
     if (baseLayerRef.current) map.removeLayer(baseLayerRef.current);
     baseLayerRef.current = layer;
     map.getLayers().insertAt(0, layer);
@@ -198,10 +409,34 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       if (!desiredIds.has(id)) {
         map.removeLayer(existing);
         dataLayersRef.current.delete(id);
+        rasterRangesRef.current.delete(id);
         continue;
       }
       const definition = layers.find((item) => item.id === id);
-      if (definition) existing.setOpacity(definition.opacity ?? (definition.kind === 'raster' ? .82 : 1));
+      if (definition) {
+        existing.setOpacity(definition.opacity ?? (definition.kind === 'raster' ? .82 : 1));
+        if (definition.kind === 'raster' && existing instanceof WebGLTileLayer) {
+          const range = rasterRange(definition);
+          existing.updateStyleVariables({ rangeMin: range.min, rangeMax: range.max });
+          const previousRange = rasterRangesRef.current.get(definition.id);
+          if (previousRange?.min !== range.min || previousRange.max !== range.max) {
+            rasterRangesRef.current.set(definition.id, range);
+            rasterRangeCallbackRef.current?.(definition.id, range);
+          }
+        } else if (definition.kind === 'vector' && existing instanceof VectorLayer) {
+          existing.setStyle((feature) => feature?.get('webgis:filtered') ? undefined : vectorStyle(definition.id, definition.vectorStyle));
+          const rows: Record<string, unknown>[] = [];
+          existing.getSource()?.forEachFeature((feature) => {
+            const properties = { ...feature.getProperties() } as Record<string, unknown>;
+            delete properties.geometry;
+            const filtered = !matchesFeatureFilter(properties, definition.featureFilter);
+            feature.set('webgis:filtered', filtered, true);
+            if (!filtered) rows.push(properties);
+          });
+          layerFeaturesCallbackRef.current?.(definition.id, rows);
+          existing.changed();
+        }
+      }
     }
     const missing = layers.filter((definition) => !dataLayersRef.current.has(definition.id));
     let cancelled = false;
@@ -212,21 +447,46 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       let rendered: RenderedDataLayer;
       if (definition.kind === 'raster') {
         const source = new GeoTIFF({
-          sources: [{ url: definition.url, nodata: definition.noData ?? 0 }],
+          sources: [{ url: definition.url, nodata: definition.noData ?? 0, loader: loadGeoTiff }],
           normalize: false, convertToRGB: false,
           // OpenLayers' bilinear GeoTIFF resampling samples the configured 2×2 kernel.
           interpolate: definition.styleDefault?.resamplingMethod ? definition.styleDefault.resamplingMethod === 'bilinear' : true,
-          sourceOptions: { maxRanges: 8 },
+          // Firebase Hosting currently advertises byte ranges but answers Range requests with 200/full body.
+          // These optimized COGs are <= 13 MiB; permit the full-file fallback so geotiff.js can decode them.
+          sourceOptions: { maxRanges: 1, allowFullFile: true, cacheSize: 24 },
         });
-        rendered = new WebGLTileLayer({ source, opacity: definition.opacity ?? .82, style: rasterStyle(definition), properties: { id: definition.id, title: definition.title, kind: definition.kind } });
+        try {
+          // Forces metadata/IFD loading before the layer is added, so HTTP/CRS failures reach the UI.
+          await source.getView();
+        } catch (reason) {
+          const detail = reason instanceof Error ? reason.message : String(reason);
+          throw new Error(`${definition.title}: falha ao abrir o COG (${detail}).`);
+        }
+        rendered = new WebGLTileLayer({ source, opacity: definition.opacity ?? .82, style: rasterStyle(definition), properties: { id: definition.id, title: definition.title, kind: definition.kind }, zIndex: 10 });
+        const range = rasterRange(definition);
+        rasterRangesRef.current.set(definition.id, range);
+        rasterRangeCallbackRef.current?.(definition.id, range);
+        source.on('change', () => {
+          if (source.getState() === 'error' && aliveRef.current) {
+            setError(`Não foi possível decodificar o raster “${definition.title}”. Verifique a resposta HTTP do COG e a definição de CRS.`);
+          }
+        });
       } else {
         const response = await fetch(definition.url, { headers: { Accept: 'application/geo+json, application/json' } });
         if (!response.ok) throw new Error(`${definition.title}: resposta ${response.status}`);
         const document = await response.json() as Record<string, unknown>;
         if (cancelled || !aliveRef.current) return;
         const features = new GeoJSON().readFeatures(document, { dataProjection: 'EPSG:4674', featureProjection: 'EPSG:3857' });
+        const rows = features.map((feature) => {
+          const properties = { ...feature.getProperties() } as Record<string, unknown>;
+          delete properties.geometry;
+          const visible = matchesFeatureFilter(properties, definition.featureFilter);
+          feature.set('webgis:filtered', !visible, true);
+          return properties;
+        });
+        layerFeaturesCallbackRef.current?.(definition.id, rows);
         const vectorSource = new VectorSource({ features });
-        rendered = new VectorLayer({ properties: { id: definition.id, title: definition.title, kind: definition.kind }, source: vectorSource, style: vectorStyle(definition.id), opacity: definition.opacity ?? 1 });
+        rendered = new VectorLayer({ properties: { id: definition.id, title: definition.title, kind: definition.kind }, source: vectorSource, style: (feature) => feature?.get('webgis:filtered') ? undefined : vectorStyle(definition.id, definition.vectorStyle), opacity: definition.opacity ?? 1, zIndex: 20 });
         if (definition.id === 'bacia-hidrografica-paramirim') {
           const extent = vectorSource.getExtent();
           if (extent && extent.every(Number.isFinite)) initialExtentRef.current = extent;
@@ -260,7 +520,16 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       <button type="button" onClick={() => zoom(1)} aria-label="Aproximar"><i className="fa-solid fa-plus" /></button>
       <button type="button" onClick={() => zoom(-1)} aria-label="Afastar"><i className="fa-solid fa-minus" /></button>
       <button type="button" onClick={resetView} aria-label="Repor vista"><i className="fa-solid fa-crosshairs" /></button>
+      <button type="button" onClick={() => mapRef.current?.getView().animate({ rotation: 0, duration: 180 })} aria-label="Orientar norte" title="Orientar norte"><span className="map-north-arrow" style={{ transform: `rotate(${-rotation}rad)` }}>N<i className="fa-solid fa-location-arrow" /></span></button>
     </div>
+    <div className="map-canvas-hint" aria-hidden="true">Botão do meio + arrastar para girar</div>
+    {measurementHistory.length > 0 && <aside className="map-measure-history" aria-label="Histórico de medições">
+      <header><strong>Medições</strong><span>{measurementHistory.length}</span></header>
+      <div>{measurementHistory.slice(-5).reverse().map((entry, index) => <details key={entry.id} open={index === 0}>
+        <summary><span>{entry.kind === 'measure-area' ? 'Área' : 'Distância'}</span><strong>{entry.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {entry.unit}</strong></summary>
+        <ol>{entry.vertices.map(([longitude, latitude], vertexIndex) => <li key={`${entry.id}-${vertexIndex}`}><span>V{vertexIndex + 1}</span><code>{latitude.toFixed(5)}, {longitude.toFixed(5)}</code></li>)}</ol>
+      </details>)}</div>
+    </aside>}
     <div className="map-attribution">{baseMapSources[baseMap].attribution}</div>
     {loading && <div className="map-canvas-feedback" role="status"><i className="fa-solid fa-spinner fa-spin" /> Carregando camada…</div>}
     {error && <div className="map-canvas-feedback is-error" role="alert"><i className="fa-solid fa-triangle-exclamation" /> {error}</div>}

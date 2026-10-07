@@ -1,0 +1,49 @@
+.webgis-print-map-image { object-fit: cover; object-position: center; }
+
+.webgis-print-form > footer {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.webgis-print-form > footer button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px solid var(--webgis-border);
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--surface);
+  font: inherit;
+  font-size: .76rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: transform 150ms ease, border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+}
+
+.webgis-print-form > footer button:hover {
+  transform: translateY(-1px);
+  border-color: var(--brand-strong);
+  box-shadow: 0 6px 18px rgba(30, 40, 10, .12);
+}
+
+.webgis-print-form > footer button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--brand-strong) 35%, transparent);
+  outline-offset: 2px;
+}
+
+.webgis-print-form > footer button[type='submit'] {
+  border-color: var(--brand-strong);
+  color: var(--on-brand, #fff);
+  background: var(--brand-strong);
+}
+
+@media (max-width: 520px) {
+  .webgis-print-form > footer { flex-direction: column-reverse; }
+  .webgis-print-form > footer button { width: 100%; }
+}
