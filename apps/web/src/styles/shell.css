@@ -23,6 +23,7 @@
   transition: transform 180ms var(--ease-premium), background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 .icon-button { display: inline-grid; place-items: center; font-size: 1.08rem; }
+.topbar .mobile-menu-button { display: none; }
 .icon-button:hover, .compact-select:hover { border-color: color-mix(in srgb, var(--brand) 60%, var(--border)); background: var(--brand-soft); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
 .icon-button:active, .login-link:active, .button:active { transform: translateY(1px) scale(.98); }
 .compact-select { min-width: 62px; cursor: pointer; font-size: .78rem; font-weight: 850; border-color: transparent; background: transparent; box-shadow: none; }
@@ -43,8 +44,9 @@
 .sidebar-author strong { display: inline-block; margin-top: 3px; }
 .sidebar-socials { grid-column: 2; display: flex; gap: 6px; }
 .sidebar-socials a { display: inline-grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--border); border-radius: 8px; color: var(--text-muted); text-decoration: none; transition: all 180ms var(--ease-premium); }
-.sidebar-socials img { width: 17px; height: 17px; object-fit: contain; }
+.sidebar-socials a i { color: var(--text-muted); font-size: .94rem; line-height: 1; }
 .sidebar-socials a:hover { border-color: var(--brand); background: var(--brand); transform: translateY(-2px); }
+.sidebar-socials a:hover i { color: #fff; }
 .main-content { padding-left: 300px; padding-top: 110px; transition: padding-left 240ms var(--ease-premium); }
 .main-content-expanded { padding-left: 112px; }
 .sidebar { transition: width 240ms var(--ease-premium), transform 240ms var(--ease-premium), padding 240ms var(--ease-premium); overflow-x: hidden; }
@@ -61,7 +63,7 @@
 .sidebar-collapsed .sidebar-author, .sidebar-collapsed .sidebar-socials { display: none; }
 
 @media (max-width: 980px) {
-  .mobile-menu-button { display: inline-grid; }
+  .topbar .mobile-menu-button { display: inline-grid; }
   .sidebar { top: 78px; }
   .main-content, .main-content-expanded { padding-left: 24px; }
   .sidebar-collapsed { width: 266px; padding-inline: 16px; }

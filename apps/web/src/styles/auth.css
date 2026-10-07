@@ -1,5 +1,6 @@
 .auth-page { background: radial-gradient(circle at 12% 8%, var(--brand-glow), transparent 30%), var(--surface-muted); }
 .auth-story { position: relative; overflow: hidden; background: radial-gradient(circle at 82% 16%, rgba(215,225,99,.28), transparent 31%), linear-gradient(145deg, #252900, var(--brand) 60%, #7b821c); }
+:root:not([data-theme="dark"]) .auth-story { background: radial-gradient(circle at 82% 16%, rgba(255,255,255,.18), transparent 31%), linear-gradient(145deg, #566414, #83932d 62%, #a5b64a); }
 .network-particles { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: .9; }
 .network-particles-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
 .auth-particles { opacity: .9; }
@@ -11,6 +12,7 @@
 .auth-brand, .auth-story > div, .auth-story > small { position: relative; z-index: 1; }
 .auth-brand img { display: block; width: min(100%, 290px); height: auto; max-height: 72px; object-fit: contain; object-position: left center; }
 .auth-story h1 { max-width: 10ch; letter-spacing: -.07em; text-wrap: balance; }
+.auth-brand img { width: min(100%, 520px); max-height: 126px; }
 .auth-panel { position: relative; overflow: hidden; background: color-mix(in srgb, var(--surface-muted) 75%, transparent); }
 .auth-card { position: relative; z-index: 1; width: min(100%, 470px); padding: clamp(30px, 5vw, 56px); border: 1px solid var(--border); border-radius: 30px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow-elevated); }
 .auth-card h2 { margin-top: 12px; letter-spacing: -.055em; }

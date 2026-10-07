@@ -135,7 +135,6 @@ export function ProfilePage() {
             <UserAvatar name={user.displayName} email={user.email} photoURL={user.photoURL} size="large" />
             <span><i className="fa-solid fa-camera" /></span>
           </button>
-          <span className="profile-avatar-status" title="Conta ativa"><i className="fa-solid fa-check" /></span>
         </div>
         <div className="profile-hero-copy">
           <span className="profile-kicker"><i className="fa-solid fa-shield-halved" /> Conta autenticada pelo Google</span>

@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.23] - 2026-10-07
+
+### Ajustes visuais
+
+- painéis verdes em tema claro receberam uma faixa intermediária de oliva para manter contraste com `logo_w.svg` e `detail_w.svg`;
+- logo SVG da tela de entrada foi ampliado e os fundos claros/escuros passaram a preservar a leitura da decoração temática;
+- seta duplicada do header permanece oculta em desktop, deixando o controle principal no menu lateral;
+- ícones Font Awesome de GitHub, LinkedIn e Lattes receberam cor explícita para o tema claro;
+- botão de saída do perfil ganhou contraste sólido e o indicador redundante sobre o avatar foi removido.
+
 ## [0.3.0-beta.22] - 2026-10-07
 
 ### Corrigido e aprimorado

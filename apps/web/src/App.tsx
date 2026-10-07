@@ -180,9 +180,9 @@ function PlatformShell() {
             <small>Inteligência de dados territoriais</small>
           </div>
           <div className="sidebar-socials" aria-label="Redes do desenvolvedor">
-            <a href="https://github.com/hlbs" target="_blank" rel="noreferrer" aria-label="GitHub de Hermes Santos"><img src="/github.png" alt="" /></a>
-            <a href="https://www.linkedin.com/in/hermes-santos-28720b141" target="_blank" rel="noreferrer" aria-label="LinkedIn de Hermes Santos"><img src="/linkedin.png" alt="" /></a>
-            <a href="http://lattes.cnpq.br/0845969740727255" target="_blank" rel="noreferrer" aria-label="Currículo Lattes de Hermes Santos"><img src="/lattes.png" alt="" /></a>
+            <a href="https://github.com/hlbs" target="_blank" rel="noreferrer" aria-label="GitHub de Hermes Santos"><i className="fa-brands fa-github" aria-hidden="true" /></a>
+            <a href="https://www.linkedin.com/in/hermes-santos-28720b141" target="_blank" rel="noreferrer" aria-label="LinkedIn de Hermes Santos"><i className="fa-brands fa-linkedin-in" aria-hidden="true" /></a>
+            <a href="http://lattes.cnpq.br/0845969740727255" target="_blank" rel="noreferrer" aria-label="Currículo Lattes de Hermes Santos"><i className="fa-solid fa-graduation-cap" aria-hidden="true" /></a>
           </div>
         </div>
       </aside>
