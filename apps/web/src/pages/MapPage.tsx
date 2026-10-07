@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MapCanvas, type MapBaseMap, type MapFeatureSelection, type MapLayerDefinition } from '../features/gis/MapCanvas';
+import { PrintMapDialog } from '../features/gis/PrintMapDialog';
 
 type CatalogLayer = {
   id: string;
@@ -9,6 +10,7 @@ type CatalogLayer = {
   kind: 'vector' | 'raster';
   url?: string | null;
   file?: string;
+  crs?: string;
   source?: string;
   observation?: string;
   featureCount?: number;
@@ -17,6 +19,8 @@ type CatalogLayer = {
   width?: number;
   height?: number;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
+  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string };
+  noData?: number;
   visibleByDefault?: boolean;
 };
 
@@ -25,19 +29,30 @@ type MainTab = 'map' | 'dashboards';
 type SideTab = 'layers' | 'legend' | 'tools';
 type LayerKindFilter = 'all' | 'basemap' | 'vector' | 'raster';
 type MapTool = 'identify' | 'measure-length' | 'measure-area';
-type BaseMapChoice = { id: MapBaseMap; title: string; attribution: string; thumb: string };
+type BaseMapChoice = { id: MapBaseMap; title: string; attribution: string; thumbnailUrl: string };
 
+// Static tiles at the basin's approximate center (z=7, x=48, y=68) double as
+// honest previews of the same public, keyless XYZ services used by OpenLayers.
 const baseMaps: BaseMapChoice[] = [
-  { id: 'osm', title: 'OpenStreetMap', attribution: 'Ruas e localidades', thumb: 'roads' },
-  { id: 'carto-light', title: 'Carto Claro', attribution: 'Fundo claro', thumb: 'light' },
-  { id: 'carto-dark', title: 'Carto Escuro', attribution: 'Fundo escuro', thumb: 'dark' },
-  { id: 'esri-imagery', title: 'Imagem de satélite', attribution: 'Esri World Imagery', thumb: 'imagery' },
-  { id: 'esri-topo', title: 'Topográfico', attribution: 'Esri World Topo', thumb: 'topo' },
+  { id: 'osm', title: 'OpenStreetMap', attribution: '© OpenStreetMap contributors', thumbnailUrl: 'https://tile.openstreetmap.org/7/48/68.png' },
+  { id: 'carto-light', title: 'Carto Claro', attribution: '© OpenStreetMap · © CARTO', thumbnailUrl: 'https://a.basemaps.cartocdn.com/light_all/7/48/68.png' },
+  { id: 'carto-dark', title: 'Carto Escuro', attribution: '© OpenStreetMap · © CARTO', thumbnailUrl: 'https://a.basemaps.cartocdn.com/dark_all/7/48/68.png' },
 ];
 
+const defaultPowerBiUrl = 'https://app.powerbi.com/view?r=eyJrIjoiZDI4MDI2YWEtMjUyYS00Y2ViLWIxNWQtZDYyOWYzYzBhYTY3IiwidCI6ImRmNzFmNmJiLWUzY2MtNGY1Yi1iNTMyLTc5ZGUyNjFiNTFhMiJ9';
+
+function groupLayers(layers: CatalogLayer[]) {
+  const groups = new Map<string, CatalogLayer[]>();
+  for (const layer of layers) {
+    const group = layer.group?.trim() || 'Sem grupo definido no catálogo';
+    groups.set(group, [...(groups.get(group) ?? []), layer]);
+  }
+  return [...groups.entries()];
+}
+
 const initialLayers: CatalogLayer[] = [
-  { id: 'bacia-hidrografica-paramirim', title: 'Bacia Hidrográfica do Rio Paramirim', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/bacia_hidrografica_paramirim.geojson', visibleByDefault: true },
-  { id: 'hidrografia', title: 'Hidrografia', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', url: '/geospatial/layers/bacia_hidrografica/hidrografia.geojson', visibleByDefault: true },
+  { id: 'bacia-hidrografica-paramirim', title: 'Bacia Hidrográfica do Rio Paramirim', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', crs: 'EPSG:4674', url: '/geospatial/layers/bacia_hidrografica/bacia_hidrografica_paramirim.geojson', visibleByDefault: true },
+  { id: 'hidrografia', title: 'Hidrografia', group: 'Bacia hidrográfica', status: 'present', kind: 'vector', crs: 'EPSG:4674', url: '/geospatial/layers/bacia_hidrografica/hidrografia.geojson', visibleByDefault: true },
 ];
 
 function formatBytes(bytes = 0) {
@@ -75,7 +90,7 @@ export function MapPage() {
   const [tool, setTool] = useState<MapTool>('identify');
   const [measure, setMeasure] = useState<{ value: number; unit: 'm' | 'km' | 'm²' | 'km²' } | null>(null);
   const [homeToken, setHomeToken] = useState(0);
-  const powerBiUrl = import.meta.env.VITE_POWERBI_DASHBOARD_URL;
+  const powerBiUrl = import.meta.env.VITE_POWERBI_DASHBOARD_URL?.trim() || defaultPowerBiUrl;
 
   useEffect(() => {
     let cancelled = false;
@@ -93,15 +108,17 @@ export function MapPage() {
   }, []);
 
   const featureLayers = useMemo(() => catalog.filter((layer) => layer.status === 'present'), [catalog]);
-  const selectedLayers = useMemo<MapLayerDefinition[]>(() => featureLayers
+  const selectedLayers = useMemo<Array<MapLayerDefinition & { crs?: string }>>(() => featureLayers
     .filter((layer) => selectedIds.includes(layer.id) && layer.url)
-    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, statistics: layer.statistics, noData: 0, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1) })), [featureLayers, opacity, selectedIds]);
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, statistics: layer.statistics, palette: layer.styleDefault?.palette, styleDefault: layer.styleDefault, noData: layer.noData ?? 0, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1) })), [featureLayers, opacity, selectedIds]);
   const filteredCatalog = useMemo(() => catalog.filter((layer) => {
     if (layer.status !== 'present' || !layer.url) return false;
     const matchesSearch = `${layer.title} ${layer.group}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));
     const matchesKind = filter === 'all' || (filter === 'basemap' ? false : layer.kind === filter);
     return matchesSearch && matchesKind;
   }), [catalog, filter, search]);
+  const groupedVectors = useMemo(() => groupLayers(filteredCatalog.filter((layer) => layer.kind === 'vector')), [filteredCatalog]);
+  const filteredRasters = useMemo(() => filteredCatalog.filter((layer) => layer.kind === 'raster'), [filteredCatalog]);
   const handleFeatureSelect = useCallback((next: MapFeatureSelection | null) => setSelection(next), []);
 
   const toggleLayer = (layer: CatalogLayer) => {
@@ -141,16 +158,16 @@ export function MapPage() {
               {(['all', 'basemap', 'vector', 'raster'] as const).map((kind) => <button key={kind} type="button" className={filter === kind ? 'is-active' : ''} onClick={() => setFilter(kind)}>{kind === 'all' ? 'Todas' : kind === 'basemap' ? 'Base' : kind === 'vector' ? 'Vetoriais' : 'Rasters'}</button>)}
             </div>
 
-            {(filter === 'all' || filter === 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-map" /> Mapas base</strong><span>{baseMaps.length}</span></header><div className="webgis-basemap-list">{baseMaps.map((base) => <button type="button" className={`webgis-basemap-row ${activeBase === base.id ? 'is-active' : ''}`} key={base.id} onClick={() => { setBaseMap(base.id); setActiveBase(base.id); }}><span className={`webgis-basemap-thumb thumb-${base.thumb}`} /><span><strong>{base.title}</strong><small>{base.attribution}</small></span><i className={`fa-solid ${activeBase === base.id ? 'fa-circle-check' : 'fa-circle'}`} /></button>)}</div></section>}
+            {(filter === 'all' || filter === 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-map" /> Mapas base</strong><span>{baseMaps.length}</span></header><div className="webgis-basemap-list">{baseMaps.map((base) => <button type="button" className={`webgis-basemap-row ${activeBase === base.id ? 'is-active' : ''}`} key={base.id} onClick={() => { setBaseMap(base.id); setActiveBase(base.id); }}><img className="webgis-basemap-thumb" src={base.thumbnailUrl} alt={`Prévia real do mapa ${base.title}`} loading="lazy" /><span><strong>{base.title}</strong><small>{base.attribution}</small></span><i className={`fa-solid ${activeBase === base.id ? 'fa-circle-check' : 'fa-circle'}`} /></button>)}</div></section>}
 
-            {(filter !== 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-draw-polygon" /> Camadas vetoriais</strong><span>{featureLayers.filter((layer) => layer.kind === 'vector').length}</span></header>{filteredCatalog.filter((layer) => layer.kind === 'vector').map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</section>}
-            {(filter !== 'basemap') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-image" /> Camadas raster</strong><span>{featureLayers.filter((layer) => layer.kind === 'raster').length}</span></header>{filteredCatalog.filter((layer) => layer.kind === 'raster').map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</section>}
+            {(filter === 'all' || filter === 'vector') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-draw-polygon" /> Camadas vetoriais</strong><span>{featureLayers.filter((layer) => layer.kind === 'vector').length}</span></header>{groupedVectors.map(([group, layers]) => <div className="webgis-layer-subgroup" key={group}><h3 className="webgis-layer-subgroup-title"><span>{group}</span><small>{layers.length}</small></h3>{layers.map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</div>)}</section>}
+            {(filter === 'all' || filter === 'raster') && <section className="webgis-layer-group"><header><strong><i className="fa-solid fa-image" /> Camadas raster</strong><span>{featureLayers.filter((layer) => layer.kind === 'raster').length}</span></header>{filteredRasters.map((layer) => <LayerRow key={layer.id} layer={layer} active={selectedIds.includes(layer.id)} onToggle={() => toggleLayer(layer)} />)}</section>}
             {filter === 'basemap' && <p className="webgis-panel-hint">Selecione um mapa base. As miniaturas mostram o tipo de referência cartográfica.</p>}
           </div>}
 
           {sideTab === 'legend' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Simbologia ativa</small><h2>Legenda</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>{selectedLayers.length === 0 ? <p className="webgis-panel-hint">Ative uma camada no catálogo para ver sua legenda.</p> : selectedLayers.map((layer) => <div className="webgis-legend-row" key={layer.id}><span className={`webgis-legend-symbol ${layer.kind} layer-${layer.id}`} /><div><strong>{layer.title}</strong><small>{layer.kind === 'raster' ? `Baixo: ${layer.statistics?.p2 ?? layer.statistics?.min ?? '—'} · Alto: ${layer.statistics?.p98 ?? layer.statistics?.max ?? '—'}` : layer.group}</small></div></div>)}</div>}
 
-          {sideTab === 'tools' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Navegação e consulta</small><h2>Ferramentas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div><div className="webgis-tool-grid"><button type="button" className={tool === 'identify' ? 'is-active' : ''} onClick={() => { setTool('identify'); setSelection(null); }}><i className="fa-solid fa-arrow-pointer" /><span>Identificar</span></button><button type="button" className={tool === 'measure-length' ? 'is-active' : ''} onClick={() => { setTool('measure-length'); setMeasure(null); }}><i className="fa-solid fa-ruler" /><span>Medir distância</span></button><button type="button" className={tool === 'measure-area' ? 'is-active' : ''} onClick={() => { setTool('measure-area'); setMeasure(null); }}><i className="fa-solid fa-draw-polygon" /><span>Medir área</span></button><button type="button" onClick={() => window.print()}><i className="fa-solid fa-print" /><span>Imprimir mapa</span></button><button type="button" onClick={() => setSelectedIds([])}><i className="fa-solid fa-eye-slash" /><span>Limpar camadas</span></button><button type="button" onClick={() => { setSelectedIds(catalog.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id)); setBaseMap('osm'); setActiveBase('osm'); setHomeToken((current) => current + 1); }}><i className="fa-solid fa-house" /><span>Vista inicial</span></button></div>{tool !== 'identify' && <div className="webgis-measure-status"><span>{tool === 'measure-length' ? 'Distância' : 'Área'}</span>{measure ? <strong>{measure.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {measure.unit}</strong> : <small>Desenhe no mapa; dê duplo clique para concluir.</small>}<button type="button" onClick={() => { setTool('identify'); setMeasure(null); }}><i className="fa-solid fa-trash-can" /> Limpar medição</button></div>}<div className="webgis-tool-section"><h3>Transparência</h3>{selectedLayers.map((layer) => <label className="webgis-opacity-row" key={layer.id}><span>{layer.title}</span><input type="range" min="0.1" max="1" step="0.05" value={opacity[layer.id] ?? (layer.kind === 'raster' ? .82 : 1)} onChange={(event) => setOpacity((current) => ({ ...current, [layer.id]: Number(event.target.value) }))} /></label>)}</div></div>}
+          {sideTab === 'tools' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Navegação e consulta</small><h2>Ferramentas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div><div className="webgis-tool-grid"><button type="button" className={tool === 'identify' ? 'is-active' : ''} onClick={() => { setTool('identify'); setSelection(null); }}><i className="fa-solid fa-arrow-pointer" /><span>Identificar</span></button><button type="button" className={tool === 'measure-length' ? 'is-active' : ''} onClick={() => { setTool('measure-length'); setMeasure(null); }}><i className="fa-solid fa-ruler" /><span>Medir distância</span></button><button type="button" className={tool === 'measure-area' ? 'is-active' : ''} onClick={() => { setTool('measure-area'); setMeasure(null); }}><i className="fa-solid fa-draw-polygon" /><span>Medir área</span></button><PrintMapDialog layers={selectedLayers} /><button type="button" onClick={() => setSelectedIds([])}><i className="fa-solid fa-eye-slash" /><span>Limpar camadas</span></button><button type="button" onClick={() => { setSelectedIds(catalog.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id)); setBaseMap('osm'); setActiveBase('osm'); setHomeToken((current) => current + 1); }}><i className="fa-solid fa-house" /><span>Vista inicial</span></button></div>{tool !== 'identify' && <div className="webgis-measure-status"><span>{tool === 'measure-length' ? 'Distância' : 'Área'}</span>{measure ? <strong>{measure.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {measure.unit}</strong> : <small>Desenhe no mapa; dê duplo clique para concluir.</small>}<button type="button" onClick={() => { setTool('identify'); setMeasure(null); }}><i className="fa-solid fa-trash-can" /> Limpar medição</button></div>}<div className="webgis-tool-section"><h3>Transparência</h3>{selectedLayers.map((layer) => <label className="webgis-opacity-row" key={layer.id}><span>{layer.title}</span><input type="range" min="0.1" max="1" step="0.05" value={opacity[layer.id] ?? (layer.kind === 'raster' ? .82 : 1)} onChange={(event) => setOpacity((current) => ({ ...current, [layer.id]: Number(event.target.value) }))} /></label>)}</div></div>}
         </aside>
       </div> : <DashboardPanel url={powerBiUrl} />}
     </section>

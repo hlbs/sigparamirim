@@ -1,6 +1,6 @@
 {
   "name": "sig-paramirim",
-  "version": "0.3.0-beta.33",
+  "version": "0.3.0-beta.34",
   "private": true,
   "description": "Plataforma científica e WebGIS da Bacia Hidrográfica do Rio Paramirim.",
   "workspaces": [
@@ -9,7 +9,9 @@
     "packages/*"
   ],
   "scripts": {
+    "predev": "npm run stage:geospatial",
     "dev": "npm run dev --workspace @sig-paramirim/web",
+    "prebuild": "npm run stage:geospatial",
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",

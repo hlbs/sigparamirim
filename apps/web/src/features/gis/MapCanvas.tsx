@@ -19,10 +19,12 @@ import CircleStyle from 'ol/style/Circle.js';
 import Draw from 'ol/interaction/Draw.js';
 import { getArea, getLength } from 'ol/sphere.js';
 
-export type MapBaseMap = 'osm' | 'carto-light' | 'carto-dark' | 'esri-imagery' | 'esri-topo';
+export type MapBaseMap = 'osm' | 'carto-light' | 'carto-dark';
 export type MapLayerDefinition = {
   id: string; title: string; url: string; kind: 'vector' | 'raster'; group?: string;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
+  palette?: string;
+  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string };
   opacity?: number; noData?: number;
 };
 export type MapFeatureSelection = { layerId: string; layerTitle: string; properties: Record<string, unknown> };
@@ -44,8 +46,6 @@ const baseMapSources: Record<MapBaseMap, { url: string; attribution: string }> =
   osm: { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors' },
   'carto-light': { url: 'https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', attribution: '© OpenStreetMap © CARTO' },
   'carto-dark': { url: 'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', attribution: '© OpenStreetMap © CARTO' },
-  'esri-imagery': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: '© Esri' },
-  'esri-topo': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attribution: '© Esri' },
 };
 
 function vectorStyle(layerId: string) {
@@ -65,11 +65,28 @@ function rasterStyle(layer: MapLayerDefinition) {
   const min = layer.statistics?.p2 ?? layer.statistics?.min ?? 0;
   const max = layer.statistics?.p98 ?? layer.statistics?.max ?? min + 1;
   const span = Math.max(max - min, 1);
-  const palette = layer.id === 'mde'
-    ? ['#2c7bb6', '#abd9e9', '#ffffbf', '#fdae61', '#d7191c']
-    : ['#253494', '#2c7fb8', '#41b6c4', '#a1dab4', '#ffffcc'];
-  const expression: unknown[] = ['interpolate', ['linear'], ['band', 1], layer.noData ?? 0, 'rgba(0,0,0,0)'];
-  palette.forEach((color, index) => expression.push(min + (span * index) / (palette.length - 1), color));
+  const palettes: Record<string, string[]> = {
+    hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
+    'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
+    'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
+    'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
+  };
+  const palette = palettes[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? palettes['blue-sequential']!;
+  const classCount = Math.max(1, Math.min(palette.length, layer.styleDefault?.classCount ?? palette.length));
+  const classColors = classCount === 1
+    ? [palette[0]]
+    : Array.from({ length: classCount }, (_, index) => palette[Math.round((index * (palette.length - 1)) / (classCount - 1))]);
+  const band: unknown[] = ['band', 1];
+  if (layer.styleDefault?.colorInterpolation === 'continuous') {
+    const expression: unknown[] = ['interpolate', ['linear'], band];
+    classColors.forEach((color, index) => expression.push(min + (span * index) / Math.max(1, classColors.length - 1), color));
+    return { color: expression as any };
+  }
+  const expression: unknown[] = ['case'];
+  classColors.slice(0, -1).forEach((color, index) => {
+    expression.push(['<=', band, min + (span * (index + 1)) / classColors.length], color);
+  });
+  expression.push(classColors[classColors.length - 1]);
   return { color: expression as any };
 }
 
@@ -196,7 +213,10 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       if (definition.kind === 'raster') {
         const source = new GeoTIFF({
           sources: [{ url: definition.url, nodata: definition.noData ?? 0 }],
-          normalize: false, convertToRGB: false, interpolate: true, sourceOptions: { maxRanges: 4 },
+          normalize: false, convertToRGB: false,
+          // OpenLayers' bilinear GeoTIFF resampling samples the configured 2×2 kernel.
+          interpolate: definition.styleDefault?.resamplingMethod ? definition.styleDefault.resamplingMethod === 'bilinear' : true,
+          sourceOptions: { maxRanges: 8 },
         });
         rendered = new WebGLTileLayer({ source, opacity: definition.opacity ?? .82, style: rasterStyle(definition), properties: { id: definition.id, title: definition.title, kind: definition.kind } });
       } else {

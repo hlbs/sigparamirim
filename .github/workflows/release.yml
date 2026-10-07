@@ -2,36 +2,42 @@ name: Publicar release do SIG Paramirim
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   release:
-    name: Criar release no GitHub
+    name: Publicar versão no GitHub
     runs-on: ubuntu-latest
     steps:
-      - name: Publicar tag como release
+      - name: Checkout da versão
+        uses: actions/checkout@v4
+
+      - name: Criar release para a versão do pacote
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
         run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="$GITHUB_REF_NAME"
+          else
+            VERSION="$(node -p "require('./package.json').version")"
+            TAG="v$VERSION"
+          fi
+
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "O release $TAG já existe; nenhuma duplicação será criada."
             exit 0
           fi
 
+          RELEASE_ARGS=("$TAG" --repo "$GITHUB_REPOSITORY" --title "SIG Paramirim $TAG" --generate-notes --target "$GITHUB_SHA")
           if [[ "$TAG" == *-* ]]; then
-            gh release create "$TAG" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "SIG Paramirim $TAG" \
-              --generate-notes \
-              --prerelease
-          else
-            gh release create "$TAG" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "SIG Paramirim $TAG" \
-              --generate-notes
+            RELEASE_ARGS+=(--prerelease)
           fi
+
+          gh release create "${RELEASE_ARGS[@]}"
