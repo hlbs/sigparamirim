@@ -112,7 +112,6 @@ function TerrainModelVisual() {
     controlsRef.current = controls;
     let disposed = false;
     let animationFrame = 0;
-    let mainDrape: THREE.Vector3[] = [];
     const resize = () => { const rect = stage.getBoundingClientRect(); renderer.setSize(rect.width, rect.height, false); camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix(); };
     const observer = new ResizeObserver(resize); observer.observe(stage); resize();
     const image = new Image(); image.src = '/mde-height.png';
@@ -144,12 +143,6 @@ function TerrainModelVisual() {
         if (disposed) return;
         const drape = (line: number[][]) => line.map(([x = 0, z = 0]) => { const ix = Math.max(0, Math.min(cols - 1, Math.round(((x + 2.4) / 4.8) * (cols - 1)))); const iy = Math.max(0, Math.min(rows - 1, Math.round(((z + 3.6) / 7.2) * (rows - 1)))); const h = sampleHeight(ix, iy); return new THREE.Vector3(x, h * .24 + .028, z); });
         hydrography.lines.forEach((line) => { const points = drape(line); if (points.length < 2) return; const lineGeometry = new THREE.BufferGeometry().setFromPoints(points); group.add(new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0x2f9ed0, transparent: true, opacity: .86 }))); });
-        mainDrape = drape(hydrography.main);
-        if (mainDrape.length > 2) {
-          const curve = new THREE.CatmullRomCurve3(mainDrape);
-          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.min(220, mainDrape.length * 2), .018, 6, false), new THREE.MeshStandardMaterial({ color: 0x43b8e4, emissive: 0x073f5c, emissiveIntensity: .8, roughness: .45 }));
-          group.add(tube);
-        }
       }).catch(() => undefined);
     };
     const animate = () => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);

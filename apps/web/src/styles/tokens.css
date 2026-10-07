@@ -29,6 +29,11 @@
 }
 
 body { font-family: var(--font-display); letter-spacing: .002em; }
+html { scrollbar-width: thin; scrollbar-color: var(--brand) var(--surface-muted); }
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: var(--surface-muted); }
+::-webkit-scrollbar-thumb { border: 3px solid var(--surface-muted); border-radius: 99px; background: linear-gradient(180deg, var(--brand-strong), var(--brand)); }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
 button, input, select, textarea { font: inherit; }
 .story-description p, .auth-card > p, .auth-story p, .profile-field, .account-heading p { letter-spacing: .006em; }
 .story-description p { margin-bottom: 1.35em; }

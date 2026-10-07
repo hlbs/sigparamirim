@@ -2,6 +2,19 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.22] - 2026-10-07
+
+### Corrigido e aprimorado
+
+- logo da tela de entrada ampliada e seta duplicada do header removida em telas desktop;
+- ícones do menu compacto centralizados na moldura ativa;
+- painéis verdes do modo claro receberam contraste claro, decoração de curvas de nível translúcida e scrollbar alinhada à identidade visual;
+- tubo azul que permanecia no relevo 3D foi removido junto da animação de fluxo;
+- perfil simplificado, sem cards de presença, identidade territorial e referências públicas;
+- editor de foto passou a abrir ao clicar no avatar, com recorte circular, zoom e confirmação;
+- escolaridade, UF e município passaram a usar seletores; estados e municípios brasileiros são carregados pela API pública do IBGE e outros países permitem preenchimento manual;
+- workflow do GitHub passou a criar automaticamente um Release para cada tag `v*` publicada.
+
 ## [0.3.0-beta.21] - 2026-10-07
 
 ### Corrigido

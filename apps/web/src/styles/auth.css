@@ -9,7 +9,7 @@
 @keyframes auth-particle-drift { from { opacity: .18; transform: translate3d(0, 10px, 0) scale(.7); } to { opacity: .82; transform: translate3d(12px, -18px, 0) scale(1.25); } }
 .auth-story::after { position: absolute; right: -90px; bottom: -120px; width: 310px; height: 310px; border: 1px solid rgba(255,255,255,.17); border-radius: 50%; box-shadow: 0 0 0 24px rgba(255,255,255,.04), 0 0 0 48px rgba(255,255,255,.025); content: ''; }
 .auth-brand, .auth-story > div, .auth-story > small { position: relative; z-index: 1; }
-.auth-brand img { width: 46px; height: 40px; }
+.auth-brand img { display: block; width: min(100%, 290px); height: auto; max-height: 72px; object-fit: contain; object-position: left center; }
 .auth-story h1 { max-width: 10ch; letter-spacing: -.07em; text-wrap: balance; }
 .auth-panel { position: relative; overflow: hidden; background: color-mix(in srgb, var(--surface-muted) 75%, transparent); }
 .auth-card { position: relative; z-index: 1; width: min(100%, 470px); padding: clamp(30px, 5vw, 56px); border: 1px solid var(--border); border-radius: 30px; background: color-mix(in srgb, var(--surface) 94%, transparent); box-shadow: var(--shadow-elevated); }

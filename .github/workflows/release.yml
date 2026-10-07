@@ -1,0 +1,37 @@
+name: Publicar release do SIG Paramirim
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Criar release no GitHub
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publicar tag como release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "O release $TAG já existe; nenhuma duplicação será criada."
+            exit 0
+          fi
+
+          if [[ "$TAG" == *-* ]]; then
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "SIG Paramirim $TAG" \
+              --generate-notes \
+              --prerelease
+          else
+            gh release create "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "SIG Paramirim $TAG" \
+              --generate-notes
+          fi
