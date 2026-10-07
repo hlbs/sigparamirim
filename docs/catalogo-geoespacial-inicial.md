@@ -10,6 +10,26 @@ Para cada GeoJSON foram verificados: parse JSON, tipo raiz, CRS declarado, conta
 
 O catálogo estruturado completo está em `docs/catalogo-camadas-inicial.json`.
 
+## Auditoria executável e gate de publicação
+
+O inventário agora possui uma auditoria reproduzível em
+`scripts/validate-geospatial-catalog.ts`, executada com:
+
+```bash
+npm run validate:geospatial
+```
+
+O comando lê os originais no diretório `sig/` (ou em `SIG_SOURCE_ROOT`), recalcula
+SHA-256, valida cada `FeatureCollection`, CRS, geometrias, contagem e extensão,
+e lê os metadados dos GeoTIFF com `geotiff`. O resultado é salvo em
+`docs/catalogo-camadas-quality.json`. O relatório é evidência de ingestão, não
+substitui revisão científica: uma camada só é marcada como publicável quando não
+possui erros e possui fonte/licença e semântica de dados documentadas.
+
+Na primeira execução, o gate permanece bloqueado de propósito: os arquivos estão
+íntegros, mas as decisões DP-011, DP-012, DP-016 e DP-017 ainda precisam ser
+resolvidas. Nenhum original é copiado, regravado ou convertido pelo validador.
+
 ## Resumo
 
 - 20 arquivos GeoJSON presentes, todos válidos como `FeatureCollection`.

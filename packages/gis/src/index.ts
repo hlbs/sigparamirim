@@ -25,3 +25,5 @@ export type RasterStyle = {
   labelSuffix: string;
   unit?: string;
 };
+
+export * from './catalog.js';

@@ -1,0 +1,1001 @@
+{
+  "generatedAt": "2026-10-07T18:09:10.094Z",
+  "sourceRoot": "..\\sig",
+  "catalogVersion": "0.1.0",
+  "summary": {
+    "vectorPresent": 20,
+    "vectorPlanned": 17,
+    "rasterPresent": 4,
+    "publishable": 0,
+    "blocked": 24,
+    "warnings": 4,
+    "errors": 36
+  },
+  "layers": [
+    {
+      "id": "bacia-hidrografica-paramirim",
+      "file": "bacia_hidrografica/bacia_hidrografica_paramirim.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 2504352,
+        "sha256": "5b978066c7f19fa46c6f32d537139c746c4253bfa4c058d22f978307fa75b3dd",
+        "featureCount": 1,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.30762700554954,
+          -13.661241857585015,
+          -41.873980837258635,
+          -11.582013953503731
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 1
+        }
+      }
+    },
+    {
+      "id": "hidrografia",
+      "file": "bacia_hidrografica/hidrografia.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 4986818,
+        "sha256": "d09a4d409bb04d4876db8c458889c810aa0a47ecbf73fcabfcb47b01656641b6",
+        "featureCount": 199,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.30166235951174,
+          -13.580521010066166,
+          -41.93769982025042,
+          -11.596972027106773
+        ],
+        "geometryTypes": {
+          "MultiLineString": 199
+        }
+      }
+    },
+    {
+      "id": "imovel-rural-app",
+      "file": "imoveis_rurais/imovel_rural_APP.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 7776042,
+        "sha256": "6ab4ccf1a517aa191964686a25f201f5c4ba772aead3f84cefd56b87d6918b07",
+        "featureCount": 6232,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.3744562545,
+          -13.57734856,
+          -41.8866468,
+          -11.51277804
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 6232
+        }
+      }
+    },
+    {
+      "id": "imovel-rural-areas-degradadas-app",
+      "file": "imoveis_rurais/imovel_rural_areas_degradas_em_APP.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 120593,
+        "sha256": "2447ab115aca12eee47387fa30d8bc9b74f74c1ee3252aa24311f28e38d38ba2",
+        "featureCount": 130,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.08811302,
+          -13.53144405,
+          -41.93191186,
+          -12.02040238
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 130
+        }
+      }
+    },
+    {
+      "id": "imovel-rural-areas-degradadas-reserva-legal",
+      "file": "imoveis_rurais/imovel_rural_areas_degradas_em_reserva_legal.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 217629,
+        "sha256": "939e11ab4759ccb4ab6fb64e155fcdabd9f3b5082015b05dc8582ecf1a3849d1",
+        "featureCount": 504,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.11440168,
+          -13.51942512,
+          -41.98246648,
+          -11.6257212
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 504
+        }
+      }
+    },
+    {
+      "id": "imovel-rural-limites-propriedades",
+      "file": "imoveis_rurais/imovel_rural_limites_de_propriedades.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 45410803,
+        "sha256": "f6cb586bd6015e2f8166ea2e0f3cdb10e2477c1ae42288dfa9b33a62be23c4b8",
+        "featureCount": 58620,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.38114805244317,
+          -13.66559945,
+          -41.8724838,
+          -11.49548829
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 58620
+        }
+      }
+    },
+    {
+      "id": "imovel-rural-reserva-legal",
+      "file": "imoveis_rurais/imovel_rural_reserva_legal.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 41666734,
+        "sha256": "e91d1528683c7147aa0a4477817dd9e13ad8933ee5711d4fc8560455bb496d91",
+        "featureCount": 52793,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.33656888,
+          -13.66559945,
+          -41.88932088,
+          -11.57855249
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 52793
+        }
+      }
+    },
+    {
+      "id": "cidades",
+      "file": "limites_territoriais/cidades.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 2454,
+        "sha256": "404d068682c2d08084424a1bdc83eb488db82b3be650ebcd6d1b4690fafe12c0",
+        "featureCount": 13,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -42.88987623,
+          -13.44453548,
+          -42.14071832,
+          -11.82203728
+        ],
+        "geometryTypes": {
+          "Point": 13
+        }
+      }
+    },
+    {
+      "id": "limites-municipais",
+      "file": "limites_territoriais/limites_municipais.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 9592337,
+        "sha256": "fe73da51112d43ff7603e7d8b47794eec5c92a073ec4b00b9db74409c34b576d",
+        "featureCount": 417,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -46.5772829,
+          -18.35070489,
+          -37.34133894,
+          -8.52476499
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 417
+        }
+      }
+    },
+    {
+      "id": "territorios-identidade",
+      "file": "limites_territoriais/territorios_de_identidade.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 11600824,
+        "sha256": "4fef9eccc0eb0da0c3c310269a31bf1f3bd1d9e1a0adcaedc8ddbb2655f324d1",
+        "featureCount": 27,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -46.57728461,
+          -18.3484877,
+          -37.33386506,
+          -8.52726351
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 27
+        }
+      }
+    },
+    {
+      "id": "limites-estaduais",
+      "file": "limites_territoriais/unidade_federacao.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 16904024,
+        "sha256": "72b3fce4cf3b097acc2b20ef3ddb5a15e566b6c898159f3f73ebabffe85965ee",
+        "featureCount": 27,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -73.98680967,
+          -33.75117799,
+          -28.84777035,
+          5.26961953
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 27
+        }
+      }
+    },
+    {
+      "id": "pocos-siagas",
+      "file": "pocos/pocos_SIAGAS.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 917625,
+        "sha256": "0bae263c035eca3c5560468b9eb5b018da6a1b1ea0b91b7bb412e08ca1c5a887",
+        "featureCount": 935,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.218611,
+          -13.624722,
+          -41.908888,
+          -11.611111
+        ],
+        "geometryTypes": {
+          "Point": 935
+        }
+      }
+    },
+    {
+      "id": "extracao-mineral-pontos",
+      "file": "producao/extracao_mineral_(pontos).geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 8833,
+        "sha256": "f4024031fb268820844fd410bdea74375f1402b01ae0a865205bfdd8dc79fa41",
+        "featureCount": 19,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -42.74618018,
+          -13.56083111,
+          -42.08358601,
+          -11.87375386
+        ],
+        "geometryTypes": {
+          "Point": 19
+        }
+      }
+    },
+    {
+      "id": "geologia",
+      "file": "recursos_naturais/geologia.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 3100229,
+        "sha256": "7ba90417fb347b7bffc05777750c7f4e01ac005f9dd950553a8a006290289877",
+        "featureCount": 231,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.45802911,
+          -15.16552614,
+          -40.92094118,
+          -10.79383405
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 231
+        }
+      }
+    },
+    {
+      "id": "geomorfologia",
+      "file": "recursos_naturais/geomorfologia.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 433680,
+        "sha256": "51f144c297964f19d83c2b764fd83ac0b584b3a88a4baef66f7299f4d96ed344",
+        "featureCount": 39,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -44.4796,
+          -14.33817007,
+          -40.5879,
+          -8.70487239
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 39
+        }
+      }
+    },
+    {
+      "id": "vegetacao",
+      "file": "recursos_naturais/vegetacao.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 138853169,
+        "sha256": "b07213a3a876c9123e077ef8d99900c14059b792926530b49bc8bd57f51b5d0a",
+        "featureCount": 6721,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.381411201999924,
+          -14.188360046999946,
+          -41.65055485599993,
+          -10.822683022999911
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 6721
+        }
+      }
+    },
+    {
+      "id": "areas-quilombolas",
+      "file": "sociedade_e_cultura/areas_quilombolas.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 4082,
+        "sha256": "79ab4b8ff54220bd9063a8b086554862b2687293fccf69057f7a006d52131f9c",
+        "featureCount": 1,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -42.05021563579846,
+          -12.558841751552878,
+          -41.97256175952035,
+          -12.48154764902114
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 1
+        }
+      }
+    },
+    {
+      "id": "sitios-arqueologicos",
+      "file": "sociedade_e_cultura/sitios_arqueologicos.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 36361,
+        "sha256": "2e7af4beed365f12a84cdb11034ed6169c1e52f043f691a6bcbf31311e8314e3",
+        "featureCount": 71,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -43.241705,
+          -13.451563,
+          -42.013189,
+          -11.650804
+        ],
+        "geometryTypes": {
+          "Point": 71
+        }
+      }
+    },
+    {
+      "id": "unidade-conservacao-estadual",
+      "file": "sociedade_e_cultura/unidades_de_conservacao_estadual.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 11919,
+        "sha256": "85e2788f6fffa9a9c0dbcb7c38dd9ba586ab5f2ec393d86c7a0a9a9001fa57fc",
+        "featureCount": 1,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -42.04376554384464,
+          -13.542165151100676,
+          -41.70863741558412,
+          -13.146099201117067
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 1
+        }
+      }
+    },
+    {
+      "id": "unidade-conservacao-municipal",
+      "file": "sociedade_e_cultura/unidades_de_conservacao_municipal.geojson",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        }
+      ],
+      "observed": {
+        "bytes": 102178,
+        "sha256": "7e05ea37d4868d2005598f9262b2f5489f07baf8a6c9190a9402fc0b0091ab5f",
+        "featureCount": 8,
+        "crs": "EPSG:4674",
+        "bbox": [
+          -42.795960786288745,
+          -13.660489026059329,
+          -41.81721806256608,
+          -12.770333508383871
+        ],
+        "geometryTypes": {
+          "MultiPolygon": 8
+        }
+      }
+    },
+    {
+      "id": "mde",
+      "file": "tif/mde.tif",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        },
+        {
+          "code": "source-metadata-missing",
+          "severity": "error",
+          "message": "Fonte não informada para este raster."
+        },
+        {
+          "code": "nodata-semantics-unconfirmed",
+          "severity": "error",
+          "message": "A semântica de zero como NoData ainda aguarda confirmação documental."
+        },
+        {
+          "code": "raster-unit-unconfirmed",
+          "severity": "error",
+          "message": "Unidade/significado do raster ainda aguarda confirmação documental."
+        },
+        {
+          "code": "web-optimization-pending",
+          "severity": "warning",
+          "message": "Raster original ainda não possui derivado otimizado para acesso web."
+        }
+      ],
+      "observed": {
+        "bytes": 76624186,
+        "sha256": "7a7dd9c7b006b9b07f824aa617ae96205a5dc3661fa89b21d759e2202822d449",
+        "width": 5057,
+        "height": 7567,
+        "bandCount": 1,
+        "dataType": "uint16",
+        "noData": 0,
+        "compression": 1,
+        "rowsPerStrip": 1,
+        "internalOverviews": false
+      }
+    },
+    {
+      "id": "nivel-dinamico",
+      "file": "tif/nivel_dinamico.tif",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        },
+        {
+          "code": "source-metadata-missing",
+          "severity": "error",
+          "message": "Fonte não informada para este raster."
+        },
+        {
+          "code": "nodata-semantics-unconfirmed",
+          "severity": "error",
+          "message": "A semântica de zero como NoData ainda aguarda confirmação documental."
+        },
+        {
+          "code": "raster-unit-unconfirmed",
+          "severity": "error",
+          "message": "Unidade/significado do raster ainda aguarda confirmação documental."
+        },
+        {
+          "code": "web-optimization-pending",
+          "severity": "warning",
+          "message": "Raster original ainda não possui derivado otimizado para acesso web."
+        }
+      ],
+      "observed": {
+        "bytes": 11936779,
+        "sha256": "1ba2a1459e8442f5b03e3953611a2d4ec590c46be61062a090ee74055eb2585f",
+        "width": 1433,
+        "height": 2078,
+        "bandCount": 1,
+        "dataType": "float32",
+        "noData": 0,
+        "compression": 1,
+        "rowsPerStrip": 1,
+        "internalOverviews": false
+      }
+    },
+    {
+      "id": "nivel-estatico",
+      "file": "tif/nivel_estatico.tif",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        },
+        {
+          "code": "source-metadata-missing",
+          "severity": "error",
+          "message": "Fonte não informada para este raster."
+        },
+        {
+          "code": "nodata-semantics-unconfirmed",
+          "severity": "error",
+          "message": "A semântica de zero como NoData ainda aguarda confirmação documental."
+        },
+        {
+          "code": "raster-unit-unconfirmed",
+          "severity": "error",
+          "message": "Unidade/significado do raster ainda aguarda confirmação documental."
+        },
+        {
+          "code": "web-optimization-pending",
+          "severity": "warning",
+          "message": "Raster original ainda não possui derivado otimizado para acesso web."
+        }
+      ],
+      "observed": {
+        "bytes": 11936779,
+        "sha256": "6e1b2b5f515ad907a90846dcf0e004a53f5877f466780951e0780c3fe1537063",
+        "width": 1433,
+        "height": 2078,
+        "bandCount": 1,
+        "dataType": "float32",
+        "noData": 0,
+        "compression": 1,
+        "rowsPerStrip": 1,
+        "internalOverviews": false
+      }
+    },
+    {
+      "id": "profundidade",
+      "file": "tif/profundidade.tif",
+      "status": "present",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "license-metadata-missing",
+          "severity": "error",
+          "message": "Licença/atribuição ainda não foi registrada no catálogo."
+        },
+        {
+          "code": "source-metadata-missing",
+          "severity": "error",
+          "message": "Fonte não informada para este raster."
+        },
+        {
+          "code": "nodata-semantics-unconfirmed",
+          "severity": "error",
+          "message": "A semântica de zero como NoData ainda aguarda confirmação documental."
+        },
+        {
+          "code": "raster-unit-unconfirmed",
+          "severity": "error",
+          "message": "Unidade/significado do raster ainda aguarda confirmação documental."
+        },
+        {
+          "code": "web-optimization-pending",
+          "severity": "warning",
+          "message": "Raster original ainda não possui derivado otimizado para acesso web."
+        }
+      ],
+      "observed": {
+        "bytes": 11936779,
+        "sha256": "5a361765d9218d14cc2f5a0377363c4f93cc5d5be58f62cd002161a17274b46e",
+        "width": 1433,
+        "height": 2078,
+        "bandCount": 1,
+        "dataType": "float32",
+        "noData": 0,
+        "compression": 1,
+        "rowsPerStrip": 1,
+        "internalOverviews": false
+      }
+    },
+    {
+      "id": "estacoes-fluviometricas-rhn",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "estacoes-pluviometricas-rhn",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "unidade-conservacao-federal",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "solos",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "aquiferos-porosos",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "aquiferos-carsticos",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "aquiferos-fraturados",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "rodovias",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "ferrovias",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "aeroportos",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "linhas-transmissao",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "subestacoes",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "barragens",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "usina-eolica",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "usina-solar",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "usina-biomassa",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    },
+    {
+      "id": "usina-hidreletrica",
+      "status": "planned",
+      "publishable": false,
+      "issues": [
+        {
+          "code": "planned-layer",
+          "severity": "info",
+          "message": "Camada planejada sem arquivo; não é publicada nesta fase."
+        }
+      ]
+    }
+  ],
+  "gate": {
+    "passed": false,
+    "blockedReasons": [
+      "bacia-hidrografica-paramirim: license-metadata-missing",
+      "hidrografia: license-metadata-missing",
+      "imovel-rural-app: license-metadata-missing",
+      "imovel-rural-areas-degradadas-app: license-metadata-missing",
+      "imovel-rural-areas-degradadas-reserva-legal: license-metadata-missing",
+      "imovel-rural-limites-propriedades: license-metadata-missing",
+      "imovel-rural-reserva-legal: license-metadata-missing",
+      "cidades: license-metadata-missing",
+      "limites-municipais: license-metadata-missing",
+      "territorios-identidade: license-metadata-missing",
+      "limites-estaduais: license-metadata-missing",
+      "pocos-siagas: license-metadata-missing",
+      "extracao-mineral-pontos: license-metadata-missing",
+      "geologia: license-metadata-missing",
+      "geomorfologia: license-metadata-missing",
+      "vegetacao: license-metadata-missing",
+      "areas-quilombolas: license-metadata-missing",
+      "sitios-arqueologicos: license-metadata-missing",
+      "unidade-conservacao-estadual: license-metadata-missing",
+      "unidade-conservacao-municipal: license-metadata-missing",
+      "mde: license-metadata-missing",
+      "mde: source-metadata-missing",
+      "mde: nodata-semantics-unconfirmed",
+      "mde: raster-unit-unconfirmed",
+      "nivel-dinamico: license-metadata-missing",
+      "nivel-dinamico: source-metadata-missing",
+      "nivel-dinamico: nodata-semantics-unconfirmed",
+      "nivel-dinamico: raster-unit-unconfirmed",
+      "nivel-estatico: license-metadata-missing",
+      "nivel-estatico: source-metadata-missing",
+      "nivel-estatico: nodata-semantics-unconfirmed",
+      "nivel-estatico: raster-unit-unconfirmed",
+      "profundidade: license-metadata-missing",
+      "profundidade: source-metadata-missing",
+      "profundidade: nodata-semantics-unconfirmed",
+      "profundidade: raster-unit-unconfirmed"
+    ]
+  }
+}

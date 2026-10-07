@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.27] - 2026-10-07
+
+### Catálogo geoespacial e gate de ingestão
+
+- criada a auditoria executável em `scripts/validate-geospatial-catalog.ts`;
+- validação real dos 20 GeoJSON (hash, FeatureCollection, CRS, geometrias, contagem e extensão) e dos 4 GeoTIFF (dimensões, banda, tipo, NoData, compressão e overviews);
+- gerado relatório rastreável em `docs/catalogo-camadas-quality.json` e testes automatizados em `tests/geospatial-catalog.test.ts`;
+- camadas sem licença, fonte, unidade ou semântica de NoData documentadas permanecem bloqueadas e não publicáveis;
+- originais permanecem fora do repositório e não são alterados pelo pipeline.
+
 ## [0.3.0-beta.26] - 2026-10-07
 
 ### Refinamento do menu lateral
