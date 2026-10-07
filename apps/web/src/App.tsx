@@ -19,12 +19,13 @@ const navigation = [
 
 const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
 
-type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'user' | 'logout';
+type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout';
 function UiIcon({ name }: { name: IconName }) {
   const classes: Record<IconName, string> = {
     home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', help: 'fa-solid fa-circle-question',
     menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
     edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear', chevron: 'fa-solid fa-chevron-down',
+    chevronLeft: 'fa-solid fa-chevron-left', chevronRight: 'fa-solid fa-chevron-right',
     user: 'fa-solid fa-user', logout: 'fa-solid fa-arrow-right-from-bracket',
   };
   return <i className={classes[name]} aria-hidden="true" />;
@@ -92,14 +93,14 @@ function PlatformShell() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <button type="button" className="icon-button menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Fechar menu' : 'Abrir menu'} aria-expanded={sidebarOpen} aria-controls="main-sidebar">
-          <UiIcon name="menu" />
+        <button type="button" className="icon-button menu-button mobile-menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Recolher menu' : 'Abrir menu'} aria-expanded={sidebarOpen} aria-controls="main-sidebar">
+          <UiIcon name={sidebarOpen ? 'chevronLeft' : 'chevronRight'} />
         </button>
         <NavLink className="brand" to="/" aria-label="SIG Paramirim — início">
           <BrandLogo kind="icon" alt="" />
           <span>SIG Paramirim</span>
         </NavLink>
-        <span className="version">v{__APP_VERSION__}</span>
+        <a className="version release-link" href={`https://github.com/hlbs/sigparamirim/releases/tag/v${__APP_VERSION__}`} target="_blank" rel="noreferrer" title={`Abrir release v${__APP_VERSION__} no GitHub`}>v{__APP_VERSION__}</a>
 
         <div className="topbar-actions">
           <select
@@ -155,6 +156,10 @@ function PlatformShell() {
       </header>
 
       <aside id="main-sidebar" className={`sidebar ${sidebarOpen ? 'sidebar-open' : 'sidebar-collapsed'}`} aria-label="Navegação principal">
+        <button type="button" className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Recolher menu lateral' : 'Expandir menu lateral'} aria-expanded={sidebarOpen}>
+          <UiIcon name={sidebarOpen ? 'chevronLeft' : 'chevronRight'} />
+          <span>Menu</span>
+        </button>
         <nav>
           {visibleNavigation.map((item) => (
             <NavLink

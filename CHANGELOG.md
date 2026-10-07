@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.20] - 2026-10-07
+
+### Aprimorado
+
+- menu lateral recebeu seta de recolhimento dentro da própria navegação, com ícones centralizados no modo compacto;
+- decoração de curvas de nível passou a usar `detail_w.svg` e `detail_b.svg` nos painéis verdes, conforme o tema;
+- modelo 3D deixou de exibir marcadores animados de fluxo, preservando o relevo e a hidrografia estáticos;
+- loading ganhou a mesma rede de partículas conectadas do login, com velocidade refinada;
+- versão do header passou a apontar para o release correspondente no GitHub;
+- perfil foi redesenhado com cabeçalho de identidade, progresso de preenchimento, indicadores contextuais, edição de foto e formulário organizado por seções;
+- login passou a exibir a logo SVG completa, sem duplicação textual.
+
 ## [0.3.0-beta.19] - 2026-10-07
 
 ### Refinado

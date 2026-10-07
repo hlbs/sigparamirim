@@ -1,6 +1,6 @@
 {
   "name": "sig-paramirim",
-  "version": "0.3.0-beta.19",
+  "version": "0.3.0-beta.20",
   "private": true,
   "description": "Plataforma científica e WebGIS da Bacia Hidrográfica do Rio Paramirim.",
   "workspaces": [

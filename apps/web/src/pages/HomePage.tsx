@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BrandLogo } from '../components/BrandLogo';
+import { ThemeDetail } from '../components/ThemeDetail';
 import {
   compatibleConcentrationTime,
   concentrationTimeMethods,
@@ -111,7 +112,6 @@ function TerrainModelVisual() {
     controlsRef.current = controls;
     let disposed = false;
     let animationFrame = 0;
-    const flowMarkers: Array<{ mesh: THREE.Mesh; offset: number }> = [];
     let mainDrape: THREE.Vector3[] = [];
     const resize = () => { const rect = stage.getBoundingClientRect(); renderer.setSize(rect.width, rect.height, false); camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix(); };
     const observer = new ResizeObserver(resize); observer.observe(stage); resize();
@@ -150,11 +150,9 @@ function TerrainModelVisual() {
           const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.min(220, mainDrape.length * 2), .018, 6, false), new THREE.MeshStandardMaterial({ color: 0x43b8e4, emissive: 0x073f5c, emissiveIntensity: .8, roughness: .45 }));
           group.add(tube);
         }
-        const markerGeometry = new THREE.SphereGeometry(.045, 8, 8); const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xb7f4ff });
-        for (let i = 0; i < 18; i += 1) { const marker = new THREE.Mesh(markerGeometry, markerMaterial); group.add(marker); flowMarkers.push({ mesh: marker, offset: i / 18 }); }
       }).catch(() => undefined);
     };
-    const animate = (time: number) => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; if (mainDrape.length > 1) flowMarkers.forEach(({ mesh, offset }) => { const progress = ((time * .00008 + offset) % 1) * (mainDrape.length - 1); const a = Math.floor(progress); const start = mainDrape[a] ?? mainDrape[0]; const end = mainDrape[Math.min(a + 1, mainDrape.length - 1)] ?? start; if (start && end) mesh.position.lerpVectors(start, end, progress - a); }); renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);
+    const animate = () => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);
     return () => { disposed = true; cancelAnimationFrame(animationFrame); observer.disconnect(); controls.dispose(); controlsRef.current = null; renderer.dispose(); renderer.domElement.remove(); };
   }, []);
   return (
@@ -230,9 +228,10 @@ function NarrativeSection({
   description: React.ReactNode;
   tone?: 'surface' | 'soft' | 'brand';
   children: React.ReactNode;
-}) {
+  }) {
   return (
     <section id={id} className="story-section" data-tone={tone} aria-labelledby={`${id}-title`}>
+      {tone === 'brand' && <ThemeDetail className="story-detail" />}
       <div className="story-copy">
         <span className="eyebrow">{eyebrow}</span>
         <h2 id={`${id}-title`}>{title}</h2>
@@ -300,6 +299,7 @@ export function HomePage() {
   return (
     <div className="home-story">
       <section className="story-hero" aria-labelledby="home-title">
+        <ThemeDetail className="story-detail" />
         <div className="story-hero-copy">
           <BrandLogo kind="logo" alt="SIG Paramirim" className="story-hero-logo" />
           <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
