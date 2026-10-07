@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.29] - 2026-10-07
+
+### Catálogo WebGIS inicial
+
+- substituído o placeholder da rota `Mapa` por um catálogo de camadas rastreável;
+- adicionados filtros por estado (`bloqueada`, `planejada`, `pronta`), estratégia de derivação e motivo do bloqueio;
+- incluído layout responsivo para o catálogo sem publicar dados ainda não validados.
+
 ## [0.3.0-beta.28] - 2026-10-07
 
 ### Planejamento de derivados geoespaciais

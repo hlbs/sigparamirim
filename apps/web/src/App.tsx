@@ -9,6 +9,7 @@ import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuar
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 import { HomePage } from './pages/HomePage';
+import { MapPage } from './pages/MapPage';
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
@@ -192,7 +193,7 @@ function PlatformShell() {
       <main className={`main-content ${sidebarOpen ? '' : 'main-content-expanded'}`}>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/mapa" element={<Placeholder title="Mapa e dashboard" description="O catálogo geoespacial e o motor OpenLayers serão conectados após a validação das camadas iniciais." />} />
+          <Route path="/mapa" element={<MapPage />} />
           <Route path="/observatorio" element={<Placeholder title="Observatório Científico Paramirim" description="Acervo pesquisável de publicações, fontes e estudos sobre a bacia." />} />
           <Route path="/ajuda" element={<Placeholder title="Central de ajuda" description="Abertura e acompanhamento de tickets com histórico e anexos protegidos." />} />
           <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
