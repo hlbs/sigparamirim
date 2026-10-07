@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.18] - 2026-10-07
+
+### Refinado
+
+- malha tecnológica do login passou a ser desenhada em canvas, com pontos luminosos e linhas conectadas animadas sem interação com o mouse;
+- efeito visual deixou de depender da disponibilidade global do particles.js em cache ou em carregamentos antigos;
+- canvas respeita o redimensionamento do painel e a preferência de redução de movimento do sistema.
+
 ## [0.3.0-beta.17] - 2026-10-07
 
 ### Corrigido

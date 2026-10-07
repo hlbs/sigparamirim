@@ -29,24 +29,99 @@ export function AuthPage() {
   const destination = (location.state as { from?: string } | null)?.from || '/';
 
   useEffect(() => {
-    let frame = 0;
-    frame = window.requestAnimationFrame(() => {
-      const container = document.getElementById('auth-particles');
-      if (!container || !window.particlesJS || container.dataset.initialized === 'true') return;
-      container.dataset.initialized = 'true';
-      try {
-        window.particlesJS('auth-particles', {
-          particles: { number: { value: 78, density: { enable: true, value_area: 420 } }, color: { value: '#d7e77a' }, opacity: { value: .6, random: true }, size: { value: 2.3, random: true }, line_linked: { enable: true, distance: 220, color: '#d7e77a', opacity: .82, width: 1.35 }, move: { enable: true, speed: .28, direction: 'none', random: true, straight: false, out_mode: 'out', bounce: false } },
-          interactivity: { detect_on: 'canvas', events: { onhover: { enable: false }, onclick: { enable: false }, resize: true } },
-          retina_detect: true,
-        });
-      } catch { container.dataset.initialized = 'false'; }
-    });
+    const container = document.getElementById('auth-particles');
+    if (!container) return;
+
+    // Rede independente do carregamento externo do particles.js: desenhar em
+    // canvas evita a ausência de linhas quando o navegador mantém um bundle
+    // antigo em cache e também mantém o efeito sem interação com o mouse.
+    const canvas = document.createElement('canvas');
+    canvas.className = 'auth-network-canvas';
+    canvas.setAttribute('aria-hidden', 'true');
+    container.appendChild(canvas);
+    const context = canvas.getContext('2d');
+    if (!context) return () => canvas.remove();
+
+    type NetworkNode = { x: number; y: number; vx: number; vy: number; radius: number };
+    const nodes: NetworkNode[] = [];
+    let width = 0;
+    let height = 0;
+    let animationFrame = 0;
+    let resizeObserver: ResizeObserver | undefined;
+    let seed = 9127;
+    const random = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+    const resize = () => {
+      const ratio = Math.min(window.devicePixelRatio || 1, 2);
+      width = Math.max(container.clientWidth, 1);
+      height = Math.max(container.clientHeight, 1);
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      context.setTransform(ratio, 0, 0, ratio, 0, 0);
+      if (nodes.length === 0) {
+        for (let index = 0; index < 62; index += 1) {
+          nodes.push({
+            x: random() * width,
+            y: random() * height,
+            vx: (random() - .5) * .18,
+            vy: (random() - .5) * .18,
+            radius: 1.1 + random() * 1.8,
+          });
+        }
+      }
+    };
+    const draw = () => {
+      context.clearRect(0, 0, width, height);
+      const maxDistance = Math.min(190, Math.max(120, width * .24));
+      const maxDistanceSquared = maxDistance * maxDistance;
+      for (const node of nodes) {
+        node.x += node.vx;
+        node.y += node.vy;
+        if (node.x < -10 || node.x > width + 10) node.vx *= -1;
+        if (node.y < -10 || node.y > height + 10) node.vy *= -1;
+      }
+      for (let first = 0; first < nodes.length; first += 1) {
+        const node = nodes[first];
+        if (!node) continue;
+        for (let second = first + 1; second < nodes.length; second += 1) {
+          const other = nodes[second];
+          if (!other) continue;
+          const dx = node.x - other.x;
+          const dy = node.y - other.y;
+          const distanceSquared = dx * dx + dy * dy;
+          if (distanceSquared > maxDistanceSquared) continue;
+          const alpha = (1 - Math.sqrt(distanceSquared) / maxDistance) * .24;
+          context.strokeStyle = `rgba(215,231,122,${alpha.toFixed(3)})`;
+          context.lineWidth = .7;
+          context.beginPath();
+          context.moveTo(node.x, node.y);
+          context.lineTo(other.x, other.y);
+          context.stroke();
+        }
+      }
+      for (const node of nodes) {
+        context.fillStyle = 'rgba(224,239,154,.78)';
+        context.shadowColor = 'rgba(215,231,122,.52)';
+        context.shadowBlur = 9;
+        context.beginPath();
+        context.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.shadowBlur = 0;
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        animationFrame = window.requestAnimationFrame(draw);
+      }
+    };
+    resize();
+    resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
+    draw();
     return () => {
-      window.cancelAnimationFrame(frame);
-      const container = document.getElementById('auth-particles');
-      container?.querySelector('canvas')?.remove();
-      if (container) container.dataset.initialized = 'false';
+      window.cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      canvas.remove();
     };
   }, []);
 
