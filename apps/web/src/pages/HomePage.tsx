@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import * as THREE from 'three';
 import {
   compatibleConcentrationTime,
   concentrationTimeMethods,
@@ -78,23 +79,53 @@ function ConcentrationTimeRecommendation() {
 }
 
 function TerrainModelVisual() {
-  const [rotation, setRotation] = useState({ x: 54, y: -12 });
+  const stageRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState({ x: -0.9, y: -0.35 });
   const dragRef = useRef<{ x: number; y: number; rotation: { x: number; y: number } } | null>(null);
-
-  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { x: event.clientX, y: event.clientY, rotation };
-  };
-  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current) return;
-    setRotation({
-      x: Math.max(28, Math.min(72, dragRef.current.rotation.x - (event.clientY - dragRef.current.y) * 0.18)),
-      y: dragRef.current.rotation.y + (event.clientX - dragRef.current.x) * 0.22,
-    });
-  };
+  const groupRef = useRef<THREE.Group | null>(null);
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return undefined;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+    camera.position.set(0, 2.2, 4.4);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x000000, 0);
+    stage.appendChild(renderer.domElement);
+    const group = new THREE.Group();
+    groupRef.current = group;
+    scene.add(group);
+    scene.add(new THREE.HemisphereLight(0xf5f4d8, 0x1f260c, 2.1));
+    const light = new THREE.DirectionalLight(0xffffff, 2.8); light.position.set(-2, 5, 3); scene.add(light);
+    let disposed = false;
+    const resize = () => { const rect = stage.getBoundingClientRect(); renderer.setSize(rect.width, rect.height, false); camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix(); };
+    const observer = new ResizeObserver(resize); observer.observe(stage); resize();
+    const image = new Image(); image.src = '/mde-height.png';
+    image.onload = () => {
+      if (disposed) return;
+      const canvas = document.createElement('canvas'); canvas.width = image.width; canvas.height = image.height;
+      const context = canvas.getContext('2d'); if (!context) return; context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(0, 0, image.width, image.height).data;
+      const cols = image.width; const rows = image.height; const positions: number[] = []; const colors: number[] = []; const indices: number[] = [];
+      const index = (x: number, y: number) => y * cols + x;
+      for (let y = 0; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
+        const p = index(x, y) * 4; const h = (pixels[p] ?? 0) / 255; const px = (x / (cols - 1) - .5) * 4.8; const pz = (y / (rows - 1) - .5) * 7.2;
+        positions.push(px, h * 1.55, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
+      }
+      for (let y = 0; y < rows - 1; y += 1) for (let x = 0; x < cols - 1; x += 1) { const a = index(x, y); const b = index(x + 1, y); const c = index(x + 1, y + 1); const d = index(x, y + 1); indices.push(a, b, d, b, c, d); }
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); geometry.setIndex(indices); geometry.computeVertexNormals();
+      const material = new THREE.MeshStandardMaterial({ vertexColors: true, transparent: true, roughness: .9, metalness: 0, side: THREE.DoubleSide, depthWrite: false });
+      const mesh = new THREE.Mesh(geometry, material); group.add(mesh);
+    };
+    const animate = () => { if (disposed) return; renderer.render(scene, camera); requestAnimationFrame(animate); }; animate();
+    return () => { disposed = true; observer.disconnect(); renderer.dispose(); renderer.domElement.remove(); };
+  }, []);
+  useEffect(() => { if (!groupRef.current) return; groupRef.current.rotation.x = rotation.x; groupRef.current.rotation.y = rotation.y; groupRef.current.scale.setScalar(zoom); }, [rotation, zoom]);
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => { event.currentTarget.setPointerCapture(event.pointerId); dragRef.current = { x: event.clientX, y: event.clientY, rotation }; };
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => { if (!dragRef.current) return; setRotation({ x: Math.max(-1.35, Math.min(-.25, dragRef.current.rotation.x + (event.clientY - dragRef.current.y) * .006)), y: dragRef.current.rotation.y + (event.clientX - dragRef.current.x) * .008 }); };
   const handlePointerUp = () => { dragRef.current = null; };
-
   return (
     <figure className="terrain-figure" aria-labelledby="terrain-caption">
       <div
@@ -107,9 +138,7 @@ function TerrainModelVisual() {
         onPointerCancel={handlePointerUp}
         onWheel={(event) => { event.preventDefault(); setZoom((current) => Math.max(.78, Math.min(1.35, current - event.deltaY * .001))); }}
       >
-        <div className="terrain-orbit" style={{ transform: `rotateX(${rotation.x}deg) rotateZ(${rotation.y}deg) scale(${zoom})` }}>
-          <img src="/mde-terrain.png" alt="Modelo hipsométrico da bacia do Rio Paramirim" draggable="false" />
-        </div>
+        <div ref={stageRef} className="terrain-canvas" />
         <div className="terrain-north">N</div>
       </div>
       <div className="terrain-controls" aria-label="Controles do modelo">

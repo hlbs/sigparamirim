@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.10] - 2026-10-07
+
+### Aprimorado
+
+- substituído o relevo em imagem por uma malha 3D WebGL real, construída a partir do heightmap derivado do MDE;
+- adicionadas elevação no eixo vertical, iluminação hemisférica, normais de superfície, falsa-cor por altitude, transparência de nodata e navegação orbital;
+- incluído heightmap público otimizado para carregamento da visualização sem expor o arquivo raster original no bundle.
+
 ## [0.3.0-beta.9] - 2026-10-07
 
 ### Aprimorado
