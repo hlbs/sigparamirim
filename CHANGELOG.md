@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.31] - 2026-10-07
+
+### Interação cartográfica
+
+- adicionados controles próprios de aproximação, afastamento e reposicionamento;
+- preparado carregamento assíncrono de GeoJSON somente para camadas `ready`;
+- erros de carregamento passaram a aparecer no próprio mapa sem travar a navegação.
+
 ## [0.3.0-beta.30] - 2026-10-07
 
 ### Motor cartográfico inicial

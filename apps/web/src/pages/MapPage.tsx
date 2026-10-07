@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { MapCanvas } from '../features/gis/MapCanvas';
+import { MapCanvas, type MapLayerDefinition } from '../features/gis/MapCanvas';
 
 type LayerStatus = 'blocked' | 'planned' | 'ready';
 type LayerFormat = 'COG' | 'GeoJSON direto' | 'GeoJSON em Worker' | 'GeoJSON particionado';
@@ -29,6 +29,9 @@ const layers: CatalogLayer[] = [
   { id: 'barragens', title: 'Barragens', group: 'Planejadas', status: 'planned', detail: 'Nenhum arquivo original foi submetido ao catálogo.', blocker: 'Aguardando fonte oficial e arquivo validável.' },
 ];
 
+// O pipeline preenche esta lista somente depois que o gate de publicação passar.
+const publishedMapLayers: MapLayerDefinition[] = [];
+
 const statusLabel: Record<LayerStatus, string> = { blocked: 'Bloqueada', planned: 'Planejada', ready: 'Pronta' };
 
 export function MapPage() {
@@ -57,7 +60,7 @@ export function MapPage() {
 
       <section className="catalog-map-panel" aria-labelledby="catalog-map-title">
         <div className="catalog-map-heading"><div><span className="eyebrow">Motor cartográfico</span><h2 id="catalog-map-title">Enquadramento da bacia</h2></div><span className="catalog-map-state"><i className="fa-solid fa-circle-pause" aria-hidden="true" /> Aguardando camadas</span></div>
-        <MapCanvas />
+        <MapCanvas layers={publishedMapLayers} />
       </section>
 
       <div className="catalog-toolbar">

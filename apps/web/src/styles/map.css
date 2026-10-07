@@ -20,11 +20,16 @@
 .catalog-map-state i { color: var(--brand-strong); }
 .map-canvas-shell { position: relative; min-height: 310px; overflow: hidden; border: 1px solid var(--border); border-radius: 17px; background: radial-gradient(circle at 26% 30%, color-mix(in srgb, var(--brand-soft) 55%, transparent), transparent 42%), var(--surface-muted); }
 .map-canvas { width: 100%; min-height: 310px; }
+.map-canvas-controls { position: absolute; top: 14px; right: 14px; z-index: 2; display: grid; gap: 6px; }
+.map-canvas-controls button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid var(--border); border-radius: 9px; color: var(--text); background: color-mix(in srgb, var(--surface) 90%, transparent); box-shadow: var(--shadow-soft); cursor: pointer; transition: transform 160ms ease, color 160ms ease, background 160ms ease; }
+.map-canvas-controls button:hover { transform: translateY(-1px); color: var(--brand-strong); background: var(--brand-soft); }
 .map-canvas-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 24px; pointer-events: none; }
 .map-canvas-empty > span { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 50%; color: var(--brand-strong); background: var(--brand-soft); font-size: 1.2rem; }
 .map-canvas-empty strong, .map-canvas-empty p { display: block; }
 .map-canvas-empty strong { font-size: .95rem; }
 .map-canvas-empty p { max-width: 480px; margin: 5px 0 0; color: var(--text-muted); font-size: .8rem; line-height: 1.5; }
+.map-canvas-feedback { position: absolute; left: 14px; bottom: 14px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; max-width: calc(100% - 28px); padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; color: var(--text-muted); background: color-mix(in srgb, var(--surface) 92%, transparent); font-size: .76rem; }
+.map-canvas-feedback.is-error { color: #8a4b32; border-color: color-mix(in srgb, #b96c45 50%, var(--border)); }
 .catalog-toolbar h2 { margin: 8px 0 0; font-size: clamp(1.6rem, 3vw, 2.5rem); letter-spacing: -.05em; }
 .catalog-filters { display: flex; flex-wrap: wrap; justify-content: end; gap: 7px; }
 .catalog-filters button { padding: 9px 13px; border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); background: var(--surface); cursor: pointer; transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 160ms ease; }

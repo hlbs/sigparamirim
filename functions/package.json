@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/functions",
-  "version": "0.3.0-beta.30",
+  "version": "0.3.0-beta.31",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
