@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.25] - 2026-10-07
+
+### Correção de navegação
+
+- itens do menu lateral recolhido passaram a usar um único eixo flexível de alinhamento;
+- ícones ativos e inativos agora ficam centralizados horizontal e verticalmente na mesma moldura, sem a segunda linha implícita criada pelo texto do link.
+
 ## [0.3.0-beta.24] - 2026-10-07
 
 ### Ajustes de contraste e marca
