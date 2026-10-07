@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { BrandLogo } from '../components/BrandLogo';
 import {
   compatibleConcentrationTime,
   concentrationTimeMethods,
@@ -122,9 +123,18 @@ function TerrainModelVisual() {
       const pixels = context.getImageData(0, 0, image.width, image.height).data;
       const cols = image.width; const rows = image.height; const positions: number[] = []; const colors: number[] = []; const indices: number[] = [];
       const index = (x: number, y: number) => y * cols + x;
+      const sampleHeight = (x: number, y: number) => {
+        let total = 0; let count = 0;
+        for (let oy = -1; oy <= 1; oy += 1) for (let ox = -1; ox <= 1; ox += 1) {
+          const sx = Math.max(0, Math.min(cols - 1, x + ox)); const sy = Math.max(0, Math.min(rows - 1, y + oy));
+          const value = (pixels[index(sx, sy) * 4] ?? 0) / 255;
+          if (value > 0) { total += value; count += 1; }
+        }
+        return count ? total / count : 0;
+      };
       for (let y = 0; y < rows; y += 1) for (let x = 0; x < cols; x += 1) {
-        const p = index(x, y) * 4; const h = (pixels[p] ?? 0) / 255; const px = (x / (cols - 1) - .5) * 4.8; const pz = (y / (rows - 1) - .5) * 7.2;
-        positions.push(px, h * .38, pz); const color = new THREE.Color().setHSL(.64 - h * .62, .78, .38 + h * .12); colors.push(color.r, color.g, color.b, (pixels[p + 3] ?? 0) / 255);
+        const p = index(x, y) * 4; const raw = (pixels[p] ?? 0) / 255; const h = sampleHeight(x, y); const px = (x / (cols - 1) - .5) * 4.8; const pz = (y / (rows - 1) - .5) * 7.2;
+        positions.push(px, h * .24, pz); const color = new THREE.Color().setHSL(.25 - h * .19, .68, .34 + h * .16); colors.push(color.r, color.g, color.b, raw > 0 ? 1 : 0);
       }
       for (let y = 0; y < rows - 1; y += 1) for (let x = 0; x < cols - 1; x += 1) { const a = index(x, y); const b = index(x + 1, y); const c = index(x + 1, y + 1); const d = index(x, y + 1); indices.push(a, b, d, b, c, d); }
       const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4)); geometry.setIndex(indices); geometry.computeVertexNormals();
@@ -132,14 +142,19 @@ function TerrainModelVisual() {
       const mesh = new THREE.Mesh(geometry, material); group.add(mesh);
       fetch('/hidrografia-3d.json').then((response) => response.json() as Promise<{ lines: number[][][]; main: number[][] }>).then((hydrography) => {
         if (disposed) return;
-        const drape = (line: number[][]) => line.map(([x = 0, z = 0]) => { const ix = Math.max(0, Math.min(cols - 1, Math.round(((x + 2.4) / 4.8) * (cols - 1)))); const iy = Math.max(0, Math.min(rows - 1, Math.round(((z + 3.6) / 7.2) * (rows - 1)))); const h = (pixels[(iy * cols + ix) * 4] ?? 0) / 255; return new THREE.Vector3(x, h * .38 + .025, z); });
-        hydrography.lines.forEach((line) => { const points = drape(line); if (points.length < 2) return; const lineGeometry = new THREE.BufferGeometry().setFromPoints(points); group.add(new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0x54c8de, transparent: true, opacity: .68 }))); });
+        const drape = (line: number[][]) => line.map(([x = 0, z = 0]) => { const ix = Math.max(0, Math.min(cols - 1, Math.round(((x + 2.4) / 4.8) * (cols - 1)))); const iy = Math.max(0, Math.min(rows - 1, Math.round(((z + 3.6) / 7.2) * (rows - 1)))); const h = sampleHeight(ix, iy); return new THREE.Vector3(x, h * .24 + .028, z); });
+        hydrography.lines.forEach((line) => { const points = drape(line); if (points.length < 2) return; const lineGeometry = new THREE.BufferGeometry().setFromPoints(points); group.add(new THREE.Line(lineGeometry, new THREE.LineBasicMaterial({ color: 0x2f9ed0, transparent: true, opacity: .86 }))); });
         mainDrape = drape(hydrography.main);
-        const markerGeometry = new THREE.SphereGeometry(.035, 8, 8); const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xa9f4ff });
-        for (let i = 0; i < 14; i += 1) { const marker = new THREE.Mesh(markerGeometry, markerMaterial); group.add(marker); flowMarkers.push({ mesh: marker, offset: i / 14 }); }
+        if (mainDrape.length > 2) {
+          const curve = new THREE.CatmullRomCurve3(mainDrape);
+          const tube = new THREE.Mesh(new THREE.TubeGeometry(curve, Math.min(220, mainDrape.length * 2), .018, 6, false), new THREE.MeshStandardMaterial({ color: 0x43b8e4, emissive: 0x073f5c, emissiveIntensity: .8, roughness: .45 }));
+          group.add(tube);
+        }
+        const markerGeometry = new THREE.SphereGeometry(.045, 8, 8); const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xb7f4ff });
+        for (let i = 0; i < 18; i += 1) { const marker = new THREE.Mesh(markerGeometry, markerMaterial); group.add(marker); flowMarkers.push({ mesh: marker, offset: i / 18 }); }
       }).catch(() => undefined);
     };
-    const animate = (time: number) => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; if (mainDrape.length > 1) flowMarkers.forEach(({ mesh, offset }) => { const progress = ((time * .000035 + offset) % 1) * (mainDrape.length - 1); const a = Math.floor(progress); const start = mainDrape[a] ?? mainDrape[0]; const end = mainDrape[Math.min(a + 1, mainDrape.length - 1)] ?? start; if (start && end) mesh.position.lerpVectors(start, end, progress - a); }); renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);
+    const animate = (time: number) => { if (disposed) return; controls.update(); if (northRef.current) northRef.current.style.transform = `rotate(${-controls.getAzimuthalAngle()}rad)`; if (mainDrape.length > 1) flowMarkers.forEach(({ mesh, offset }) => { const progress = ((time * .00008 + offset) % 1) * (mainDrape.length - 1); const a = Math.floor(progress); const start = mainDrape[a] ?? mainDrape[0]; const end = mainDrape[Math.min(a + 1, mainDrape.length - 1)] ?? start; if (start && end) mesh.position.lerpVectors(start, end, progress - a); }); renderer.render(scene, camera); animationFrame = requestAnimationFrame(animate); }; animationFrame = requestAnimationFrame(animate);
     return () => { disposed = true; cancelAnimationFrame(animationFrame); observer.disconnect(); controls.dispose(); controlsRef.current = null; renderer.dispose(); renderer.domElement.remove(); };
   }, []);
   return (
@@ -171,22 +186,22 @@ function TerritoryContextTabs() {
     clima: {
       label: 'Clima e água', icon: 'fa-cloud-sun', title: 'O pulso sazonal da bacia',
       body: 'O diagnóstico do Macrozoneamento Ecológico-Econômico do São Francisco descreve o Vale do Paramirim no domínio semiárido, com precipitação anual entre 650 e 1.250 mm concentrada em cerca de quatro meses do verão e temperaturas médias anuais entre 23 e 25 °C. A classificação regional varia com o relevo: áreas baixas são mais secas, enquanto serras e transições próximas à Chapada Diamantina são mais úmidas.', refs: [] as number[],
-      items: [['Cheias', 'Responder a eventos intensos exige séries de chuva, nível e vazão; a morfometria sozinha não define a magnitude da cheia.'], ['Estiagem', 'A redução das vazões evidencia o papel de nascentes, reservatórios, solos e aquíferos na sustentação do escoamento de base.'], ['Temperatura média', 'O indicador será calculado por estação, período e método de agregação antes de ser publicado; um valor sem janela temporal seria enganoso.']],
+      items: [['Chuva concentrada', 'No Vale do Paramirim, a precipitação anual varia de 650 a 1.250 mm e se concentra em cerca de quatro meses do verão; essa concentração sazonal ajuda a explicar a alternância entre resposta rápida e estiagem prolongada.'], ['Serras e vales', 'O domínio semiárido não é uniforme: os vales mais baixos são secos, enquanto serras e áreas de transição próximas à Chapada Diamantina recebem mais umidade.'], ['Temperatura média', 'As médias anuais regionais ficam entre 23 e 25 °C. Para comparar municípios, ainda é necessário preservar a estação, o período e o método de agregação.']],
     },
     vegetacao: {
       label: 'Vegetação e solo', icon: 'fa-leaf', title: 'Cobertura, infiltração e erosão',
       body: 'O estudo florístico da sub-bacia registra um gradiente entre formações serranas mais conservadas, áreas de transição e Caatinga arbustivo-arbórea nas porções mais baixas. A análise da água subterrânea em Boquira mostra por que geologia, solos e qualidade da água precisam acompanhar a leitura da cobertura vegetal.', refs: [15],
-      items: [['Vegetação', 'A camada de vegetação da plataforma será lida com escala e data de mapeamento, evitando comparar classes de anos diferentes como se fossem uma fotografia única.'], ['Solos', 'O mapa de solos orienta hipóteses sobre infiltração e armazenamento, mas deve ser cruzado com campo, litologia e uso da terra.'], ['Risco de erosão', 'Encostas, solo exposto e concentração de escoamento podem formar áreas prioritárias para monitoramento e conservação.']],
+      items: [['Serras conservadas', 'O levantamento florístico identifica formações serranas mais conservadas e um gradiente que desce até a Caatinga arbustivo-arbórea nas porções mais baixas da sub-bacia.'], ['Água subterrânea em Boquira', 'A qualidade da água subterrânea estudada em Boquira mostra que litologia, solo e cobertura vegetal precisam ser interpretados em conjunto, especialmente onde a infiltração é limitada.'], ['Cobertura e erosão', 'A transição entre encostas serranas, áreas de uso agropecuário e Caatinga cria contrastes de proteção do solo e de concentração do escoamento que devem orientar o monitoramento.']],
     },
     sociedade: {
       label: 'Sociedade e cultura', icon: 'fa-people-group', title: 'Água como território vivido',
       body: 'A pesquisa sobre o Território de Identidade Bacia do Paramirim reúne indicadores educacionais, demográficos e socioeconômicos de 2011 a 2022. Estudos sobre educação quilombola reforçam que território, memória e identidade não são camadas decorativas: são dimensões concretas da gestão da água e da divulgação científica.', refs: [16, 17],
-      items: [['Comunidades', 'Camadas sociais precisam ser apresentadas com cuidado, escala adequada e respeito à proteção de dados sensíveis.'], ['Patrimônio', 'Sítios arqueológicos e referências culturais ajudam a contar como as pessoas ocupam e interpretam o território.'], ['Segurança hídrica', 'Acesso à água e distância de fontes devem ser analisados junto com sazonalidade, infraestrutura e desigualdades locais.']],
+      items: [['Indicadores territoriais', 'O diagnóstico do Território de Identidade Bacia do Paramirim acompanha indicadores educacionais, demográficos e socioeconômicos entre 2011 e 2022, permitindo observar mudanças além da paisagem física.'], ['Educação quilombola', 'Pesquisas sobre educação quilombola na região mostram que memória, identidade e território fazem parte da gestão da água e não podem ser tratados como informação acessória.'], ['Acesso à água', 'A leitura social da bacia deve cruzar a localização das comunidades e dos serviços com a sazonalidade, a infraestrutura hídrica e as desigualdades de acesso.']],
     },
     economia: {
       label: 'Economia territorial', icon: 'fa-chart-line', title: 'Produção, infraestrutura e resiliência',
       body: 'A economia regional combina agropecuária, serviços, infraestrutura hídrica e atividades minerais. O estudo sobre conflitos da mineração na Bahia inclui ocorrências no Território Bacia do Paramirim e ajuda a enquadrar a vocação econômica junto de seus passivos, disputas e efeitos ambientais, sem confundir potencial mineral com desenvolvimento social automático.', refs: [18],
-      items: [['Uso da terra', 'Agricultura, pecuária e áreas urbanizadas devem ser comparadas por período para revelar expansão, permanência e mudança.'], ['Infraestrutura', 'Barragens, poços, adutoras e pontos de captação organizam a resiliência durante a estiagem e a exposição durante cheias.'], ['Planejamento', 'Indicadores econômicos só são úteis quando acompanhados de escala, fonte, data e incerteza.']],
+      items: [['Agropecuária e serviços', 'A economia regional combina produção agropecuária e serviços; a análise espacial deve mostrar onde essa atividade depende de água regular e onde a estiagem impõe maior vulnerabilidade.'], ['Mineração em Boquira', 'Estudos sobre conflitos da mineração na Bahia registram ocorrências no Território Bacia do Paramirim e recomendam separar potencial mineral de efeitos ambientais e benefícios sociais efetivos.'], ['Infraestrutura hídrica', 'Barragens, poços, adutoras e captações sustentam a economia durante a estiagem, mas também definem quem está mais exposto quando a chuva se concentra em poucos meses.']],
     },
   } as const;
   const current = tabs[active as keyof typeof tabs];
@@ -286,6 +301,7 @@ export function HomePage() {
     <div className="home-story">
       <section className="story-hero" aria-labelledby="home-title">
         <div className="story-hero-copy">
+          <BrandLogo kind="logo" alt="SIG Paramirim" className="story-hero-logo" />
           <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
           <h1 id="home-title">Uma leitura territorial construída com dados rastreáveis.</h1>
           <p>
@@ -301,11 +317,6 @@ export function HomePage() {
             <span aria-hidden="true">·</span>
             <strong>{formatMetric(channelLength)}</strong> de canal principal
           </div>
-        </div>
-        <div className="story-hero-mark" aria-label="Identidade do SIG Paramirim">
-          <img src="/sig-logo.png" alt="SIG Paramirim" />
-          <span>Conheça a bacia</span>
-          <small>Informação científica acessível e rastreável</small>
         </div>
       </section>
 
@@ -449,7 +460,7 @@ export function HomePage() {
         </>}
       >
         <figure className="channel-profile" aria-labelledby="channel-caption">
-          <svg viewBox="0 0 680 300" role="img" aria-labelledby="channel-svg-title channel-svg-description">
+          <svg viewBox="0 0 680 320" role="img" aria-labelledby="channel-svg-title channel-svg-description">
             <title id="channel-svg-title">Perfil simplificado do canal principal</title>
             <desc id="channel-svg-description">Linha descendente entre 979,89 e 409 metros ao longo de 386,54 quilômetros.</desc>
             <defs><linearGradient id="channel-gradient" x1="0" x2="1"><stop offset="0" stopColor="#dce67a" /><stop offset="1" stopColor="#5a5e0b" /></linearGradient></defs>
@@ -457,16 +468,16 @@ export function HomePage() {
             <path className="channel-area" d="M56 54 C180 72 236 126 344 145 S510 188 632 228 L632 246 L56 246Z" />
             <path className="channel-line" d="M56 54 C180 72 236 126 344 145 S510 188 632 228" />
             <circle className="channel-point" cx="56" cy="54" r="8" /><circle className="channel-point" cx="632" cy="228" r="8" />
-            <text className="channel-axis-label" x="18" y="40">altitude (m)</text><text className="channel-axis-label" x="632" y="276" textAnchor="end">percurso do canal (km)</text>
-            <text className="channel-value-label" x="56" y="30">{formatMetric(channelStart)}</text><text className="channel-value-label" x="632" y="218" textAnchor="end">{formatMetric(channelEnd)}</text>
-            <text className="channel-end-label" x="56" y="267">nascente</text><text className="channel-end-label" x="632" y="267" textAnchor="end">jusante</text>
+            <text className="channel-axis-label" x="56" y="18">Altitude (m)</text><text className="channel-axis-label" x="632" y="305" textAnchor="end">Percurso do canal (km)</text>
+            <text className="channel-value-label" x="56" y="39">{formatMetric(channelStart)}</text><text className="channel-value-label" x="632" y="213" textAnchor="end">{formatMetric(channelEnd)}</text>
+            <text className="channel-end-label" x="56" y="272">Nascente</text><text className="channel-end-label" x="632" y="272" textAnchor="end">Jusante</text>
           </svg>
           <div className="channel-stats">
             <span><strong>{formatMetric(channelGradient)}</strong> gradiente</span>
             <span><strong>{formatMetric(channelSlope)}</strong> declividade entre extremos</span>
             <span><strong>{formatMetric(channelSinuosity)}</strong> sinuosidade informada</span>
           </div>
-          <figcaption id="channel-caption">Representação esquemática, sem escala vertical ou horizontal.</figcaption>
+          <figcaption id="channel-caption">Representação esquemática do gradiente do canal principal; as escalas vertical e horizontal não são proporcionais.</figcaption>
         </figure>
       </NarrativeSection>
 

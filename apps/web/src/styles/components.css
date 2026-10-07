@@ -1,11 +1,11 @@
 .ui-icon { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .theme-switch { display: inline-flex; align-items: center; cursor: pointer; }
 .theme-switch input { position: absolute; opacity: 0; pointer-events: none; }
-.theme-switch-track { position: relative; display: inline-flex; align-items: center; width: 66px; height: 36px; padding: 4px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface-muted); transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
-.theme-switch-thumb { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.22); transform: translateX(0); transition: transform 260ms var(--ease-premium), background 220ms ease; }
+.theme-switch-track { position: relative; display: inline-flex; align-items: center; width: 84px; height: 38px; padding: 4px; border: 1px solid var(--border); border-radius: 99px; background: var(--surface-muted); transition: background 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+.theme-switch-thumb { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; box-shadow: 0 3px 8px rgba(0,0,0,.22); transform: translateX(0); transition: transform 260ms var(--ease-premium), background 220ms ease; }
 .theme-switch-thumb .fa-solid { font-size: .75rem; }
 .theme-switch input:checked + .theme-switch-track { border-color: var(--brand); background: var(--brand-soft); box-shadow: 0 0 0 4px var(--brand-glow); }
-.theme-switch input:checked + .theme-switch-track .theme-switch-thumb { background: var(--brand-strong); transform: translateX(30px); }
+.theme-switch input:checked + .theme-switch-track .theme-switch-thumb { background: var(--brand-strong); transform: translateX(46px); }
 .button, .provider-button { position: relative; overflow: hidden; border: 1px solid transparent; cursor: pointer; transition: transform 180ms var(--ease-premium), box-shadow 180ms ease, background 180ms ease, color 180ms ease; }
 .button::after, .provider-button::after, .login-link::after { position: absolute; inset: 0; content: ''; background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.25) 48%, transparent 70%); transform: translateX(-120%); transition: transform 500ms var(--ease-premium); }
 .button:hover::after, .provider-button:hover::after, .login-link:hover::after { transform: translateX(120%); }
@@ -19,7 +19,7 @@
 .notification-popover strong { display: block; margin-bottom: 9px; letter-spacing: -.02em; }
 .profile-menu-anchor { position: relative; }
 .profile-trigger { display: inline-flex; align-items: center; gap: 8px; padding: 3px; border: 1px solid transparent; border-radius: 16px; background: transparent; color: var(--text); cursor: pointer; }
-.profile-trigger:hover, .profile-trigger[aria-expanded="true"] { border-color: var(--border); background: var(--surface-muted); }
+.profile-trigger:hover, .profile-trigger[aria-expanded="true"] { border-color: transparent; background: transparent; opacity: .84; }
 .profile-trigger > .fa-chevron-down { color: var(--text-muted); font-size: .66rem; transition: transform 180ms ease; }
 .profile-trigger[aria-expanded="true"] > .fa-chevron-down { transform: rotate(180deg); }
 .profile-popover { position: absolute; top: 52px; right: 0; z-index: 40; width: 230px; padding: 8px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-elevated); animation: popover-in 180ms var(--ease-premium); }
@@ -27,8 +27,9 @@
 .profile-popover-header strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .profile-popover-header small { overflow: hidden; color: var(--text-muted); text-overflow: ellipsis; white-space: nowrap; }
 .profile-menu-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px; border: 0; border-radius: 11px; background: transparent; color: var(--text); font-weight: 700; text-align: left; text-decoration: none; cursor: pointer; }
+.profile-menu-item > .fa-solid { width: 17px; color: var(--brand-strong); text-align: center; }
 .profile-menu-item:hover { background: var(--brand-soft); color: var(--brand-strong); }
-.profile-menu-item.danger { color: #9b3d37; }
+.profile-menu-item.danger { color: var(--text); }
 @keyframes popover-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } to { opacity: 1; transform: none; } }
 
 .terrain-figure { margin: 0; padding: clamp(18px, 4vw, 34px); border: 1px solid var(--border); border-radius: 24px; background: var(--surface); }

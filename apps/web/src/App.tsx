@@ -4,6 +4,7 @@ import { LanguageCode, usePreferences } from './stores/preferences';
 import { signOutUser, useAuth } from './features/auth';
 import { AuthLoading } from './components/AuthLoading';
 import { UserAvatar } from './components/UserAvatar';
+import { BrandLogo } from './components/BrandLogo';
 import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
@@ -18,12 +19,13 @@ const navigation = [
 
 const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
 
-type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron';
+type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'user' | 'logout';
 function UiIcon({ name }: { name: IconName }) {
   const classes: Record<IconName, string> = {
     home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', help: 'fa-solid fa-circle-question',
     menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
     edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear', chevron: 'fa-solid fa-chevron-down',
+    user: 'fa-solid fa-user', logout: 'fa-solid fa-arrow-right-from-bracket',
   };
   return <i className={classes[name]} aria-hidden="true" />;
 }
@@ -94,7 +96,7 @@ function PlatformShell() {
           <UiIcon name="menu" />
         </button>
         <NavLink className="brand" to="/" aria-label="SIG Paramirim — início">
-          <img src="/sig-logo.png" alt="" />
+          <BrandLogo kind="icon" alt="" />
           <span>SIG Paramirim</span>
         </NavLink>
         <span className="version">v{__APP_VERSION__}</span>
@@ -141,8 +143,8 @@ function PlatformShell() {
                     <strong>{user.displayName || 'Usuário SIG Paramirim'}</strong>
                     <small>{user.email}</small>
                   </div>
-                  <NavLink className="profile-menu-item" to="/perfil" role="menuitem" onClick={() => setProfileMenuOpen(false)}>◉ <span>Meu perfil</span></NavLink>
-                  <button className="profile-menu-item danger" type="button" role="menuitem" onClick={() => void signOutUser()}>↪ <span>Sair da conta</span></button>
+                  <NavLink className="profile-menu-item" to="/perfil" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="user" /><span>Meu perfil</span></NavLink>
+                  <button className="profile-menu-item" type="button" role="menuitem" onClick={() => void signOutUser()}><UiIcon name="logout" /><span>Sair da conta</span></button>
                 </div>
               )}
             </div>
@@ -169,13 +171,13 @@ function PlatformShell() {
         <div className="sidebar-footer">
           <span className={`connection-dot ${firebaseConfigured ? 'ready' : ''}`} aria-hidden="true" />
           <div className="sidebar-author">
-            <span>Desenvolvido por Hermes Santos</span>
+            <span>Desenvolvido por<br /><strong>Hermes Santos</strong></span>
             <small>Inteligência de dados territoriais</small>
           </div>
           <div className="sidebar-socials" aria-label="Redes do desenvolvedor">
-            <a href="#github" aria-label="GitHub (link demonstrativo)">GH</a>
-            <a href="#linkedin" aria-label="LinkedIn (link demonstrativo)">in</a>
-            <a href="#lattes" aria-label="Lattes (link demonstrativo)">L</a>
+            <a href="https://github.com/hlbs" target="_blank" rel="noreferrer" aria-label="GitHub de Hermes Santos"><img src="/github.png" alt="" /></a>
+            <a href="https://www.linkedin.com/in/hermes-santos-28720b141" target="_blank" rel="noreferrer" aria-label="LinkedIn de Hermes Santos"><img src="/linkedin.png" alt="" /></a>
+            <a href="http://lattes.cnpq.br/0845969740727255" target="_blank" rel="noreferrer" aria-label="Currículo Lattes de Hermes Santos"><img src="/lattes.png" alt="" /></a>
           </div>
         </div>
       </aside>

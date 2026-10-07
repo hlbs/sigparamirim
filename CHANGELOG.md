@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.14] - 2026-10-07
+
+### Aprimorado
+
+- seção 09 passou a usar cartões editoriais com dados específicos do Paramirim sobre chuva sazonal, gradiente serrano, vegetação, Boquira, indicadores sociais, educação quilombola, agropecuária, infraestrutura e mineração;
+- login ganhou partículas tecnológicas no painel escuro, modal responsivo para termos e privacidade em Markdown e logos alternáveis por tema;
+- header e menu lateral receberam SVGs oficiais, switch de tema mais amplo, dropdown de usuário com ícones Font Awesome e rodapé com os links reais de Hermes Santos;
+- loading passou a usar GIF temático com ondulação de fundo;
+- modelo 3D recebeu suavização espacial do MDE, tratamento de zeros como transparentes, relevo menos exagerado, paleta hipsométrica e canal principal azul espessado com fluxo animado;
+- perfil esquemático do canal teve rótulos reposicionados e capitalização revisada.
+
 ## [0.3.0-beta.13] - 2026-10-07
 
 ### Aprimorado
