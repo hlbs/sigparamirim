@@ -3,7 +3,7 @@ import 'ol/ol.css';
 import proj4 from 'proj4';
 import Map from 'ol/Map.js';
 import View from 'ol/View.js';
-import { fromLonLat } from 'ol/proj.js';
+import { fromLonLat, transform } from 'ol/proj.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import TileLayer from 'ol/layer/Tile.js';
 import VectorLayer from 'ol/layer/Vector.js';
@@ -26,6 +26,7 @@ import Draw from 'ol/interaction/Draw.js';
 import { getArea, getLength } from 'ol/sphere.js';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Graticule from 'ol/layer/Graticule.js';
+import { fromArrayBuffer } from 'geotiff';
 
 export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'osm-de';
 export type RasterRange = { min: number; max: number };
@@ -89,25 +90,40 @@ export const baseMapSources: Record<MapBaseMap, { url: string; attribution: stri
 };
 
 // Firebase Hosting currently returns 200/full-body responses to byte-range requests.
-// Memoize this response in memory per COG so GeoTIFF's block reader does not download it once per range.
+// Keep one full COG response per URL; the same bytes also power pixel identification.
 const fullGeoTiffFiles = new globalThis.Map<string, Promise<ArrayBuffer>>();
-async function loadGeoTiff(url: string, requestHeaders: HeadersInit, signal: AbortSignal) {
-  const headers = new Headers(requestHeaders);
-  const range = headers.has('Range');
-  if (!range) return fetch(url, { headers, signal, cache: 'force-cache' });
+const parsedGeoTiffFiles = new globalThis.Map<string, ReturnType<typeof fromArrayBuffer>>();
+function getFullGeoTiffBuffer(url: string, headers: Headers) {
   let file = fullGeoTiffFiles.get(url);
   if (!file) {
     const fullFileHeaders = new Headers(headers);
     fullFileHeaders.delete('Range');
-    file = fetch(url, { headers: fullFileHeaders, signal, cache: 'force-cache' }).then(async (response) => {
+    file = fetch(url, { headers: fullFileHeaders, cache: 'force-cache' }).then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.arrayBuffer();
     });
     fullGeoTiffFiles.set(url, file);
     file.catch(() => fullGeoTiffFiles.delete(url));
   }
-  const body = await file;
+  return file;
+}
+async function loadGeoTiff(url: string, requestHeaders: HeadersInit, signal: AbortSignal) {
+  const headers = new Headers(requestHeaders);
+  const range = headers.has('Range');
+  if (!range) return fetch(url, { headers, signal, cache: 'force-cache' });
+  const body = await getFullGeoTiffBuffer(url, headers);
   return new Response(body.slice(0), { status: 200, headers: { 'Content-Type': 'image/tiff' } });
+}
+
+async function getGeoTiffImage(url: string) {
+  let file = parsedGeoTiffFiles.get(url);
+  if (!file) {
+    file = getFullGeoTiffBuffer(url, new Headers()).then((buffer) => fromArrayBuffer(buffer.slice(0)));
+    parsedGeoTiffFiles.set(url, file);
+    file.catch(() => parsedGeoTiffFiles.delete(url));
+  }
+  const tiff = await file;
+  return { tiff, image: await tiff.getImage(0) };
 }
 
 function vectorStyle(layerId: string, custom?: VectorLayerStyle) {
@@ -189,6 +205,8 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
   const dataLayersRef = useRef(new globalThis.Map<string, RenderedDataLayer>());
   const layerDefinitionsRef = useRef(layers);
   const rasterRangesRef = useRef(new globalThis.Map<string, RasterRange>());
+  const rasterSourcesRef = useRef(new globalThis.Map<string, GeoTIFF>());
+  const identifyRequestRef = useRef(0);
   const initialExtentRef = useRef<import('ol/extent').Extent | null>(null);
   const callbackRef = useRef(onFeatureSelect);
   const measureCallbackRef = useRef(onMeasure);
@@ -217,7 +235,13 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       controls: [new ScaleLine({ units: 'metric', bar: true, steps: 4, text: true, minWidth: 90 })],
     });
     const graticule = new Graticule({
-      showLabels: false,
+      showLabels: true,
+      lonLabelPosition: 1,
+      latLabelPosition: 0,
+      targetSize: 135,
+      intervals: [30, 15, 10, 5, 2, 1, 0.5, 0.25],
+      lonLabelStyle: new Text({ font: '600 10px Inter, sans-serif', textBaseline: 'top', fill: new Fill({ color: 'rgba(50,65,45,.74)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.86)', width: 3 }), padding: [2, 3, 2, 3] }),
+      latLabelStyle: new Text({ font: '600 10px Inter, sans-serif', textAlign: 'start', fill: new Fill({ color: 'rgba(50,65,45,.74)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.86)', width: 3 }), padding: [2, 3, 2, 3] }),
       wrapX: false,
       strokeStyle: new Stroke({ color: 'rgba(60, 77, 58, .18)', width: 1, lineDash: [2, 5] }),
       zIndex: 25,
@@ -260,8 +284,9 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       }
     } catch { try { sessionStorage.removeItem('sigparamirim-webgis-measurements-v1'); } catch { /* private browsing */ } }
     mapRef.current = map;
-    const handleClick = (event: import('ol/MapBrowserEvent').default) => {
+    const handleClick = async (event: import('ol/MapBrowserEvent').default) => {
       if (toolRef.current !== 'identify') return;
+      const requestId = ++identifyRequestRef.current;
       let selection: MapFeatureSelection | null = null;
       map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
         const properties = { ...feature.getProperties() } as Record<string, unknown>;
@@ -269,6 +294,41 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         selection = { layerId: String(layer?.get('id') ?? ''), layerTitle: String(layer?.get('title') ?? 'Camada'), properties };
         return true;
     }, { layerFilter: (layer) => layer.get('kind') === 'vector' && layerDefinitionsRef.current.some((definition) => definition.id === layer.get('id') && definition.identifyEnabled !== false) });
+      const rasters = [...layerDefinitionsRef.current].filter((definition) => definition.kind === 'raster' && definition.identifyEnabled && rasterSourcesRef.current.has(definition.id)).reverse();
+      for (const definition of rasters) {
+        try {
+          const source = rasterSourcesRef.current.get(definition.id)!;
+          const projection = source.getProjection();
+          if (!projection) continue;
+          const coordinate = transform(event.coordinate, 'EPSG:3857', projection);
+          const { image } = await getGeoTiffImage(definition.url);
+          const [originX, originY] = image.getOrigin();
+          const [resolutionX, resolutionY] = image.getResolution();
+          if (![originX, originY, resolutionX, resolutionY, coordinate[0], coordinate[1]].every(Number.isFinite) || !resolutionX || !resolutionY) continue;
+          const pixelX = Math.floor((coordinate[0]! - originX!) / resolutionX!);
+          const pixelY = Math.floor((coordinate[1]! - originY!) / resolutionY!);
+          if (pixelX < 0 || pixelY < 0 || pixelX >= image.getWidth() || pixelY >= image.getHeight()) continue;
+          const samples = await image.readRasters({ window: [pixelX, pixelY, pixelX + 1, pixelY + 1], samples: [0], interleave: true });
+          const value = Number((samples as unknown as ArrayLike<number>)[0]);
+          if (!Number.isFinite(value) || value === definition.noData) continue;
+          selection = {
+            layerId: definition.id,
+            layerTitle: definition.title,
+            properties: {
+              'Valor do pixel': value.toLocaleString('pt-BR', { maximumFractionDigits: 5 }),
+              Banda: '1',
+              'Sistema de referência': projection.getCode(),
+              'Coordenada X': coordinate[0]!.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+              'Coordenada Y': coordinate[1]!.toLocaleString('pt-BR', { maximumFractionDigits: 2 }),
+              'Intervalo visualizado': `${rasterRange(definition).min.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} – ${rasterRange(definition).max.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`,
+            },
+          };
+          break;
+        } catch (reason) {
+          if (aliveRef.current && requestId === identifyRequestRef.current) setError(`Não foi possível consultar o pixel de “${definition.title}”: ${reason instanceof Error ? reason.message : String(reason)}`);
+        }
+      }
+      if (requestId !== identifyRequestRef.current) return;
       callbackRef.current?.(selection);
     };
     map.on('singleclick', handleClick);
@@ -325,6 +385,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       baseLayerRef.current = null;
       dataLayersRef.current.clear();
       rasterRangesRef.current.clear();
+      rasterSourcesRef.current.clear();
       initialExtentRef.current = null;
       drawRef.current = null;
       measureLayerRef.current = null;
@@ -410,6 +471,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         map.removeLayer(existing);
         dataLayersRef.current.delete(id);
         rasterRangesRef.current.delete(id);
+        rasterSourcesRef.current.delete(id);
         continue;
       }
       const definition = layers.find((item) => item.id === id);
@@ -458,6 +520,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         try {
           // Forces metadata/IFD loading before the layer is added, so HTTP/CRS failures reach the UI.
           await source.getView();
+          rasterSourcesRef.current.set(definition.id, source);
         } catch (reason) {
           const detail = reason instanceof Error ? reason.message : String(reason);
           throw new Error(`${definition.title}: falha ao abrir o COG (${detail}).`);
