@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.47] - 2026-10-08
+
+### Preparação em segundo plano para polígonos rurais
+
+- camadas com mais de mil polígonos agora também são encaminhadas ao processamento em segundo plano, mesmo quando o arquivo é menor que o limite geral de tamanho;
+- isso inclui a camada **Imóvel rural — APP**, evitando que seu GeoJSON seja interpretado diretamente na interface.
+
 ## [0.3.0-beta.46] - 2026-10-08
 
 ### Carregamento progressivo de camadas vetoriais

@@ -40,7 +40,7 @@ export type FeatureFilter = {
 };
 export type MapLayerDefinition = {
   id: string; title: string; url: string; kind: 'vector' | 'raster'; group?: string;
-  sizeBytes?: number; featureCount?: number; crs?: string;
+  sizeBytes?: number; featureCount?: number; geometryTypes?: Record<string, number>; crs?: string;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
   palette?: string;
   styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string };
@@ -723,7 +723,8 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           }
         });
       } else {
-        const requiresWorker = (definition.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (definition.featureCount ?? 0) >= 10_000;
+        const polygonCount = (definition.geometryTypes?.Polygon ?? 0) + (definition.geometryTypes?.MultiPolygon ?? 0);
+        const requiresWorker = (definition.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (definition.featureCount ?? 0) >= 10_000 || polygonCount >= 1_000;
         let packedFeatures: PackedFeature[] | null = null;
         let features: Feature[] | null = null;
         setLoadingLayer({ title: definition.title, message: requiresWorker ? 'Baixando e processando dados em segundo plano…' : 'Lendo dados…' });
