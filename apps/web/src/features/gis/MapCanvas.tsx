@@ -151,10 +151,6 @@ function rasterRange(layer: MapLayerDefinition): RasterRange {
 }
 
 export const rasterPaletteCatalog: Record<string, string[]> = {
-  hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
-  'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
-  'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
-  'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
   viridis: ['#440154', '#482878', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
   plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
   inferno: ['#000004', '#1b0c41', '#4a0c6b', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4'],
@@ -192,21 +188,17 @@ export const rasterPaletteCatalog: Record<string, string[]> = {
 };
 
 export function getRasterPalette(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
-  return rasterPaletteCatalog[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPaletteCatalog['blue-sequential']!;
+  return rasterPaletteCatalog[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPaletteCatalog.viridis!;
 }
 
 export const rasterPaletteOptions = [
-  { value: 'hypsometric', label: 'Hipsométrica · relevo' },
-  { value: 'blue-cyan-sequential', label: 'Azul-ciano · água' },
-  { value: 'blue-sequential', label: 'Azul · contínua' },
-  { value: 'blue-indigo-sequential', label: 'Azul-índigo · contínua' },
-  { value: 'viridis', label: 'Viridis · QGIS / cpt-city' },
-  { value: 'plasma', label: 'Plasma · QGIS / cpt-city' },
-  { value: 'inferno', label: 'Inferno · QGIS / cpt-city' },
-  { value: 'magma', label: 'Magma · QGIS / cpt-city' },
-  { value: 'cividis', label: 'Cividis · QGIS / cpt-city' },
-  { value: 'turbo', label: 'Turbo · QGIS / cpt-city' },
-  { value: 'terrain', label: 'Terrain · cpt-city' },
+  { value: 'viridis', label: 'Viridis · rampas QGIS' },
+  { value: 'plasma', label: 'Plasma · rampas QGIS' },
+  { value: 'inferno', label: 'Inferno · rampas QGIS' },
+  { value: 'magma', label: 'Magma · rampas QGIS' },
+  { value: 'cividis', label: 'Cividis · rampas QGIS' },
+  { value: 'turbo', label: 'Turbo · rampas QGIS' },
+  { value: 'terrain', label: 'Terrain · catálogo QGIS' },
   { value: 'blues', label: 'Blues · ColorBrewer' },
   { value: 'bu-gn', label: 'BuGn · ColorBrewer' },
   { value: 'bu-pu', label: 'BuPu · ColorBrewer' },
@@ -324,8 +316,8 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       latLabelPosition: 0,
       targetSize: 135,
       intervals: [30, 15, 10, 5, 2, 1, 0.5, 0.25],
-      lonLabelStyle: new Text({ font: '600 10px Inter, sans-serif', textBaseline: 'top', fill: new Fill({ color: 'rgba(50,65,45,.74)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.86)', width: 3 }), padding: [2, 3, 2, 3] }),
-      latLabelStyle: new Text({ font: '600 10px Inter, sans-serif', textAlign: 'start', fill: new Fill({ color: 'rgba(50,65,45,.74)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.86)', width: 3 }), padding: [2, 3, 2, 3] }),
+      lonLabelStyle: new Text({ font: '700 10px Inter, sans-serif', textBaseline: 'top', fill: new Fill({ color: 'rgba(50,65,45,.82)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.9)', width: 3 }), padding: [3, 3, 2, 3] }),
+      latLabelStyle: new Text({ font: '700 10px Inter, sans-serif', textAlign: 'start', fill: new Fill({ color: 'rgba(50,65,45,.82)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.9)', width: 3 }), padding: [2, 3, 2, 3] }),
       wrapX: false,
       strokeStyle: new Stroke({ color: 'rgba(60, 77, 58, .18)', width: 1, lineDash: [2, 5] }),
       zIndex: 25,

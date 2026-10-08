@@ -35,7 +35,19 @@ jobs:
             exit 0
           fi
 
-          RELEASE_ARGS=("$TAG" --repo "$GITHUB_REPOSITORY" --title "SIG Paramirim $TAG" --generate-notes --target "$GITHUB_SHA")
+          NOTES_FILE="$(mktemp)"
+          VERSION="${TAG#v}"
+          awk -v version="## [$VERSION]" '
+            index($0, version) == 1 { found=1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > "$NOTES_FILE"
+          if [[ ! -s "$NOTES_FILE" ]]; then
+            echo "Não há notas em português para $VERSION no CHANGELOG.md." >&2
+            exit 1
+          fi
+
+          RELEASE_ARGS=("$TAG" --repo "$GITHUB_REPOSITORY" --title "SIG Paramirim $TAG" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA")
           if [[ "$TAG" == *-* ]]; then
             RELEASE_ARGS+=(--prerelease)
           fi

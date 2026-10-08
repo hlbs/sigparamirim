@@ -408,3 +408,35 @@
 @media (max-width: 680px) { .map-scale-stack { bottom: 17px; left: 9px; min-width: 124px; gap: 4px; } .map-scale-line-target, .map-scale-line-target .ol-scale-bar { min-width: 124px; } .map-scale-denominator { padding: 7px 9px; } }
 @media (prefers-reduced-motion: reduce) { .webgis-workspace button, .webgis-print-portal button, .webgis-dashboard-portal button { transition: none; } }
 @media (max-width: 680px) { .map-canvas-shell .ol-scale-bar { bottom: 8px; left: 8px; min-width: 115px; } .map-scale-denominator { bottom: 66px; left: 8px; min-width: 115px; } .webgis-dashboard-focus-backdrop { padding: 0; } .webgis-dashboard-focus { width: 100vw; max-height: 100dvh; border: 0; border-radius: 0; } .webgis-dashboard-focus-frame { width: 100vw; max-height: calc(100dvh - 48px); } }
+
+/* Polished layer navigation without frames around the tab icons. */
+.webgis-side-tabs button, .webgis-tools-panel.is-collapsed .webgis-side-tabs button { border: 0 !important; border-radius: 0; background: transparent !important; box-shadow: none !important; }
+.webgis-side-tabs button:hover, .webgis-side-tabs button.is-active { border: 0 !important; background: transparent !important; box-shadow: none !important; }
+.webgis-side-tabs button::before { display: none !important; }
+.webgis-side-tabs button i { width: auto; height: auto; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.webgis-layer-kind-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0 13px 12px; padding: 5px; overflow: visible; border-radius: 14px; background: color-mix(in srgb, var(--surface-muted) 80%, var(--webgis-panel)); }
+.webgis-layer-kind-tabs button { display: grid; min-width: 0; min-height: 54px; grid-template-columns: 1fr auto; grid-template-rows: 1fr auto; align-items: center; justify-items: center; gap: 0 4px; padding: 5px 4px; border: 0 !important; border-radius: 10px; color: var(--text-muted); background: transparent; transition: color 180ms ease, background-color 180ms ease, transform 180ms cubic-bezier(.2,.8,.2,1); }
+.webgis-layer-kind-tabs button > i { grid-column: 1 / -1; align-self: end; margin-bottom: 3px; font-size: .9rem; }
+.webgis-layer-kind-tabs button > span { font-size: .58rem; font-weight: 760; white-space: nowrap; }
+.webgis-layer-kind-tabs button > small { align-self: center; color: inherit; font-size: .53rem; font-weight: 700; opacity: .72; }
+.webgis-layer-kind-tabs button.is-active { color: var(--on-brand, #fff); background: var(--brand-strong); box-shadow: none !important; }
+.webgis-layer-kind-tabs button:hover:not(.is-active) { color: var(--brand-strong); background: color-mix(in srgb, var(--brand-soft) 66%, transparent); transform: translateY(-1px); }
+.webgis-layer-detail > header { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+.webgis-layer-detail-back { display: inline-flex !important; width: auto !important; min-height: 34px; align-items: center; gap: 7px; padding: 0 9px; border: 0 !important; border-radius: 9px; color: var(--brand-strong) !important; background: color-mix(in srgb, var(--brand-soft) 55%, transparent) !important; font: inherit; font-size: .68rem; font-weight: 750; cursor: pointer; }
+.webgis-layer-detail-back:hover { background: var(--brand-soft) !important; transform: translateX(-2px); }
+.webgis-raster-style-range { display: grid; gap: 8px; margin-top: 4px; padding: 12px; border-radius: 13px; background: color-mix(in srgb, var(--surface-muted) 70%, var(--webgis-panel)); }
+.webgis-raster-style-range h4 { margin: 0; font-size: .7rem; }
+.webgis-raster-style-range > small { color: var(--text-muted); font-size: .62rem; }
+.webgis-raster-style-range .webgis-range-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.webgis-raster-style-range .webgis-range-values label { display: grid; grid-template-columns: 1fr; gap: 4px; font-size: .62rem; }
+.webgis-raster-style-range .webgis-range-values input { width: 100%; }
+
+/* One responsive white control keeps numeric and graphic scales visually together. */
+.map-scale-stack { box-sizing: border-box; width: max(var(--scale-width, 138px), 138px); max-width: min(48vw, 230px); gap: 5px; padding: 10px 12px 11px; border: 0; border-radius: 13px; background: rgba(255,255,255,.97); box-shadow: 0 8px 24px rgba(20,25,10,.17); }
+.map-scale-line-target { width: 100%; min-width: 0; min-height: 35px; }
+.map-scale-line-target .ol-scale-bar { box-sizing: border-box; width: max-content; min-width: 100%; margin: 0; padding: 7px 4px 9px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.map-scale-denominator { box-sizing: border-box; width: 100%; align-items: center; padding: 0 0 4px; border: 0; border-radius: 0; background: transparent; box-shadow: none; text-align: center; }
+.webgis-print-sheet .webgis-print-map-image { object-fit: contain; object-position: center; }
+.webgis-print-map { background: #fff; }
+.webgis-print-raster-scale { grid-template-columns: max-content minmax(24mm, 1fr) max-content; align-items: center; gap: 2mm; }
+@media (max-width: 680px) { .map-scale-stack { max-width: min(62vw, 210px); padding: 9px 10px 10px; } }

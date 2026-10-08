@@ -55,7 +55,9 @@ function readLayerPreferences(uid?: string): UserLayerPreferences {
       vectorColor: value.vectorColor && typeof value.vectorColor === 'object' ? value.vectorColor : {},
       vectorFilters: value.vectorFilters && typeof value.vectorFilters === 'object' ? value.vectorFilters : {},
       rasterRanges: value.rasterRanges && typeof value.rasterRanges === 'object' ? value.rasterRanges : {},
-      rasterPalette: value.rasterPalette && typeof value.rasterPalette === 'object' ? value.rasterPalette : {},
+      rasterPalette: value.rasterPalette && typeof value.rasterPalette === 'object'
+        ? Object.fromEntries(Object.entries(value.rasterPalette).filter(([, palette]) => rasterPaletteOptions.some((option) => option.value === palette)))
+        : {},
     };
   } catch {
     return emptyLayerPreferences;
@@ -86,6 +88,27 @@ function groupLayers(layers: CatalogLayer[]) {
     groups.set(group, [...(groups.get(group) ?? []), layer]);
   }
   return [...groups.entries()];
+}
+
+function RasterRangeControls({ layer, range, onChange }: { layer: CatalogLayer; range: NumericRange; onChange: (range: NumericRange) => void }) {
+  const domainMin = layer.statistics?.min ?? 0;
+  const domainMax = layer.statistics?.max ?? Math.max(range.max, domainMin + 1);
+  const rangeStep = (domainMax - domainMin) / 500 || 0.01;
+  const minPercent = Math.max(0, Math.min(100, ((range.min - domainMin) / (domainMax - domainMin || 1)) * 100));
+  const maxPercent = Math.max(minPercent, Math.min(100, ((range.max - domainMin) / (domainMax - domainMin || 1)) * 100));
+  const format = (value: number) => value.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  return <section className="webgis-raster-style-range" aria-label={`Intervalo de valores de ${layer.title}`}>
+    <h4>Intervalo de exibição</h4>
+    <div className="webgis-range-values">
+      <label>Mínimo<input aria-label={`Mínimo exibido de ${layer.title}`} type="number" min={domainMin} max={range.max - rangeStep} step="any" value={range.min} onChange={(event) => { const value = Number(event.target.value); if (Number.isFinite(value)) onChange({ min: Math.min(range.max - rangeStep, Math.max(domainMin, value)), max: range.max }); }} /></label>
+      <label>Máximo<input aria-label={`Máximo exibido de ${layer.title}`} type="number" min={range.min + rangeStep} max={domainMax} step="any" value={range.max} onChange={(event) => { const value = Number(event.target.value); if (Number.isFinite(value)) onChange({ min: range.min, max: Math.max(range.min + rangeStep, Math.min(domainMax, value)) }); }} /></label>
+    </div>
+    <div className="webgis-dual-range" style={{ '--range-start': `${minPercent}%`, '--range-end': `${maxPercent}%` } as React.CSSProperties}>
+      <input aria-label={`Ajustar mínimo de ${layer.title}`} type="range" min={domainMin} max={domainMax} step={rangeStep} value={range.min} onChange={(event) => onChange({ min: Math.min(range.max - rangeStep, Number(event.target.value)), max: range.max })} />
+      <input aria-label={`Ajustar máximo de ${layer.title}`} type="range" min={domainMin} max={domainMax} step={rangeStep} value={range.max} onChange={(event) => onChange({ min: range.min, max: Math.max(range.min + rangeStep, Number(event.target.value)) })} />
+    </div>
+    <small>Domínio da amostra: {format(domainMin)} – {format(domainMax)}</small>
+  </section>;
 }
 
 const initialLayers: CatalogLayer[] = [
@@ -248,7 +271,10 @@ export function MapPage() {
             <div className="webgis-panel-title"><div><small>Conteúdo do mapa</small><h2>Catálogo de camadas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>
             <label className="webgis-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar camada" /></label>
             <div className="webgis-layer-kind-tabs" role="group" aria-label="Filtrar tipo de camada">
-              {(['all', 'basemap', 'vector', 'raster'] as const).map((kind) => <button key={kind} type="button" className={filter === kind ? 'is-active' : ''} onClick={() => setFilter(kind)}>{kind === 'all' ? 'Todas' : kind === 'basemap' ? 'Base' : kind === 'vector' ? 'Vetoriais' : 'Rasters'}</button>)}
+              {(['all', 'basemap', 'vector', 'raster'] as const).map((kind) => {
+                const item = { all: { title: 'Todas', icon: 'fa-layer-group', count: baseMaps.length + featureLayers.length }, basemap: { title: 'Base', icon: 'fa-map', count: baseMaps.length }, vector: { title: 'Vetoriais', icon: 'fa-draw-polygon', count: featureLayers.filter((layer) => layer.kind === 'vector').length }, raster: { title: 'Rasters', icon: 'fa-image', count: featureLayers.filter((layer) => layer.kind === 'raster').length } }[kind];
+                return <button key={kind} type="button" className={filter === kind ? 'is-active' : ''} aria-pressed={filter === kind} onClick={() => setFilter(kind)}><i className={`fa-solid ${item.icon}`} aria-hidden="true" /><span>{item.title}</span><small>{item.count}</small></button>;
+              })}
             </div>
 
             {(filter === 'all' || filter === 'basemap') && <CatalogGroup title="Mapas base" icon="fa-map" count={baseMaps.length} expanded={expandedGroups['Mapas base'] ?? true} onToggle={() => toggleGroup('Mapas base')}><div className="webgis-basemap-list">{baseMaps.map((base) => <button type="button" className={`webgis-basemap-row ${activeBase === base.id ? 'is-active' : ''}`} key={base.id} onClick={() => { setBaseMap(base.id); setActiveBase(base.id); }}><img className="webgis-basemap-thumb" src={base.thumbnailUrl} alt={`Miniatura do mapa ${base.title}`} loading="lazy" /><span><strong>{base.title}</strong><small>{base.attribution}</small></span><i className={`fa-solid ${activeBase === base.id ? 'fa-circle-check' : 'fa-circle'}`} /></button>)}</div></CatalogGroup>}
@@ -264,10 +290,10 @@ export function MapPage() {
               const field = attributeField[layer.id] || fields[0] || '';
               const query = (attributeQuery[layer.id] ?? '').trim().toLocaleLowerCase('pt-BR');
               const rows = features.filter((feature) => !query || displayValue(feature.properties?.[field]).toLocaleLowerCase('pt-BR').includes(query)).slice(0, 100);
-              return <div className="webgis-layer-detail" role="dialog" aria-modal="true" aria-label={`Detalhes de ${layer.title}`}><header><div><small>{layer.group}</small><h3>{layer.title}</h3></div><button type="button" aria-label="Fechar detalhes" onClick={() => setLayerView(null)}><i className="fa-solid fa-xmark" /></button></header>
+              return <div className="webgis-layer-detail" role="dialog" aria-modal="true" aria-label={`Detalhes de ${layer.title}`}><header><button type="button" className="webgis-layer-detail-back" aria-label="Voltar para camadas" onClick={() => setLayerView(null)}><i className="fa-solid fa-arrow-left" /><span>Voltar</span></button><div><small>{layer.group}</small><h3>{layer.title}</h3></div></header>
                 <nav aria-label="Detalhes da camada">{(layer.kind === 'vector' ? ['properties', 'table', 'style'] as const : ['properties', 'style'] as const).map((view) => <button type="button" className={layerView.view === view ? 'is-active' : ''} key={view} onClick={() => setLayerView({ id: layer.id, view })}>{view === 'properties' ? 'Fonte e dados' : view === 'table' ? 'Atributos' : 'Estilo'}</button>)}</nav>
                 {layerView.view === 'properties' && <dl className="webgis-layer-metadata"><div><dt>Fonte</dt><dd>{layer.source || 'Não informada no catálogo'}</dd></div><div><dt>Sistema de referência</dt><dd>{layer.crs || 'Não informado'}</dd></div><div><dt>Feições / resolução</dt><dd>{layerMetadata(layer)}</dd></div><div><dt>Observação</dt><dd>{layer.observation || 'Sem observação registrada.'}</dd></div></dl>}
-                {layerView.view === 'style' && <div className="webgis-layer-style"><label>Transparência <input type="range" min="0.1" max="1" step="0.05" value={opacity[layer.id] ?? (layer.kind === 'raster' ? .82 : 1)} onChange={(event) => setOpacity((current) => ({ ...current, [layer.id]: Number(event.target.value) }))} /></label>{layer.kind === 'vector' ? <><label>Cor de linha e pontos <input type="color" value={vectorColor[layer.id] ?? '#68710a'} onChange={(event) => setVectorColor((current) => ({ ...current, [layer.id]: event.target.value }))} /></label><h4>Filtro de feições no mapa</h4>{fields.length ? <><label>Campo<select value={vectorFilters[layer.id]?.field ?? ''} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { field: event.target.value, operator: current[layer.id]?.operator ?? 'contains', value: current[layer.id]?.value ?? '' } }))}><option value="">Sem filtro</option>{fields.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>{vectorFilters[layer.id]?.field && <div className="webgis-filter-inputs"><label>Operador<select value={vectorFilters[layer.id]?.operator ?? 'contains'} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { ...current[layer.id]!, operator: event.target.value as VectorFilter['operator'] } }))}><option value="contains">Contém</option><option value="equals">Igual a</option><option value="gt">Maior que</option><option value="gte">Maior ou igual</option><option value="lt">Menor que</option><option value="lte">Menor ou igual</option></select></label><label>Valor<input value={String(vectorFilters[layer.id]?.value ?? '')} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { ...current[layer.id]!, value: event.target.value } }))} /></label><button type="button" onClick={() => setVectorFilters((current) => { const next = { ...current }; delete next[layer.id]; return next; })}>Limpar filtro</button></div>}</> : <p>Abra a tabela de atributos para carregar os campos disponíveis.</p>}</> : <><label>Paleta de cores<select value={rasterPalette[layer.id] ?? layer.styleDefault?.palette ?? 'blue-sequential'} onChange={(event) => setRasterPalette((current) => ({ ...current, [layer.id]: event.target.value }))}>{rasterPaletteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><p>O intervalo min–máx é ajustado na aba Legenda. A paleta e a transparência são preferências da sua conta.</p></>}</div>}
+                {layerView.view === 'style' && <div className="webgis-layer-style"><label>Transparência <input type="range" min="0.1" max="1" step="0.05" value={opacity[layer.id] ?? (layer.kind === 'raster' ? .82 : 1)} onChange={(event) => setOpacity((current) => ({ ...current, [layer.id]: Number(event.target.value) }))} /></label>{layer.kind === 'vector' ? <><label>Cor de linha e pontos <input type="color" value={vectorColor[layer.id] ?? '#68710a'} onChange={(event) => setVectorColor((current) => ({ ...current, [layer.id]: event.target.value }))} /></label><h4>Filtro de feições no mapa</h4>{fields.length ? <><label>Campo<select value={vectorFilters[layer.id]?.field ?? ''} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { field: event.target.value, operator: current[layer.id]?.operator ?? 'contains', value: current[layer.id]?.value ?? '' } }))}><option value="">Sem filtro</option>{fields.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>{vectorFilters[layer.id]?.field && <div className="webgis-filter-inputs"><label>Operador<select value={vectorFilters[layer.id]?.operator ?? 'contains'} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { ...current[layer.id]!, operator: event.target.value as VectorFilter['operator'] } }))}><option value="contains">Contém</option><option value="equals">Igual a</option><option value="gt">Maior que</option><option value="gte">Maior ou igual</option><option value="lt">Menor que</option><option value="lte">Menor ou igual</option></select></label><label>Valor<input value={String(vectorFilters[layer.id]?.value ?? '')} onChange={(event) => setVectorFilters((current) => ({ ...current, [layer.id]: { ...current[layer.id]!, value: event.target.value } }))} /></label><button type="button" onClick={() => setVectorFilters((current) => { const next = { ...current }; delete next[layer.id]; return next; })}>Limpar filtro</button></div>}</> : <p>Abra a tabela de atributos para carregar os campos disponíveis.</p>}</> : <><label>Paleta de cores<select value={rasterPalette[layer.id] ?? (rasterPaletteOptions.some((option) => option.value === layer.styleDefault?.palette) ? layer.styleDefault?.palette : 'viridis')} onChange={(event) => setRasterPalette((current) => ({ ...current, [layer.id]: event.target.value }))}>{rasterPaletteOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label><RasterRangeControls layer={layer} range={rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }} onChange={(range) => setRasterRanges((current) => ({ ...current, [layer.id]: range }))} /><p>Paleta, intervalo e transparência são preferências da sua conta.</p></>}</div>}
                 {layerView.view === 'table' && <div className="webgis-attribute-panel">{attributeLoading === layer.id ? <p>Carregando tabela de atributos…</p> : attributeError ? <p role="alert">Erro ao carregar: {attributeError}</p> : features.length === 0 ? <p>Esta camada não contém feições tabulares ou o GeoJSON não possui propriedades.</p> : <><label>Propriedade<select value={field} onChange={(event) => setAttributeField((current) => ({ ...current, [layer.id]: event.target.value }))}>{fields.map((item) => <option key={item} value={item}>{item}</option>)}</select></label><label>Filtrar valor<input value={attributeQuery[layer.id] ?? ''} onChange={(event) => setAttributeQuery((current) => ({ ...current, [layer.id]: event.target.value }))} placeholder={`Buscar em ${field}`} /></label><small>{rows.length} de {features.length.toLocaleString('pt-BR')} feições (máximo 100 linhas exibidas)</small><div className="webgis-attribute-table-wrap"><table><thead><tr>{fields.slice(0, 5).map((item) => <th key={item}>{item}</th>)}</tr></thead><tbody>{rows.map((feature, index) => <tr key={index}>{fields.slice(0, 5).map((item) => <td key={item}>{displayValue(feature.properties?.[item])}</td>)}</tr>)}</tbody></table></div></>}</div>}
               </div>;
             })()}
@@ -277,29 +303,16 @@ export function MapPage() {
             <div className="webgis-panel-title"><div><small>Simbologia ativa</small><h2>Legenda</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>
             {selectedLayers.length === 0 ? <p className="webgis-panel-hint">Ative uma camada no catálogo para ver sua legenda.</p> : selectedLayers.map((layer) => {
               const range = rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 };
-              const domainMin = layer.statistics?.min ?? 0;
-              const domainMax = layer.statistics?.max ?? 1;
-              const rangeStep = (domainMax - domainMin) / 500 || 0.01;
-              const minPercent = Math.max(0, Math.min(100, ((range.min - domainMin) / (domainMax - domainMin || 1)) * 100));
-              const maxPercent = Math.max(minPercent, Math.min(100, ((range.max - domainMin) / (domainMax - domainMin || 1)) * 100));
               return <div className={`webgis-legend-row ${layer.kind}`} key={layer.id}><span className={`webgis-legend-symbol ${layer.kind} layer-${layer.id}`} style={layer.kind === 'raster' ? { background: getRasterGradient(layer) } : undefined} /><div>
                 <strong>{layer.title}</strong>
                 {layer.kind === 'raster' ? <div className="webgis-raster-legend" aria-label={`Legenda de ${layer.title}, mínimo ${range.min} e máximo ${range.max}`}><small>{range.min.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</small><span style={{ background: getRasterGradient(layer) }} /><small>{range.max.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</small></div> : <small>{layer.group}</small>}
-                {layer.kind === 'raster' && <div className="webgis-raster-range">
-                  <div className="webgis-range-values"><label>Mín.<input aria-label={`Mínimo exibido de ${layer.title}`} type="number" min={domainMin} max={range.max - rangeStep} step="any" value={range.min} onChange={(event) => { const value = Math.min(range.max - rangeStep, Math.max(domainMin, Number(event.target.value))); setRasterRanges((current) => ({ ...current, [layer.id]: { min: value, max: range.max } })); }} /></label><label>Máx.<input aria-label={`Máximo exibido de ${layer.title}`} type="number" min={range.min + rangeStep} max={domainMax} step="any" value={range.max} onChange={(event) => { const value = Math.max(range.min + rangeStep, Math.min(domainMax, Number(event.target.value))); setRasterRanges((current) => ({ ...current, [layer.id]: { min: range.min, max: value } })); }} /></label></div>
-                  <div className="webgis-dual-range" style={{ '--range-start': `${minPercent}%`, '--range-end': `${maxPercent}%` } as React.CSSProperties}>
-                    <input aria-label={`Ajustar mínimo de ${layer.title}`} type="range" min={domainMin} max={domainMax} step={rangeStep} value={range.min} onChange={(event) => { const value = Math.min(range.max - rangeStep, Number(event.target.value)); setRasterRanges((current) => ({ ...current, [layer.id]: { min: value, max: range.max } })); }} />
-                    <input aria-label={`Ajustar máximo de ${layer.title}`} type="range" min={domainMin} max={domainMax} step={rangeStep} value={range.max} onChange={(event) => { const value = Math.max(range.min + rangeStep, Number(event.target.value)); setRasterRanges((current) => ({ ...current, [layer.id]: { min: range.min, max: value } })); }} />
-                  </div>
-                  <small>Domínio da amostra: {domainMin.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} – {domainMax.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</small>
-                </div>}
               </div></div>;
             })}
           </div>}
 
           {sideTab === 'tools' && <div className="webgis-side-content"><div className="webgis-panel-title"><div><small>Navegação e consulta</small><h2>Ferramentas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div><div className="webgis-tool-grid"><button type="button" className={tool === 'identify' ? 'is-active' : ''} onClick={() => { setTool('identify'); setSelection(null); }}><i className="fa-solid fa-arrow-pointer" /><span>Identificar</span></button><button type="button" className={tool === 'measure-length' ? 'is-active' : ''} onClick={() => { setTool('measure-length'); setMeasure(null); }}><i className="fa-solid fa-ruler" /><span>Medir distância</span></button><button type="button" className={tool === 'measure-area' ? 'is-active' : ''} onClick={() => { setTool('measure-area'); setMeasure(null); }}><i className="fa-solid fa-draw-polygon" /><span>Medir área</span></button><PrintMapDialog layers={selectedLayers} /><button type="button" onClick={() => setSelectedIds([])}><i className="fa-solid fa-eye-slash" /><span>Limpar camadas</span></button><button type="button" onClick={() => { setSelectedIds(catalog.filter((layer) => layer.status === 'present' && layer.visibleByDefault).map((layer) => layer.id)); setBaseMap('osm'); setActiveBase('osm'); setHomeToken((current) => current + 1); }}><i className="fa-solid fa-house" /><span>Vista inicial</span></button></div>{tool !== 'identify' && <div className="webgis-measure-status"><span>{tool === 'measure-length' ? 'Distância' : 'Área'}</span>{measure ? <strong>{measure.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {measure.unit}</strong> : <small>Desenhe no mapa; dê duplo clique para concluir.</small>}<small>As medições ficam no mapa e no histórico desta sessão.</small></div>}{measurementHistory.length > 0 && <section className="webgis-measure-history"><header><h3>Histórico de medições</h3><button type="button" onClick={() => setClearMeasurementsToken((value) => value + 1)}><i className="fa-solid fa-trash-can" /> Limpar</button></header><ol>{measurementHistory.map((entry, index) => <li key={entry.id}><details><summary><span>{index + 1}. {entry.kind === 'measure-area' ? 'Área' : 'Distância'}</span><strong>{entry.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {entry.unit}</strong></summary><ol>{entry.vertices.map(([longitude, latitude], vertexIndex) => <li key={`${entry.id}-${vertexIndex}`}>V{vertexIndex + 1}: {longitude.toFixed(6)}, {latitude.toFixed(6)}</li>)}</ol></details></li>)}</ol></section>}</div>}
         </aside>
-      </div> : <DashboardPanel url={powerBiUrl} />}
+      </div> : <DashboardPanel url={powerBiUrl} onClose={() => setTab('map')} />}
     </section>
   );
 }
@@ -313,30 +326,22 @@ function LayerRow({ layer, active, onToggle, onOpen, onToggleIdentify, identifyA
   return <div className={`webgis-layer-row ${active ? 'is-active' : ''} ${available ? '' : 'is-planned'}`}><button type="button" className="webgis-layer-check" aria-label={`${active ? 'Ocultar' : 'Mostrar'} ${layer.title}`} aria-pressed={active} disabled={!available} onClick={onToggle}><i className={`fa-solid ${active ? 'fa-eye' : 'fa-eye-slash'}`} /></button><span className={`webgis-layer-swatch ${layer.kind} layer-${layer.id}`} style={layer.kind === 'raster' ? { background: getRasterGradient(layer) } : undefined} /><div className="webgis-layer-row-copy"><strong title={layer.title}>{layer.title}</strong><small>{layerMetadata(layer)}</small></div>{available && onOpen && <div className="webgis-layer-actions">{onToggleIdentify && <button type="button" className={identifyActive ? 'is-active' : ''} title={identifyActive ? 'Desativar consulta por clique no mapa' : layer.kind === 'raster' ? 'Ativar consulta de valores raster no mapa' : 'Ativar identificação no mapa'} aria-pressed={identifyActive} aria-label={`${layer.kind === 'raster' ? 'Consulta raster' : 'Identificação'} de ${layer.title}`} onClick={onToggleIdentify}><i className={`fa-solid ${layer.kind === 'raster' ? 'fa-crosshairs' : 'fa-arrow-pointer'}`} /></button>}<button type="button" title="Informações e fonte da camada" aria-label={`Informações de ${layer.title}`} onClick={() => onOpen('properties')}><i className="fa-solid fa-circle-info" /></button>{layer.kind === 'vector' && <button type="button" title="Tabela de atributos" aria-label={`Tabela de ${layer.title}`} onClick={() => onOpen('table')}><i className="fa-solid fa-table-list" /></button>}<button type="button" title="Propriedades e estilo" aria-label={`Estilo de ${layer.title}`} onClick={() => onOpen('style')}><i className="fa-solid fa-sliders" /></button></div>}</div>;
 }
 
-function DashboardPanel({ url }: { url?: string }) {
+function DashboardPanel({ url, onClose }: { url?: string; onClose: () => void }) {
   if (!url) return <div className="webgis-dashboard-empty"><span><i className="fa-solid fa-chart-column" /></span><h2>Dashboard indisponível</h2><p>O painel não está configurado neste ambiente.</p></div>;
-  return <DashboardFocusView url={url} />;
+  return <DashboardFocusView url={url} onClose={onClose} />;
 }
 
-function DashboardFocusView({ url }: { url: string }) {
-  const [expanded, setExpanded] = useState(true);
+function DashboardFocusView({ url, onClose }: { url: string; onClose: () => void }) {
   useEffect(() => {
-    if (!expanded) return;
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setExpanded(false); };
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [expanded]);
+  }, [onClose]);
   const dashboard = <iframe title="Dashboard Power BI do SIG Paramirim" src={url} allowFullScreen referrerPolicy="strict-origin-when-cross-origin" />;
-  return <>
-    <div className="webgis-dashboard-view">
-      <header><div><small>Inteligência territorial</small><h2>Dashboards</h2></div><button type="button" onClick={() => setExpanded(true)}><i className="fa-solid fa-up-right-and-down-left-from-center" /> Ampliar visualização</button></header>
-      {expanded ? <div className="webgis-dashboard-inline-state">Dashboard em modo de foco</div> : <div className="webgis-dashboard-content">{dashboard}</div>}
-    </div>
-    {expanded && createPortal(<div className="webgis-dashboard-portal"><div className="webgis-dashboard-focus-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setExpanded(false); }}>
+  return createPortal(<div className="webgis-dashboard-portal"><div className="webgis-dashboard-focus-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
       <section className="webgis-dashboard-focus" role="dialog" aria-modal="true" aria-label="Dashboard ampliado">
-        <header><strong>SIG Paramirim · Dashboard</strong><button type="button" aria-label="Fechar visualização ampliada" onClick={() => setExpanded(false)}><i className="fa-solid fa-xmark" /></button></header>
+        <header><strong>SIG Paramirim · Dashboard</strong><button type="button" aria-label="Fechar visualização ampliada" onClick={onClose}><i className="fa-solid fa-xmark" /></button></header>
         <div className="webgis-dashboard-focus-frame">{dashboard}</div>
       </section>
-    </div></div>, document.body)}
-  </>;
+    </div></div>, document.body);
 }

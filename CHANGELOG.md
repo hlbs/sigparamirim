@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.39] - 2026-10-08
+
+### Ajustes finais do WebGIS
+
+- o ajuste dos valores mínimo e máximo do raster voltou para a aba **Estilo** da camada; a legenda mostra apenas a rampa e os valores atuais;
+- o seletor de cores raster agora oferece rampas do catálogo do QGIS, incluindo opções ColorBrewer e rampas científicas;
+- a escala numérica e a barra gráfica foram reunidas em um único cartão branco responsivo, com o valor numérico centralizado;
+- fechar o dashboard ampliado, inclusive com `Esc` ou clicando fora, retorna à aba **Mapa**;
+- removidas as molduras dos ícones das abas laterais, redesenhados os filtros de tipo de camada e substituído o botão de fechar detalhes por **Voltar**;
+- a legenda raster impressa posiciona mínimo e máximo nas extremidades da rampa; as coordenadas de latitude e longitude da impressão ficam em negrito e o mapa deixa de ser cortado;
+- os releases passam a usar as notas em português deste histórico, em linguagem direta para quem usa a plataforma.
+
 ## [0.3.0-beta.33] - 2026-10-07
 
 ### Interface WebGIS refeita
