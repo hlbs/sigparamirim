@@ -3,7 +3,7 @@ import 'ol/ol.css';
 import proj4 from 'proj4';
 import Map from 'ol/Map.js';
 import View from 'ol/View.js';
-import { fromLonLat, transform } from 'ol/proj.js';
+import { fromLonLat, getPointResolution, transform } from 'ol/proj.js';
 import GeoJSON from 'ol/format/GeoJSON.js';
 import TileLayer from 'ol/layer/Tile.js';
 import VectorLayer from 'ol/layer/Vector.js';
@@ -156,6 +156,13 @@ export function getRasterPalette(layer: Pick<MapLayerDefinition, 'styleDefault' 
   return rasterPalettes[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPalettes['blue-sequential']!;
 }
 
+export const rasterPaletteOptions = [
+  { value: 'hypsometric', label: 'Hipsométrica · relevo' },
+  { value: 'blue-cyan-sequential', label: 'Azul-ciano · água' },
+  { value: 'blue-sequential', label: 'Azul · contínua' },
+  { value: 'blue-indigo-sequential', label: 'Azul-índigo · contínua' },
+] as const;
+
 export function getRasterGradient(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
   return `linear-gradient(90deg, ${getRasterPalette(layer).join(', ')})`;
 }
@@ -220,6 +227,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
   const [loading, setLoading] = useState(layers.length > 0);
   const [error, setError] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
+  const [scaleDenominator, setScaleDenominator] = useState(0);
   const [measurementHistory, setMeasurementHistory] = useState<MeasurementHistoryEntry[]>([]);
   const measurementHistoryCallbackRef = useRef(onMeasurementHistoryChange);
 
@@ -232,7 +240,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       target: targetRef.current,
       layers: [],
       view: new View({ center: INITIAL_CENTER, zoom: 6.5, minZoom: 3, maxZoom: 19 }),
-      controls: [new ScaleLine({ units: 'metric', bar: true, steps: 4, text: true, minWidth: 90 })],
+      controls: [new ScaleLine({ units: 'metric', bar: true, steps: 4, text: false, minWidth: 110 })],
     });
     const graticule = new Graticule({
       showLabels: true,
@@ -284,6 +292,16 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       }
     } catch { try { sessionStorage.removeItem('sigparamirim-webgis-measurements-v1'); } catch { /* private browsing */ } }
     mapRef.current = map;
+    const updateScale = () => {
+      const view = map.getView();
+      const resolution = view.getResolution();
+      const center = view.getCenter();
+      if (!resolution || !center) return;
+      const groundResolution = getPointResolution(view.getProjection(), resolution, center, 'm');
+      setScaleDenominator(Math.round(groundResolution * 3779.527559));
+    };
+    const scaleKeys = [map.getView().on('change:resolution', updateScale), map.getView().on('change:center', updateScale)];
+    updateScale();
     const handleClick = async (event: import('ol/MapBrowserEvent').default) => {
       if (toolRef.current !== 'identify') return;
       const requestId = ++identifyRequestRef.current;
@@ -379,6 +397,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerUp);
       unByKey(rotationKey);
+      unByKey(scaleKeys);
       map.un('singleclick', handleClick);
       map.setTarget(undefined);
       mapRef.current = null;
@@ -585,6 +604,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       <button type="button" onClick={resetView} aria-label="Repor vista"><i className="fa-solid fa-crosshairs" /></button>
       <button type="button" onClick={() => mapRef.current?.getView().animate({ rotation: 0, duration: 180 })} aria-label="Orientar norte" title="Orientar norte"><span className="map-north-arrow" style={{ transform: `rotate(${-rotation}rad)` }}>N<i className="fa-solid fa-location-arrow" /></span></button>
     </div>
+    {scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}
     <div className="map-canvas-hint" aria-hidden="true">Botão do meio + arrastar para girar</div>
     {measurementHistory.length > 0 && <aside className="map-measure-history" aria-label="Histórico de medições">
       <header><strong>Medições</strong><span>{measurementHistory.length}</span></header>
