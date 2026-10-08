@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { getRasterGradient, rasterPaletteOptions, MapCanvas, type MapBaseMap, type MapFeatureSelection, type MapLayerDefinition, type MeasurementHistoryEntry } from '../features/gis/MapCanvas';
+import { getRasterGradient, rasterPaletteOptions, MapCanvas, readVectorPropertiesInWorker, type MapBaseMap, type MapFeatureSelection, type MapLayerDefinition, type MeasurementHistoryEntry } from '../features/gis/MapCanvas';
 import { PrintMapDialog } from '../features/gis/PrintMapDialog';
 import { useDraggableMapPanel } from '../features/gis/useDraggableMapPanel';
 import { useAuth } from '../features/auth';
@@ -212,7 +212,7 @@ export function MapPage() {
   const featureLayers = useMemo(() => catalog.filter((layer) => layer.status === 'present'), [catalog]);
   const selectedLayers = useMemo<Array<MapLayerDefinition & { crs?: string }>>(() => featureLayers
     .filter((layer) => selectedIds.includes(layer.id) && layer.url)
-    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id], fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : undefined } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, sizeBytes: layer.sizeBytes, featureCount: layer.featureCount, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id], fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : undefined } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
   const filteredCatalog = useMemo(() => catalog.filter((layer) => {
     if (layer.status !== 'present' || !layer.url) return false;
     const matchesSearch = `${layer.title} ${layer.group}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));
@@ -232,10 +232,15 @@ export function MapPage() {
     if (attributeCache[layer.id] || !layer.url) return;
     setAttributeLoading(layer.id);
     try {
-      const response = await fetch(layer.url, { headers: { Accept: 'application/geo+json, application/json' } });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const document = await response.json() as { features?: AttributeFeature[] };
-      setAttributeCache((current) => ({ ...current, [layer.id]: Array.isArray(document.features) ? document.features : [] }));
+      if ((layer.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (layer.featureCount ?? 0) >= 10_000) {
+        const properties = await readVectorPropertiesInWorker(layer.url);
+        setAttributeCache((current) => ({ ...current, [layer.id]: properties.map((item) => ({ properties: item })) }));
+      } else {
+        const response = await fetch(layer.url, { headers: { Accept: 'application/geo+json, application/json' } });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const document = await response.json() as { features?: AttributeFeature[] };
+        setAttributeCache((current) => ({ ...current, [layer.id]: Array.isArray(document.features) ? document.features : [] }));
+      }
     } catch (error) {
       setAttributeError(error instanceof Error ? error.message : 'Não foi possível carregar os atributos.');
     } finally {

@@ -28,6 +28,7 @@ import ScaleLine from 'ol/control/ScaleLine.js';
 import Graticule from 'ol/layer/Graticule.js';
 import { fromArrayBuffer } from 'geotiff';
 import { useDraggableMapPanel } from './useDraggableMapPanel';
+import { unpackGeometry, type PackedGeometry } from './vectorCodec';
 
 export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'esri-street' | 'esri-topo' | 'esri-imagery' | 'esri-terrain' | 'esri-natgeo' | 'esri-relief';
 export type RasterRange = { min: number; max: number };
@@ -39,6 +40,7 @@ export type FeatureFilter = {
 };
 export type MapLayerDefinition = {
   id: string; title: string; url: string; kind: 'vector' | 'raster'; group?: string;
+  sizeBytes?: number; featureCount?: number; crs?: string;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
   palette?: string;
   styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string };
@@ -77,6 +79,49 @@ type MapCanvasProps = {
   clearMeasurementsToken?: number;
 };
 type RenderedDataLayer = VectorLayer<VectorSource> | WebGLTileLayer;
+type PackedFeature = { id?: number | string; properties: Record<string, unknown>; geometry: PackedGeometry | null };
+
+function readVectorInWorker(url: string, dataProjection: string, signal: AbortSignal): Promise<Feature[]> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(new DOMException('Carregamento cancelado', 'AbortError')); return; }
+    const worker = new Worker(new URL('./vectorWorker.ts', import.meta.url), { type: 'module' });
+    const finish = () => {
+      signal.removeEventListener('abort', abort);
+      worker.terminate();
+    };
+    const abort = () => { finish(); reject(new DOMException('Carregamento cancelado', 'AbortError')); };
+    signal.addEventListener('abort', abort, { once: true });
+    worker.onerror = (event) => { finish(); reject(new Error(event.message || 'Falha no processamento vetorial em segundo plano.')); };
+    worker.onmessage = (event: MessageEvent<{ features?: PackedFeature[]; error?: string }>) => {
+      finish();
+      if (event.data.error) { reject(new Error(event.data.error)); return; }
+      try {
+        const features = (event.data.features ?? []).map((packed) => {
+          const feature = new Feature(packed.properties);
+          if (packed.geometry) feature.setGeometry(unpackGeometry(packed.geometry));
+          if (packed.id !== undefined) feature.setId(packed.id);
+          return feature;
+        });
+        resolve(features);
+      } catch (error) { reject(error); }
+    };
+    worker.postMessage({ url, dataProjection });
+  });
+}
+
+export function readVectorPropertiesInWorker(url: string): Promise<Record<string, unknown>[]> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./vectorWorker.ts', import.meta.url), { type: 'module' });
+    const finish = () => worker.terminate();
+    worker.onerror = (event) => { finish(); reject(new Error(event.message || 'Falha ao carregar os atributos vetoriais.')); };
+    worker.onmessage = (event: MessageEvent<{ properties?: Record<string, unknown>[]; error?: string }>) => {
+      finish();
+      if (event.data.error) { reject(new Error(event.data.error)); return; }
+      resolve(event.data.properties ?? []);
+    };
+    worker.postMessage({ url, dataProjection: 'EPSG:4674', mode: 'attributes' });
+  });
+}
 
 const INITIAL_CENTER = fromLonLat([-42.6, -12.6]);
 proj4.defs('EPSG:4674', '+proj=longlat +ellps=GRS80 +no_defs +type=crs');
@@ -624,22 +669,32 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
             rasterRangeCallbackRef.current?.(definition.id, range);
           }
         } else if (definition.kind === 'vector' && existing instanceof VectorLayer) {
-          existing.setStyle((feature) => feature?.get('webgis:filtered') ? undefined : vectorStyle(definition.id, definition.vectorStyle));
-          const rows: Record<string, unknown>[] = [];
-          existing.getSource()?.forEachFeature((feature) => {
-            const properties = { ...feature.getProperties() } as Record<string, unknown>;
-            delete properties.geometry;
-            const filtered = !matchesFeatureFilter(properties, definition.featureFilter);
-            feature.set('webgis:filtered', filtered, true);
-            if (!filtered) rows.push(properties);
-          });
-          layerFeaturesCallbackRef.current?.(definition.id, rows);
-          existing.changed();
+          const styleKey = JSON.stringify(definition.vectorStyle ?? null);
+          if (existing.get('webgis:vector-style-key') !== styleKey) {
+            const style = vectorStyle(definition.id, definition.vectorStyle);
+            existing.setStyle((feature) => feature?.get('webgis:filtered') ? undefined : style);
+            existing.set('webgis:vector-style-key', styleKey);
+          }
+          const filterKey = JSON.stringify(definition.featureFilter ?? null);
+          if (existing.get('webgis:feature-filter-key') !== filterKey) {
+            const rows: Record<string, unknown>[] = [];
+            existing.getSource()?.forEachFeature((feature) => {
+              const properties = { ...feature.getProperties() } as Record<string, unknown>;
+              delete properties.geometry;
+              const filtered = !matchesFeatureFilter(properties, definition.featureFilter);
+              feature.set('webgis:filtered', filtered, true);
+              if (!filtered) rows.push(properties);
+            });
+            existing.set('webgis:feature-filter-key', filterKey);
+            layerFeaturesCallbackRef.current?.(definition.id, rows);
+            existing.changed();
+          }
         }
       }
     }
     const missing = layers.filter((definition) => !dataLayersRef.current.has(definition.id));
     let cancelled = false;
+    const loadController = new AbortController();
     setLoading(missing.length > 0);
     setError(null);
 
@@ -674,11 +729,18 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           }
         });
       } else {
-        const response = await fetch(definition.url, { headers: { Accept: 'application/geo+json, application/json' } });
-        if (!response.ok) throw new Error(`${definition.title}: resposta ${response.status}`);
-        const document = await response.json() as Record<string, unknown>;
+        const requiresWorker = (definition.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (definition.featureCount ?? 0) >= 10_000;
+        let features: Feature[];
+        if (requiresWorker) {
+          features = await readVectorInWorker(definition.url, definition.crs ?? 'EPSG:4674', loadController.signal);
+        } else {
+          const response = await fetch(definition.url, { headers: { Accept: 'application/geo+json, application/json' }, signal: loadController.signal, cache: 'force-cache' });
+          if (!response.ok) throw new Error(`${definition.title}: resposta ${response.status}`);
+          const document = await response.json() as Record<string, unknown>;
+          if (cancelled || !aliveRef.current) return;
+          features = new GeoJSON().readFeatures(document, { dataProjection: definition.crs ?? 'EPSG:4674', featureProjection: 'EPSG:3857' });
+        }
         if (cancelled || !aliveRef.current) return;
-        const features = new GeoJSON().readFeatures(document, { dataProjection: 'EPSG:4674', featureProjection: 'EPSG:3857' });
         const rows = features.map((feature) => {
           const properties = { ...feature.getProperties() } as Record<string, unknown>;
           delete properties.geometry;
@@ -687,8 +749,9 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           return properties;
         });
         layerFeaturesCallbackRef.current?.(definition.id, rows);
-        const vectorSource = new VectorSource({ features });
-        rendered = new VectorLayer({ properties: { id: definition.id, title: definition.title, kind: definition.kind }, source: vectorSource, style: (feature) => feature?.get('webgis:filtered') ? undefined : vectorStyle(definition.id, definition.vectorStyle), opacity: definition.opacity ?? 1, zIndex: 20 });
+        const vectorSource = new VectorSource({ features, wrapX: false });
+        const style = vectorStyle(definition.id, definition.vectorStyle);
+        rendered = new VectorLayer({ properties: { id: definition.id, title: definition.title, kind: definition.kind, 'webgis:feature-filter-key': JSON.stringify(definition.featureFilter ?? null), 'webgis:vector-style-key': JSON.stringify(definition.vectorStyle ?? null) }, source: vectorSource, style: (feature) => feature?.get('webgis:filtered') ? undefined : style, opacity: definition.opacity ?? 1, renderBuffer: 96, updateWhileAnimating: false, updateWhileInteracting: false, zIndex: 20 });
         if (definition.id === 'bacia-hidrografica-paramirim') {
           const extent = vectorSource.getExtent();
           if (extent && extent.every(Number.isFinite)) initialExtentRef.current = extent;
@@ -706,7 +769,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     Promise.all(missing.map((definition) => create(definition)))
       .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Falha ao carregar a camada.'); })
       .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; loadController.abort(); };
   }, [layers]);
 
   const zoom = (delta: number) => {

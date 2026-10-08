@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.45] - 2026-10-08
+
+### Navegação mais fluida em camadas vetoriais grandes
+
+- GeoJSON grandes agora são baixados, interpretados e reprojetados em segundo plano, evitando que o processamento bloqueie a interface durante a abertura da camada;
+- a tabela de atributos dessas camadas também é preparada em segundo plano;
+- estilos deixam de ser recriados para cada feição a cada atualização, e filtros só percorrem novamente as feições quando a regra muda;
+- os dados e as geometrias originais continuam preservados, sem simplificação visual que altere a informação cartográfica.
+
 ## [0.3.0-beta.44] - 2026-10-08
 
 ### Ajuste do cartão da escala
