@@ -147,6 +147,7 @@
 .webgis-print-dialog > footer button[type="submit"] { border-color: var(--brand-strong); color: var(--on-brand, #fff); background: var(--brand-strong); }
 .webgis-print-sheet { display: none; }
 .webgis-print-sheet.is-printing { box-sizing: border-box; position: fixed; z-index: 10001; inset: 0; display: grid; grid-template-rows: auto minmax(0,1fr) auto; gap: 5mm; padding: var(--print-page-margin, 10mm); color: #1f2518; background: #fff; font-family: Arial, sans-serif; }
+.webgis-print-sheet.is-printing.is-composing { inset: auto; top: 0; left: 0; width: var(--print-sheet-width); height: var(--print-sheet-height); visibility: hidden; }
 .webgis-print-sheet header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 3mm; border-bottom: 1px solid #bbc4a1; }
 .webgis-print-sheet header div { display: grid; gap: 1.5mm; }
 .webgis-print-sheet header small, .webgis-print-sheet footer { color: #59614e; font-size: 8pt; }
@@ -372,11 +373,11 @@
 .webgis-dashboard-focus-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
 
 /* Let the printed map image fill its cartographic frame instead of letterboxing it. */
-.webgis-print-sheet .webgis-print-map-image { object-fit: cover; object-position: center; }
+.webgis-print-sheet .webgis-print-map-image { object-fit: contain; object-position: center; }
 
 /* Keep scale labels and the graphic bar together as one responsive cartographic control. */
 .map-scale-stack { position: absolute; z-index: 6; bottom: 22px; left: 14px; display: flex; width: var(--scale-width, max-content); min-width: 138px; flex-direction: column-reverse; align-items: stretch; gap: 4px; }
-.map-scale-line-target { position: relative; width: max-content; min-width: 138px; min-height: 42px; }
+.map-scale-line-target { position: relative; display: flex; width: 100%; min-width: 138px; min-height: 42px; justify-content: center; }
 .map-scale-line-target .ol-scale-bar { position: relative; inset: auto; box-sizing: border-box; width: max-content; min-width: 138px; margin: 0; padding: 9px 11px 10px; border: 0; border-radius: 12px; color: #293522; background: rgba(255,255,255,.96); box-shadow: 0 8px 23px rgba(20,25,10,.16); }
 .map-scale-line-target .ol-scale-bar-inner { height: 13px; }
 .map-scale-denominator { position: static; display: flex; min-width: 0; width: 100%; flex-direction: column; gap: 3px; padding: 8px 11px; border: 0; border-radius: 12px; color: #293522; background: rgba(255,255,255,.96); box-shadow: 0 8px 23px rgba(20,25,10,.13); font-variant-numeric: tabular-nums; }
@@ -434,10 +435,15 @@
 
 /* One responsive white control expands to the rendered scale-bar width. */
 .map-scale-stack { box-sizing: border-box; width: max(var(--scale-width, 162px), 162px); max-width: calc(100cqw - 28px); gap: 7px; padding: 13px 12px 15px; border: 0; border-radius: 13px; background: rgba(255,255,255,.97); box-shadow: 0 8px 24px rgba(20,25,10,.17); }
-.map-scale-line-target { width: 100%; min-width: 0; min-height: 35px; }
-.map-scale-line-target .ol-scale-bar { box-sizing: border-box; width: max-content; max-width: calc(100cqw - 52px); min-width: 100%; margin: 0; padding: 7px 4px 9px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.map-scale-line-target { display: flex; width: 100%; min-width: 0; min-height: 35px; justify-content: center; }
+.map-scale-line-target .ol-scale-bar { display: flex; box-sizing: border-box; width: max-content; max-width: calc(100cqw - 52px); min-width: 100%; justify-content: center; margin: 0; padding: 7px 4px 9px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
 .map-scale-denominator { box-sizing: border-box; width: 100%; align-items: center; padding: 0 0 4px; border: 0; border-radius: 0; background: transparent; box-shadow: none; text-align: center; }
-.webgis-print-sheet .webgis-print-map-image { object-fit: cover; object-position: center; }
+.map-scale-toggle { position: absolute; z-index: 2; top: 5px; right: 5px; display: grid; width: 24px; height: 24px; place-items: center; padding: 0; border: 0; border-radius: 50%; color: #64705d; background: rgba(239,241,232,.92); cursor: pointer; font-size: .62rem; transition: color 160ms ease, background-color 160ms ease, transform 160ms ease; }
+.map-scale-toggle:hover { color: var(--brand-strong); background: var(--brand-soft); transform: scale(1.08); }
+.map-scale-stack.is-collapsed { display: grid; width: 40px; min-width: 40px; max-width: 40px; height: 40px; min-height: 40px; place-items: center; padding: 0; border-radius: 50%; }
+.map-scale-stack.is-collapsed .map-scale-toggle { position: static; width: 40px; height: 40px; color: var(--brand-strong); background: rgba(255,255,255,.97); box-shadow: 0 8px 24px rgba(20,25,10,.17); font-size: .9rem; }
+.map-scale-stack.is-collapsed .map-scale-line-target, .map-scale-stack.is-collapsed .map-scale-denominator { display: none; }
+.webgis-print-sheet .webgis-print-map-image { object-fit: contain; object-position: center; }
 .webgis-print-map { background: #fff; }
 .webgis-print-raster-scale { grid-template-columns: max-content minmax(24mm, 1fr) max-content; align-items: center; gap: 2mm; }
 .webgis-print-footer-logo { display: block; width: 28mm; height: auto; max-height: 9mm; object-fit: contain; }

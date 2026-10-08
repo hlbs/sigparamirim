@@ -57,6 +57,21 @@ function renderMapSnapshot(target: HTMLElement) {
   }
 }
 
+function nextMapRender(target: HTMLElement) {
+  return new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      target.removeEventListener('webgis:rendercomplete', onRender);
+      reject(new Error('O mapa não concluiu a renderização para impressão. Tente novamente.'));
+    }, 15000);
+    const onRender = () => {
+      window.clearTimeout(timeout);
+      target.removeEventListener('webgis:rendercomplete', onRender);
+      resolve();
+    };
+    target.addEventListener('webgis:rendercomplete', onRender, { once: true });
+  });
+}
+
 function printableDate() {
   return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'long' }).format(new Date());
 }
@@ -99,7 +114,7 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  const print = (event: FormEvent<HTMLFormElement>) => {
+  const print = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const source = document.querySelector<HTMLElement>('.webgis-map-area .map-canvas');
     const sheet = sheetRef.current;
@@ -108,7 +123,33 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
     const mapHost = sheet.querySelector<HTMLElement>('.webgis-print-map');
     if (!mapHost) return;
     setPrintError('');
+    sheet.dataset.pageSize = pageSize;
+    sheet.dataset.orientation = orientation;
+    sheet.style.setProperty('--print-page-margin', pageMargin);
+    const sheetWidth = pageSize === 'A4' ? 210 : 297;
+    const sheetHeight = pageSize === 'A4' ? 297 : 420;
+    const [width, height] = orientation === 'landscape' ? [sheetHeight, sheetWidth] : [sheetWidth, sheetHeight];
+    sheet.style.setProperty('--print-sheet-width', `${width}mm`);
+    sheet.style.setProperty('--print-sheet-height', `${height}mm`);
+    sheet.classList.add('is-printing', 'is-composing');
+
+    const originalMapStyle = source.getAttribute('style');
     try {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const frame = mapHost.getBoundingClientRect();
+      const mapBounds = source.getBoundingClientRect();
+      if (!frame.width || !frame.height || !mapBounds.width) throw new Error('Não foi possível calcular a área útil do mapa para impressão.');
+
+      // Render the live map at the print frame's aspect ratio before capture.
+      // This prevents edge graticule labels from being clipped by cover/crop in A4 portrait.
+      source.style.position = 'absolute';
+      source.style.inset = '0 auto auto 0';
+      const captureWidth = Math.max(mapBounds.width, frame.width);
+      source.style.width = `${captureWidth}px`;
+      source.style.height = `${captureWidth * frame.height / frame.width}px`;
+      const rendered = nextMapRender(source);
+      source.dispatchEvent(new Event('webgis:print-resize'));
+      await rendered;
       const snapshot = renderMapSnapshot(source);
       mapHost.replaceChildren();
       const image = document.createElement('img');
@@ -118,13 +159,18 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       mapHost.append(image);
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Falha ao compor a impressão.');
+      sheet.classList.remove('is-printing', 'is-composing');
+      sheet.style.removeProperty('--print-page-margin');
+      sheet.style.removeProperty('--print-sheet-width');
+      sheet.style.removeProperty('--print-sheet-height');
       return;
+    } finally {
+      if (originalMapStyle === null) source.removeAttribute('style');
+      else source.setAttribute('style', originalMapStyle);
+      source.dispatchEvent(new Event('webgis:print-resize'));
     }
 
-    sheet.dataset.pageSize = pageSize;
-    sheet.dataset.orientation = orientation;
-    sheet.style.setProperty('--print-page-margin', pageMargin);
-    sheet.classList.add('is-printing');
+    sheet.classList.remove('is-composing');
     setOpen(false);
 
     const pageRule = document.createElement('style');
@@ -134,7 +180,10 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
     pageRule.textContent = `@media print { @page { size: ${pageSize} ${orientation}; margin: 0; } }`;
     document.head.append(pageRule);
     const cleanup = () => {
-      sheet.classList.remove('is-printing');
+      sheet.classList.remove('is-printing', 'is-composing');
+      sheet.style.removeProperty('--print-page-margin');
+      sheet.style.removeProperty('--print-sheet-width');
+      sheet.style.removeProperty('--print-sheet-height');
       pageRule.remove();
       window.removeEventListener('afterprint', cleanup);
     };

@@ -1,4 +1,4 @@
-.webgis-print-map-image { object-fit: cover; object-position: center; }
+.webgis-print-map-image { object-fit: contain; object-position: center; }
 
 .webgis-print-form > footer {
   grid-column: 1 / -1;

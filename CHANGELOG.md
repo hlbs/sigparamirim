@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.43] - 2026-10-08
+
+### Grade de coordenadas e controles de escala
+
+- a grade e as coordenadas agora são compostas na mesma proporção da área de impressão, evitando cortes dos rótulos nos eixos X e Y em folhas A4/A3, retrato ou paisagem;
+- a imagem do mapa não é mais recortada para preencher a moldura: o enquadramento preserva integralmente a área renderizada;
+- a barra de escala fica centralizada dentro do cartão de escala;
+- o cartão com escala gráfica e numérica pode ser recolhido para um ícone discreto no canto inferior esquerdo e expandido novamente com um clique.
+
 ## [0.3.0-beta.42] - 2026-10-08
 
 ### Carimbo de impressão e grade em escalas pequenas

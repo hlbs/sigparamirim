@@ -297,6 +297,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
   const [error, setError] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
   const [scaleDenominator, setScaleDenominator] = useState(0);
+  const [scaleCollapsed, setScaleCollapsed] = useState(false);
   const [measurementHistory, setMeasurementHistory] = useState<MeasurementHistoryEntry[]>([]);
   const [measurementPanelCollapsed, setMeasurementPanelCollapsed] = useState(false);
   const measurementPanelDrag = useDraggableMapPanel<HTMLElement>();
@@ -426,6 +427,15 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     map.on('singleclick', handleClick);
     const observer = new ResizeObserver(() => map.updateSize());
     observer.observe(targetRef.current);
+    const mapTarget = targetRef.current;
+    const handlePrintResize = () => {
+      map.updateSize();
+      map.renderSync();
+    };
+    mapTarget.addEventListener('webgis:print-resize', handlePrintResize);
+    const renderCompleteKey = map.on('rendercomplete', () => {
+      mapTarget.dispatchEvent(new Event('webgis:rendercomplete'));
+    });
     const scaleControlTarget = scaleControlTargetRef.current;
     const observedScaleBars = new WeakSet<Element>();
     const scaleWidthObserver = new ResizeObserver((entries) => {
@@ -491,6 +501,8 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       observer.disconnect();
       scaleWidthObserver.disconnect();
       scaleMarkupObserver.disconnect();
+      mapTarget.removeEventListener('webgis:print-resize', handlePrintResize);
+      unByKey(renderCompleteKey);
       viewport.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
@@ -709,7 +721,13 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       <button type="button" onClick={resetView} aria-label="Repor vista"><i className="fa-solid fa-crosshairs" /></button>
       <button type="button" onClick={() => mapRef.current?.getView().animate({ rotation: 0, duration: 180 })} aria-label="Orientar norte" title="Orientar norte"><span className="map-north-arrow" style={{ transform: `rotate(${-rotation}rad)` }}>N<i className="fa-solid fa-location-arrow" /></span></button>
     </div>
-    <div ref={scaleStackRef} className="map-scale-stack"><div ref={scaleControlTargetRef} className="map-scale-line-target" aria-label="Barra de escala gráfica" />{scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}</div>
+    <div ref={scaleStackRef} className={`map-scale-stack ${scaleCollapsed ? 'is-collapsed' : ''}`}>
+      <button className="map-scale-toggle" type="button" aria-label={scaleCollapsed ? 'Expandir escalas do mapa' : 'Minimizar escalas do mapa'} aria-expanded={!scaleCollapsed} title={scaleCollapsed ? 'Expandir escalas' : 'Minimizar escalas'} onClick={() => setScaleCollapsed((current) => !current)}>
+        <i className={`fa-solid ${scaleCollapsed ? 'fa-ruler-horizontal' : 'fa-minus'}`} aria-hidden="true" />
+      </button>
+      <div ref={scaleControlTargetRef} className="map-scale-line-target" aria-label="Barra de escala gráfica" />
+      {scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}
+    </div>
     <div className="map-canvas-hint" aria-hidden="true">Botão do meio + arrastar para girar</div>
     {measurementHistory.length > 0 && <aside ref={measurementPanelDrag.panelRef} style={measurementPanelDrag.style} className={`map-measure-history ${measurementPanelCollapsed ? 'is-minimized' : ''}`} aria-label="Histórico de medições">
       <header className="map-floating-panel-handle" {...measurementPanelDrag.dragHandleProps}><strong>Medições</strong><span>{measurementHistory.length}</span><button type="button" aria-label={measurementPanelCollapsed ? 'Expandir medições' : 'Minimizar medições'} aria-expanded={!measurementPanelCollapsed} onClick={() => setMeasurementPanelCollapsed((current) => !current)}><i className={`fa-solid ${measurementPanelCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}`} /></button></header>
