@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.46] - 2026-10-08
+
+### Carregamento progressivo de camadas vetoriais
+
+- ao selecionar uma camada, o mapa informa qual dado está sendo carregado e em que etapa;
+- camadas vetoriais grandes mostram o avanço enquanto suas feições são preparadas e indexadas em lotes menores;
+- camadas selecionadas são carregadas em sequência, evitando picos de processamento ao ativar várias de uma vez;
+- os lotes cedem tempo para o navegador atualizar a tela, mantendo o indicador e os controles responsivos durante a preparação.
+
 ## [0.3.0-beta.45] - 2026-10-08
 
 ### Navegação mais fluida em camadas vetoriais grandes

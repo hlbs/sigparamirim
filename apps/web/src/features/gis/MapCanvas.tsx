@@ -80,8 +80,9 @@ type MapCanvasProps = {
 };
 type RenderedDataLayer = VectorLayer<VectorSource> | WebGLTileLayer;
 type PackedFeature = { id?: number | string; properties: Record<string, unknown>; geometry: PackedGeometry | null };
+type LayerLoadingStatus = { title: string; message: string; progress?: number };
 
-function readVectorInWorker(url: string, dataProjection: string, signal: AbortSignal): Promise<Feature[]> {
+function readVectorInWorker(url: string, dataProjection: string, signal: AbortSignal): Promise<PackedFeature[]> {
   return new Promise((resolve, reject) => {
     if (signal.aborted) { reject(new DOMException('Carregamento cancelado', 'AbortError')); return; }
     const worker = new Worker(new URL('./vectorWorker.ts', import.meta.url), { type: 'module' });
@@ -95,15 +96,7 @@ function readVectorInWorker(url: string, dataProjection: string, signal: AbortSi
     worker.onmessage = (event: MessageEvent<{ features?: PackedFeature[]; error?: string }>) => {
       finish();
       if (event.data.error) { reject(new Error(event.data.error)); return; }
-      try {
-        const features = (event.data.features ?? []).map((packed) => {
-          const feature = new Feature(packed.properties);
-          if (packed.geometry) feature.setGeometry(unpackGeometry(packed.geometry));
-          if (packed.id !== undefined) feature.setId(packed.id);
-          return feature;
-        });
-        resolve(features);
-      } catch (error) { reject(error); }
+      resolve(event.data.features ?? []);
     };
     worker.postMessage({ url, dataProjection });
   });
@@ -338,7 +331,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
   const measureLayerRef = useRef<VectorLayer<VectorSource> | null>(null);
   const measurementSourceRef = useRef<VectorSource | null>(null);
   const aliveRef = useRef(false);
-  const [loading, setLoading] = useState(layers.length > 0);
+  const [loadingLayer, setLoadingLayer] = useState<LayerLoadingStatus | null>(layers.length ? { title: layers[0]?.title ?? 'Camada', message: 'Preparando camada…' } : null);
   const [error, setError] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
   const [scaleDenominator, setScaleDenominator] = useState(0);
@@ -695,12 +688,13 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     const missing = layers.filter((definition) => !dataLayersRef.current.has(definition.id));
     let cancelled = false;
     const loadController = new AbortController();
-    setLoading(missing.length > 0);
+    setLoadingLayer(missing.length > 0 ? { title: missing[0]?.title ?? 'Camada', message: 'Preparando camada…' } : null);
     setError(null);
 
     const create = async (definition: MapLayerDefinition) => {
       let rendered: RenderedDataLayer;
       if (definition.kind === 'raster') {
+        setLoadingLayer({ title: definition.title, message: 'Abrindo raster…' });
         const source = new GeoTIFF({
           sources: [{ url: definition.url, ...(definition.noData === undefined ? {} : { nodata: definition.noData }), loader: loadGeoTiff }],
           normalize: false, convertToRGB: false,
@@ -730,9 +724,11 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         });
       } else {
         const requiresWorker = (definition.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (definition.featureCount ?? 0) >= 10_000;
-        let features: Feature[];
+        let packedFeatures: PackedFeature[] | null = null;
+        let features: Feature[] | null = null;
+        setLoadingLayer({ title: definition.title, message: requiresWorker ? 'Baixando e processando dados em segundo plano…' : 'Lendo dados…' });
         if (requiresWorker) {
-          features = await readVectorInWorker(definition.url, definition.crs ?? 'EPSG:4674', loadController.signal);
+          packedFeatures = await readVectorInWorker(definition.url, definition.crs ?? 'EPSG:4674', loadController.signal);
         } else {
           const response = await fetch(definition.url, { headers: { Accept: 'application/geo+json, application/json' }, signal: loadController.signal, cache: 'force-cache' });
           if (!response.ok) throw new Error(`${definition.title}: resposta ${response.status}`);
@@ -741,15 +737,39 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           features = new GeoJSON().readFeatures(document, { dataProjection: definition.crs ?? 'EPSG:4674', featureProjection: 'EPSG:3857' });
         }
         if (cancelled || !aliveRef.current) return;
-        const rows = features.map((feature) => {
-          const properties = { ...feature.getProperties() } as Record<string, unknown>;
-          delete properties.geometry;
-          const visible = matchesFeatureFilter(properties, definition.featureFilter);
-          feature.set('webgis:filtered', !visible, true);
-          return properties;
-        });
+        const featureCount = packedFeatures?.length ?? features?.length ?? 0;
+        const rows: Record<string, unknown>[] = [];
+        const vectorSource = new VectorSource({ wrapX: false });
+        const batchSize = requiresWorker ? 200 : 600;
+        let lastReportedProgress = -1;
+        setLoadingLayer({ title: definition.title, message: 'Preparando feições para o mapa…', progress: 0 });
+        for (let start = 0; start < featureCount; start += batchSize) {
+          if (cancelled || !aliveRef.current) return;
+          const end = Math.min(start + batchSize, featureCount);
+          const batch: Feature[] = [];
+          for (let index = start; index < end; index += 1) {
+            const packed = packedFeatures?.[index];
+            const feature = packed ? new Feature(packed.properties) : features?.[index];
+            if (!feature) continue;
+            if (packed?.geometry) feature.setGeometry(unpackGeometry(packed.geometry));
+            if (packed?.id !== undefined) feature.setId(packed.id);
+            const properties = { ...feature.getProperties() } as Record<string, unknown>;
+            delete properties.geometry;
+            feature.set('webgis:filtered', !matchesFeatureFilter(properties, definition.featureFilter), true);
+            rows.push(properties);
+            batch.push(feature);
+          }
+          vectorSource.addFeatures(batch);
+          const progress = Math.round((end / Math.max(featureCount, 1)) * 100);
+          if (progress === 100 || progress - lastReportedProgress >= 2) {
+            lastReportedProgress = progress;
+            setLoadingLayer({ title: definition.title, message: `Desenhando feições… ${end.toLocaleString('pt-BR')} de ${featureCount.toLocaleString('pt-BR')}`, progress });
+          }
+          // Give the browser a paint opportunity between batches, so the progress
+          // indicator stays responsive while complex polygons are being indexed.
+          if (end < featureCount) await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+        }
         layerFeaturesCallbackRef.current?.(definition.id, rows);
-        const vectorSource = new VectorSource({ features, wrapX: false });
         const style = vectorStyle(definition.id, definition.vectorStyle);
         rendered = new VectorLayer({ properties: { id: definition.id, title: definition.title, kind: definition.kind, 'webgis:feature-filter-key': JSON.stringify(definition.featureFilter ?? null), 'webgis:vector-style-key': JSON.stringify(definition.vectorStyle ?? null) }, source: vectorSource, style: (feature) => feature?.get('webgis:filtered') ? undefined : style, opacity: definition.opacity ?? 1, renderBuffer: 96, updateWhileAnimating: false, updateWhileInteracting: false, zIndex: 20 });
         if (definition.id === 'bacia-hidrografica-paramirim') {
@@ -766,9 +786,18 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         if (extent && extent.every(Number.isFinite)) map.getView().fit(extent, { padding: [42, 42, 42, 42], maxZoom: 9, duration: 280 });
       }
     };
-    Promise.all(missing.map((definition) => create(definition)))
-      .catch((reason: unknown) => { if (!cancelled) setError(reason instanceof Error ? reason.message : 'Falha ao carregar a camada.'); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    void (async () => {
+      try {
+        for (const definition of missing) {
+          if (cancelled) return;
+          await create(definition);
+        }
+      } catch (reason) {
+        if (!cancelled) setError(reason instanceof Error ? reason.message : 'Falha ao carregar a camada.');
+      } finally {
+        if (!cancelled) setLoadingLayer(null);
+      }
+    })();
     return () => { cancelled = true; loadController.abort(); };
   }, [layers]);
 
@@ -803,7 +832,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       </details>)}</div>}
     </aside>}
     <div className="map-attribution">{baseMapSources[baseMap].attribution}</div>
-    {loading && <div className="map-canvas-feedback" role="status"><i className="fa-solid fa-spinner fa-spin" /> Carregando camada…</div>}
+    {loadingLayer && <div className="map-canvas-feedback map-loading-card" role="status" aria-live="polite"><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" /><span className="map-loading-copy"><strong>{loadingLayer.title}</strong><small>{loadingLayer.message}</small>{loadingLayer.progress !== undefined && <span className="map-loading-progress" role="progressbar" aria-label={`Carregamento de ${loadingLayer.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={loadingLayer.progress}><span style={{ width: `${loadingLayer.progress}%` }} /></span>}</span></div>}
     {error && <div className="map-canvas-feedback is-error" role="alert"><i className="fa-solid fa-triangle-exclamation" /> {error}</div>}
   </div>;
 }
