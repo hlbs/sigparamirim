@@ -318,7 +318,10 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       lonLabelPosition: 1,
       latLabelPosition: 0,
       targetSize: 135,
-      intervals: [30, 15, 10, 5, 2, 1, 0.5, 0.25],
+      // Keep coarser intervals available when zooming out. Without 45° and
+      // 90° steps, OpenLayers cannot find a suitable interval at small scales
+      // and turns the graticule off entirely.
+      intervals: [90, 45, 30, 20, 15, 10, 5, 2, 1, 0.5, 0.25],
       lonLabelStyle: new Text({ font: '700 10px Inter, sans-serif', textBaseline: 'top', fill: new Fill({ color: 'rgba(50,65,45,.82)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.9)', width: 3 }), padding: [3, 3, 2, 3] }),
       latLabelStyle: new Text({ font: '700 10px Inter, sans-serif', textAlign: 'start', fill: new Fill({ color: 'rgba(50,65,45,.82)' }), stroke: new Stroke({ color: 'rgba(255,255,255,.9)', width: 3 }), padding: [2, 3, 2, 3] }),
       wrapX: false,

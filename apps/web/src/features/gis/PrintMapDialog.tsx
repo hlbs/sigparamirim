@@ -123,12 +123,15 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
 
     sheet.dataset.pageSize = pageSize;
     sheet.dataset.orientation = orientation;
+    sheet.style.setProperty('--print-page-margin', pageMargin);
     sheet.classList.add('is-printing');
     setOpen(false);
 
     const pageRule = document.createElement('style');
     pageRule.dataset.webgisPrint = 'page';
-    pageRule.textContent = `@media print { @page { size: ${pageSize} ${orientation}; margin: ${pageMargin}; } }`;
+    // Zero page margin disables browser-injected URL/date/page headers. The
+    // selected user margin is applied as padding to the print sheet itself.
+    pageRule.textContent = `@media print { @page { size: ${pageSize} ${orientation}; margin: 0; } }`;
     document.head.append(pageRule);
     const cleanup = () => {
       sheet.classList.remove('is-printing');
@@ -169,11 +172,7 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       </div>
     </div>}
     <section ref={sheetRef} className="webgis-print-sheet" aria-hidden="true">
-      <header className="webgis-print-heading">
-        <div className="webgis-print-heading-copy"><small>SIG PARAMIRIM · PRODUTO CARTOGRÁFICO</small><h1>{title}</h1><p>{subtitle}</p></div>
-        <div className="webgis-print-brand" aria-label="SIG Paramirim"><img src="/logo_w.svg" alt="SIG Paramirim" /></div>
-        <time>{printableDate()}</time>
-      </header>
+      <header><div><small>SIG PARAMIRIM · PRODUTO CARTOGRÁFICO</small><h1>{title}</h1><p>{subtitle}</p></div><time>{printableDate()}</time></header>
       <div className="webgis-print-map">{includeNorth && <div className="webgis-print-north" aria-label="Norte">↑<small>N</small></div>}</div>
       {includeLegend && layers.length > 0 && <section className="webgis-print-legend"><h2>Legenda</h2>{layers.map((layer) => {
         const palette = layer.palette ? rasterPaletteCatalog[layer.palette] : undefined;
@@ -190,7 +189,7 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
         }
         return <span className="webgis-print-legend-item" key={layer.id}><i className="webgis-print-legend-swatch vector" style={symbolStyle as CSSProperties} />{layer.title}</span>;
       })}</section>}
-      <footer><span>{includeAttribution ? attribution || 'Créditos das fontes conforme o catálogo geoespacial' : 'SIG Paramirim'}</span><span>Elaboração: Hermes Santos / SIG Paramirim · Visualização: EPSG:3857 (Web Mercator) · {dataCrsLabel} · {printableDate()}</span></footer>
+      <footer><span>{includeAttribution ? attribution || 'Créditos das fontes conforme o catálogo geoespacial' : 'SIG Paramirim'}</span><img className="webgis-print-footer-logo" src="/logo_w.svg" alt="SIG Paramirim" /><span>Elaboração: Hermes Santos / SIG Paramirim · Visualização: EPSG:3857 (Web Mercator) · {dataCrsLabel} · {printableDate()}</span></footer>
     </section>
     </div>, document.body)}
   </>;

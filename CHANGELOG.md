@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.42] - 2026-10-08
+
+### Carimbo de impressão e grade em escalas pequenas
+
+- removidos do PDF os cabeçalhos automáticos do navegador, que exibiam o endereço da página;
+- a logo SIG Paramirim aparece sem moldura e centralizada no rodapé cartográfico, substituindo o endereço;
+- as margens escolhidas continuam aplicadas ao conteúdo do mapa e do carimbo;
+- a grade e os rótulos de coordenadas permanecem disponíveis em escalas menores, com intervalos geográficos mais amplos.
+
 ## [0.3.0-beta.41] - 2026-10-08
 
 ### Melhorias de escala e impressão
