@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.40] - 2026-10-08
+
+### Painéis flutuantes e leitura dos rasters
+
+- o histórico de medições agora pode ser arrastado pelo mapa e recolhido para liberar área de visualização;
+- o painel de identificação de feições também pode ser reposicionado; ao soltar os painéis, o WebGIS procura um local livre dentro do mapa;
+- o estilo de raster exibe uma prévia contínua da paleta selecionada e indica visualmente onde ficam os valores mínimo e máximo atuais.
+
 ## [0.3.0-beta.39] - 2026-10-08
 
 ### Ajustes finais do WebGIS

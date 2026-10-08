@@ -440,3 +440,26 @@
 .webgis-print-map { background: #fff; }
 .webgis-print-raster-scale { grid-template-columns: max-content minmax(24mm, 1fr) max-content; align-items: center; gap: 2mm; }
 @media (max-width: 680px) { .map-scale-stack { max-width: min(62vw, 210px); padding: 9px 10px 10px; } }
+
+/* Floating map panels remain movable, bounded by the map, and clear of the scale and controls. */
+.webgis-map-area { container-type: inline-size; }
+.map-floating-panel-handle { cursor: grab; touch-action: none; user-select: none; }
+.map-floating-panel-handle:active { cursor: grabbing; }
+.map-measure-history { top: 58px; right: auto; bottom: auto; left: 14px; width: min(300px, calc(100% - 40px)); max-height: min(42vh, 360px); }
+.map-measure-history > header { gap: 9px; }
+.map-measure-history > header strong { margin-right: auto; }
+.map-measure-history > header button { display: grid; width: 25px; height: 25px; flex: 0 0 auto; place-items: center; border: 0; border-radius: 7px; color: #45503f; background: transparent; cursor: pointer; }
+.map-measure-history > header button:hover { color: #303907; background: #eff1e8; }
+.map-measure-history.is-minimized { max-height: none; overflow: visible; }
+.map-measure-history-content { max-height: min(38vh, 320px); overflow: auto; }
+.webgis-identify-card { top: 205px; right: 14px; left: auto; }
+.webgis-identify-card > header { cursor: grab; touch-action: none; user-select: none; }
+.webgis-identify-card > header:active { cursor: grabbing; }
+.webgis-raster-style-preview { display: grid; gap: 5px; margin: 2px 0 3px; }
+.webgis-raster-style-gradient { height: 17px; border-radius: 5px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent); }
+.webgis-raster-style-preview > div:last-child { display: flex; justify-content: space-between; gap: 8px; color: var(--text-muted); font-size: .61rem; font-variant-numeric: tabular-nums; }
+.webgis-raster-style-preview strong { color: var(--text); font-weight: 750; }
+@container (max-width: 680px) {
+  .map-measure-history { width: min(300px, calc(50% - 22px)); left: 12px; }
+  .webgis-identify-card { width: min(340px, calc(50% - 22px)); right: 12px; }
+}

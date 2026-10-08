@@ -27,6 +27,7 @@ import { getArea, getLength } from 'ol/sphere.js';
 import ScaleLine from 'ol/control/ScaleLine.js';
 import Graticule from 'ol/layer/Graticule.js';
 import { fromArrayBuffer } from 'geotiff';
+import { useDraggableMapPanel } from './useDraggableMapPanel';
 
 export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'esri-street' | 'esri-topo' | 'esri-imagery' | 'esri-terrain' | 'esri-natgeo' | 'esri-relief';
 export type RasterRange = { min: number; max: number };
@@ -297,6 +298,8 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
   const [rotation, setRotation] = useState(0);
   const [scaleDenominator, setScaleDenominator] = useState(0);
   const [measurementHistory, setMeasurementHistory] = useState<MeasurementHistoryEntry[]>([]);
+  const [measurementPanelCollapsed, setMeasurementPanelCollapsed] = useState(false);
+  const measurementPanelDrag = useDraggableMapPanel<HTMLElement>();
   const measurementHistoryCallbackRef = useRef(onMeasurementHistoryChange);
 
   useEffect(() => { callbackRef.current = onFeatureSelect; measureCallbackRef.current = onMeasure; rasterRangeCallbackRef.current = onRasterRangeChange; layerFeaturesCallbackRef.current = onLayerFeatures; measurementHistoryCallbackRef.current = onMeasurementHistoryChange; layerDefinitionsRef.current = layers; }, [layers, onFeatureSelect, onMeasure, onRasterRangeChange, onLayerFeatures, onMeasurementHistoryChange]);
@@ -688,12 +691,12 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     </div>
     <div ref={scaleStackRef} className="map-scale-stack"><div ref={scaleControlTargetRef} className="map-scale-line-target" aria-label="Barra de escala gráfica" />{scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}</div>
     <div className="map-canvas-hint" aria-hidden="true">Botão do meio + arrastar para girar</div>
-    {measurementHistory.length > 0 && <aside className="map-measure-history" aria-label="Histórico de medições">
-      <header><strong>Medições</strong><span>{measurementHistory.length}</span></header>
-      <div>{measurementHistory.slice(-5).reverse().map((entry, index) => <details key={entry.id} open={index === 0}>
+    {measurementHistory.length > 0 && <aside ref={measurementPanelDrag.panelRef} style={measurementPanelDrag.style} className={`map-measure-history ${measurementPanelCollapsed ? 'is-minimized' : ''}`} aria-label="Histórico de medições">
+      <header className="map-floating-panel-handle" {...measurementPanelDrag.dragHandleProps}><strong>Medições</strong><span>{measurementHistory.length}</span><button type="button" aria-label={measurementPanelCollapsed ? 'Expandir medições' : 'Minimizar medições'} aria-expanded={!measurementPanelCollapsed} onClick={() => setMeasurementPanelCollapsed((current) => !current)}><i className={`fa-solid ${measurementPanelCollapsed ? 'fa-chevron-down' : 'fa-chevron-up'}`} /></button></header>
+      {!measurementPanelCollapsed && <div className="map-measure-history-content">{measurementHistory.slice(-5).reverse().map((entry, index) => <details key={entry.id} open={index === 0}>
         <summary><span>{entry.kind === 'measure-area' ? 'Área' : 'Distância'}</span><strong>{entry.value.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} {entry.unit}</strong></summary>
         <ol>{entry.vertices.map(([longitude, latitude], vertexIndex) => <li key={`${entry.id}-${vertexIndex}`}><span>V{vertexIndex + 1}</span><code>{latitude.toFixed(5)}, {longitude.toFixed(5)}</code></li>)}</ol>
-      </details>)}</div>
+      </details>)}</div>}
     </aside>}
     <div className="map-attribution">{baseMapSources[baseMap].attribution}</div>
     {loading && <div className="map-canvas-feedback" role="status"><i className="fa-solid fa-spinner fa-spin" /> Carregando camada…</div>}
