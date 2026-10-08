@@ -442,17 +442,20 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       for (const entry of entries) {
         const width = entry.target.getBoundingClientRect().width;
         if (width > 0 && scaleStackRef.current) {
-          // Include the scale card's horizontal padding so its border always
-          // encloses the full OpenLayers bar and its endpoint labels.
-          scaleStackRef.current.style.setProperty('--scale-width', `${Math.ceil(width + 24)}px`);
+          // Observe the rendered bar itself, not its OpenLayers wrapper. The
+          // wrapper can shrink to the card width while the inner bar keeps its
+          // intrinsic width, which makes the bar protrude from the white card.
+          // Include the scale-line and card padding so both remain enclosed.
+          scaleStackRef.current.style.setProperty('--scale-width', `${Math.ceil(width + 32)}px`);
         }
       }
     });
     const observeScaleBar = () => {
       const scaleBar = scaleControlTarget?.querySelector<HTMLElement>('.ol-scale-bar');
-      if (scaleBar && !observedScaleBars.has(scaleBar)) {
-        observedScaleBars.add(scaleBar);
-        scaleWidthObserver.observe(scaleBar);
+      const scaleBarContent = scaleBar?.querySelector<HTMLElement>('.ol-scale-bar-inner');
+      if (scaleBarContent && !observedScaleBars.has(scaleBarContent)) {
+        observedScaleBars.add(scaleBarContent);
+        scaleWidthObserver.observe(scaleBarContent);
       }
     };
     const scaleMarkupObserver = new MutationObserver(observeScaleBar);

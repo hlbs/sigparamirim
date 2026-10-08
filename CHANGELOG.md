@@ -2,6 +2,12 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.44] - 2026-10-08
+
+### Ajuste do cartão da escala
+
+- o cartão agora acompanha a largura real da barra e de seus rótulos, evitando que a escala gráfica ultrapasse a caixa branca em áreas de mapa mais estreitas.
+
 ## [0.3.0-beta.43] - 2026-10-08
 
 ### Grade de coordenadas e controles de escala
