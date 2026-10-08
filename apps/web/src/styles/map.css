@@ -101,6 +101,9 @@
 .layer-bacia-hidrografica-paramirim { --layer-color: #68710a; }
 .webgis-layer-swatch.layer-hidrografia { border-color: #168fce; background: #168fce; }
 .webgis-layer-swatch.layer-bacia-hidrografica-paramirim { border-color: #68710a; background: transparent; }
+.webgis-layer-swatch.geometry-polygon { width: 13px; height: 10px; border: 1.5px solid #748941; border-radius: 2px; background: color-mix(in srgb, #acbf69 32%, transparent); }
+.webgis-layer-swatch.geometry-line { width: 15px; height: 0; border: 0; border-top: 2px solid #829341; border-radius: 0; background: transparent; }
+.webgis-layer-swatch.geometry-point { width: 8px; height: 8px; border: 0; border-radius: 50%; background: #829341; }
 .webgis-layer-row-copy { display: grid; min-width: 0; gap: 4px; }
 .webgis-layer-kind-icon { color: var(--text-muted); font-size: .68rem; }
 .webgis-panel-hint { margin: 14px; color: var(--text-muted); font-size: .72rem; line-height: 1.55; }
@@ -111,6 +114,10 @@
 .webgis-legend-symbol { display: block; width: 23px; height: 7px; border-radius: 2px; background: var(--layer-color, #829341); }
 .webgis-legend-symbol.vector.layer-bacia-hidrografica-paramirim { height: 13px; border: 2px solid #68710a; background: transparent; }
 .webgis-legend-symbol.vector.layer-hidrografia { height: 3px; background: #168fce; }
+.webgis-legend-symbol.vector-polygon { width: 16px; height: 12px; border: 2px solid #829341; border-radius: 2px; background: color-mix(in srgb, #829341 24%, transparent); }
+.webgis-legend-symbol.vector-line { width: 22px; height: 0; border: 0; border-top: 3px solid #829341; border-radius: 0; background: transparent; }
+.webgis-legend-symbol.vector-point { width: 9px; height: 9px; border: 0; border-radius: 50%; background: #829341; }
+.webgis-legend-symbol.vector-unknown { width: 8px; height: 8px; border: 2px solid #829341; border-radius: 50%; background: transparent; }
 .webgis-legend-symbol.raster { height: 15px; background: linear-gradient(90deg, #2c7bb6, #abd9e9, #ffffbf, #fdae61, #d7191c); }
 .webgis-tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 13px; }
 .webgis-tool-grid button { display: grid; min-height: 66px; align-content: center; justify-items: center; gap: 6px; border: 1px solid var(--webgis-border); border-radius: 9px; color: var(--text); background: var(--webgis-panel); font: inherit; font-size: .66rem; font-weight: 700; cursor: pointer; }
@@ -166,7 +173,11 @@
 .webgis-print-legend { display: flex; flex-wrap: wrap; gap: 3mm 7mm; padding: 3mm 0 0; border-top: 1px solid #d5dacb; }
 .webgis-print-legend h2 { width: 100%; margin: 0; font-size: 9pt; }
 .webgis-print-legend-item { display: inline-flex; align-items: center; gap: 2mm; font-size: 8pt; }
-.webgis-print-legend-swatch { width: 10mm; height: 2.3mm; border: 1px solid #67714e; border-radius: 1mm; background: var(--print-color, #78883c); }
+.webgis-print-legend-swatch { flex: 0 0 auto; width: 10mm; height: 2.3mm; border: 1px solid #67714e; border-radius: 1mm; background: var(--print-color, #78883c); }
+.webgis-print-legend-swatch.vector.polygon { width: 5mm; height: 3.5mm; border: .45mm solid var(--print-color, #78883c); border-radius: .4mm; background: color-mix(in srgb, var(--print-color, #78883c) 24%, white); }
+.webgis-print-legend-swatch.vector.line { width: 9mm; height: 0; border: 0; border-top: .7mm solid var(--print-color, #78883c); border-radius: 0; background: transparent; }
+.webgis-print-legend-swatch.vector.point { width: 2.8mm; height: 2.8mm; border: .35mm solid white; border-radius: 50%; background: var(--print-color, #78883c); box-shadow: 0 0 0 .3mm var(--print-color, #78883c); }
+.webgis-print-legend-swatch.vector.unknown { width: 4mm; height: 4mm; border-radius: 50%; background: transparent; }
 .webgis-print-legend-swatch.raster { height: 3mm; background: var(--print-raster-palette, #c5c8bd); }
 .webgis-print-error { grid-column: 1/-1; margin: 0; padding: 10px 11px; border: 1px solid #c97962; border-radius: 9px; color: #9a392d; background: color-mix(in srgb, #d75c42 9%, var(--webgis-panel)); font-size: .72rem; line-height: 1.45; }
 .webgis-print-sheet footer { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 4mm; padding-top: 2mm; border-top: 1px solid #d5dacb; }

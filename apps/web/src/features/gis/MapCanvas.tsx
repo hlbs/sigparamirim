@@ -29,6 +29,7 @@ import Graticule from 'ol/layer/Graticule.js';
 import { fromArrayBuffer } from 'geotiff';
 import { useDraggableMapPanel } from './useDraggableMapPanel';
 import { unpackGeometry, type PackedGeometry } from './vectorCodec';
+import { shouldProcessVectorInWorker } from './vectorLoadingStrategy';
 
 export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'esri-street' | 'esri-topo' | 'esri-imagery' | 'esri-terrain' | 'esri-natgeo' | 'esri-relief';
 export type RasterRange = { min: number; max: number };
@@ -723,8 +724,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           }
         });
       } else {
-        const polygonCount = (definition.geometryTypes?.Polygon ?? 0) + (definition.geometryTypes?.MultiPolygon ?? 0);
-        const requiresWorker = (definition.sizeBytes ?? 0) >= 8 * 1024 * 1024 || (definition.featureCount ?? 0) >= 10_000 || polygonCount >= 1_000;
+        const requiresWorker = shouldProcessVectorInWorker(definition);
         let packedFeatures: PackedFeature[] | null = null;
         let features: Feature[] | null = null;
         setLoadingLayer({ title: definition.title, message: requiresWorker ? 'Baixando e processando dados em segundo plano…' : 'Lendo dados…' });

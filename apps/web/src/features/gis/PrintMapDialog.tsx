@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 
 import { createPortal } from 'react-dom';
 import '../../styles/print-map.css';
 import { rasterPaletteCatalog } from './MapCanvas';
+import { vectorGeometrySymbol } from './printLegendSymbol';
 
-export type PrintMapLayer = { id: string; title: string; kind: 'vector' | 'raster'; palette?: string; crs?: string; range?: { min: number; max: number } };
+export type PrintMapLayer = { id: string; title: string; kind: 'vector' | 'raster'; palette?: string; crs?: string; geometryTypes?: Record<string, number>; range?: { min: number; max: number } };
 
 type PrintMapDialogProps = {
   layers?: PrintMapLayer[];
@@ -236,7 +237,8 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
             {!palette && <small>Simbologia não configurada</small>}
           </span>;
         }
-        return <span className="webgis-print-legend-item" key={layer.id}><i className="webgis-print-legend-swatch vector" style={symbolStyle as CSSProperties} />{layer.title}</span>;
+        const geometrySymbol = vectorGeometrySymbol(layer.geometryTypes);
+        return <span className="webgis-print-legend-item" key={layer.id}><i className={`webgis-print-legend-swatch vector ${geometrySymbol}`} style={symbolStyle as CSSProperties} aria-hidden="true" />{layer.title}</span>;
       })}</section>}
       <footer><span>{includeAttribution ? attribution || 'Créditos das fontes conforme o catálogo geoespacial' : 'SIG Paramirim'}</span><img className="webgis-print-footer-logo" src="/logo_w.svg" alt="SIG Paramirim" /><span>Elaboração: Hermes Santos / SIG Paramirim · Visualização: EPSG:3857 (Web Mercator) · {dataCrsLabel} · {printableDate()}</span></footer>
     </section>

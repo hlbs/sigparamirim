@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.48] - 2026-10-08
+
+### Otimização vetorial geral e legenda cartográfica
+
+- a decisão de processar em segundo plano agora é uma regra geral baseada no tamanho, quantidade de feições e complexidade poligonal do catálogo, sem depender do nome da camada;
+- a legenda lateral e o produto impresso representam polígonos como áreas, linhas como traços e pontos como marcadores circulares;
+- em camadas com geometrias mistas, a legenda usa o tipo predominante.
+
 ## [0.3.0-beta.47] - 2026-10-08
 
 ### Preparação em segundo plano para polígonos rurais
