@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import '../../styles/print-map.css';
+import { rasterPaletteCatalog } from './MapCanvas';
 
-export type PrintMapLayer = { id: string; title: string; kind: 'vector' | 'raster'; palette?: string; crs?: string };
+export type PrintMapLayer = { id: string; title: string; kind: 'vector' | 'raster'; palette?: string; crs?: string; range?: { min: number; max: number } };
 
 type PrintMapDialogProps = {
   layers?: PrintMapLayer[];
@@ -61,13 +62,6 @@ function printableDate() {
 }
 
 const vectorColors = ['#9e803b', '#7a9b55', '#855c9c', '#c06d4f', '#477f86', '#b5813f', '#678bba'];
-const rasterPalettes: Record<string, string[]> = {
-  hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
-  'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
-  'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
-  'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
-};
-
 function vectorColor(id: string) {
   if (id === 'hidrografia') return '#168fce';
   if (id === 'bacia-hidrografica-paramirim') return '#68710a';
@@ -178,11 +172,19 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       <header><div><small>SIG PARAMIRIM · PRODUTO CARTOGRÁFICO</small><h1>{title}</h1><p>{subtitle}</p></div><span>{printableDate()}</span></header>
       <div className="webgis-print-map">{includeNorth && <div className="webgis-print-north" aria-label="Norte">↑<small>N</small></div>}</div>
       {includeLegend && layers.length > 0 && <section className="webgis-print-legend"><h2>Legenda</h2>{layers.map((layer) => {
-        const palette = layer.palette ? rasterPalettes[layer.palette] : undefined;
+        const palette = layer.palette ? rasterPaletteCatalog[layer.palette] : undefined;
         const symbolStyle = layer.kind === 'vector'
           ? { '--print-color': vectorColor(layer.id) }
           : { '--print-raster-palette': palette ? `linear-gradient(90deg, ${palette.join(',')})` : '#c5c8bd' };
-        return <span className="webgis-print-legend-item" key={layer.id}><i className={`webgis-print-legend-swatch ${layer.kind}`} style={symbolStyle as CSSProperties} />{layer.title}{layer.kind === 'raster' && !palette && <small> (simbologia não configurada)</small>}</span>;
+        if (layer.kind === 'raster') {
+          const range = layer.range ?? { min: 0, max: 0 };
+          return <span className="webgis-print-legend-item raster" key={layer.id}>
+            <strong>{layer.title}</strong>
+            <span className="webgis-print-raster-scale"><small>Mín. {range.min.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</small><i className="webgis-print-legend-swatch raster" style={symbolStyle as CSSProperties} /><small>Máx. {range.max.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}</small></span>
+            {!palette && <small>Simbologia não configurada</small>}
+          </span>;
+        }
+        return <span className="webgis-print-legend-item" key={layer.id}><i className="webgis-print-legend-swatch vector" style={symbolStyle as CSSProperties} />{layer.title}</span>;
       })}</section>}
       <footer><span>{includeAttribution ? attribution || 'Créditos das fontes conforme o catálogo geoespacial' : 'SIG Paramirim'}</span><span>Elaboração: Hermes Santos / SIG Paramirim · Visualização: EPSG:3857 (Web Mercator) · {dataCrsLabel} · {printableDate()}</span></footer>
     </section>

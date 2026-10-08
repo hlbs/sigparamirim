@@ -28,7 +28,7 @@ import ScaleLine from 'ol/control/ScaleLine.js';
 import Graticule from 'ol/layer/Graticule.js';
 import { fromArrayBuffer } from 'geotiff';
 
-export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'osm-de';
+export type MapBaseMap = 'osm' | 'osm-hot' | 'opentopomap' | 'cyclosm' | 'esri-street' | 'esri-topo' | 'esri-imagery' | 'esri-terrain' | 'esri-natgeo' | 'esri-relief';
 export type RasterRange = { min: number; max: number };
 export type VectorLayerStyle = { stroke?: string; fill?: string; strokeWidth?: number; pointRadius?: number };
 export type FeatureFilter = {
@@ -86,7 +86,12 @@ export const baseMapSources: Record<MapBaseMap, { url: string; attribution: stri
   'osm-hot': { url: 'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · Humanitarian style' },
   opentopomap: { url: 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · SRTM · OpenTopoMap' },
   cyclosm: { url: 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · CyclOSM' },
-  'osm-de': { url: 'https://tile.openstreetmap.de/{z}/{x}/{y}.png', attribution: '© OpenStreetMap contributors · OSM DE' },
+  'esri-street': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri — Sources: Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), (c) OpenStreetMap contributors, and the GIS User Community' },
+  'esri-topo': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri — Sources: Esri, USGS, NOAA' },
+  'esri-imagery': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri — Sources: Esri, Maxar, Earthstar Geographics, and the GIS User Community' },
+  'esri-terrain': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri — Sources: Esri, USGS, NOAA' },
+  'esri-natgeo': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri, National Geographic Society, Garmin, HERE, UNEP-WCMC, USGS, NASA, ESA, METI, NRCAN, GEBCO, NOAA, increment P Corp.' },
+  'esri-relief': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}', attribution: 'Tiles © Esri — Sources: Esri, USGS' },
 };
 
 // Firebase Hosting currently returns 200/full-body responses to byte-range requests.
@@ -145,15 +150,49 @@ function rasterRange(layer: MapLayerDefinition): RasterRange {
   return { min, max: Math.max(max, min + Math.max(Math.abs(min) * 1e-9, 1e-9)) };
 }
 
-const rasterPalettes: Record<string, string[]> = {
-    hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
-    'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
-    'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
-    'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
+export const rasterPaletteCatalog: Record<string, string[]> = {
+  hypsometric: ['#315c37', '#477c3d', '#669644', '#8daf4a', '#b7c957', '#d8d66a', '#e5bd58', '#d99949', '#b87542', '#eee5c8'],
+  'blue-cyan-sequential': ['#f0f9ff', '#d9f0f7', '#b9e4ef', '#91d5e5', '#65c2da', '#3eabc9', '#278caf', '#216f91', '#205775', '#193f5b'],
+  'blue-sequential': ['#f1f8fe', '#dcecf8', '#c4def1', '#a7cceb', '#86b6e0', '#679dd1', '#4d81bd', '#3b65a5', '#304e88', '#243a6c'],
+  'blue-indigo-sequential': ['#f3f1fa', '#e0dcf1', '#c9c3e6', '#ada7d8', '#918bc9', '#7773b6', '#625ba1', '#514889', '#403970', '#302a57'],
+  viridis: ['#440154', '#482878', '#3e4989', '#31688e', '#26828e', '#1f9e89', '#35b779', '#6ece58', '#b5de2b', '#fde725'],
+  plasma: ['#0d0887', '#46039f', '#7201a8', '#9c179e', '#bd3786', '#d8576b', '#ed7953', '#fb9f3a', '#fdca26', '#f0f921'],
+  inferno: ['#000004', '#1b0c41', '#4a0c6b', '#781c6d', '#a52c60', '#cf4446', '#ed6925', '#fb9b06', '#f7d13d', '#fcffa4'],
+  magma: ['#000004', '#180f3d', '#440f76', '#721f81', '#9e2f7f', '#cd4071', '#f1605d', '#fd9668', '#feca8d', '#fcfdbf'],
+  cividis: ['#00204c', '#19376b', '#3b4f78', '#59667b', '#777e78', '#96966f', '#b6ae63', '#d7c653', '#f1df45', '#fee838'],
+  turbo: ['#30123b', '#466be3', '#28bbec', '#32f298', '#a4fc3c', '#e1dd37', '#f9a51a', '#ee5713', '#c22603', '#7a0403'],
+  terrain: ['#333399', '#2765a5', '#2c91a2', '#6caa72', '#b4bd55', '#e2c36a', '#c99555', '#a46a48', '#e3d9c7'],
+  blues: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#08519c', '#08306b'],
+  'bu-gn': ['#f7fcfd', '#e5f5f9', '#ccece6', '#99d8c9', '#66c2a4', '#41ae76', '#238b45', '#006d2c', '#00441b'],
+  'bu-pu': ['#f7fcfd', '#e0ecf4', '#bfd3e6', '#9ebcda', '#8c96c6', '#8c6bb1', '#88419d', '#810f7c', '#4d004b'],
+  'gn-bu': ['#f7fcf0', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081'],
+  greens: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#006d2c', '#00441b'],
+  greys: ['#ffffff', '#f0f0f0', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525', '#000000'],
+  reds: ['#fff5f0', '#fee0d2', '#fcbba1', '#fc9272', '#fb6a4a', '#ef3b2c', '#cb181d', '#a50f15', '#67000d'],
+  oranges: ['#fff5eb', '#fee6ce', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#a63603', '#7f2704'],
+  'or-rd': ['#fff7ec', '#fee8c8', '#fdd49e', '#fdbb84', '#fc8d59', '#ef6548', '#d7301f', '#b30000', '#7f0000'],
+  'pu-bu': ['#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'],
+  'pu-bu-gn': ['#fff7fb', '#ece2f0', '#d0d1e6', '#a6bddb', '#67a9cf', '#3690c0', '#02818a', '#016c59', '#014636'],
+  'pu-rd': ['#f7f4f9', '#e7e1ef', '#d4b9da', '#c994c7', '#df65b0', '#e7298a', '#ce1256', '#980043', '#67001f'],
+  purples: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#54278f', '#3f007d'],
+  'rd-pu': ['#fff7f3', '#fde0dd', '#fcc5c0', '#fa9fb5', '#f768a1', '#dd3497', '#ae017e', '#7a0177', '#49006a'],
+  'yl-gn': ['#ffffe5', '#f7fcb9', '#d9f0a3', '#addd8e', '#78c679', '#41ab5d', '#238443', '#006837', '#004529'],
+  'yl-gn-bu': ['#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58'],
+  'yl-or-br': ['#ffffe5', '#fff7bc', '#fee391', '#fec44f', '#fe9929', '#ec7014', '#cc4c02', '#993404', '#662506'],
+  'yl-or-rd': ['#ffffcc', '#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'],
+  'rd-bu': ['#67001f', '#b2182b', '#d6604d', '#f4a582', '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#053061'],
+  'pi-yg': ['#8e0152', '#c51b7d', '#de77ae', '#f1b6da', '#fde0ef', '#f7f7f7', '#e6f5d0', '#b8e186', '#7fbc41', '#4d9221', '#276419'],
+  'pr-gn': ['#40004b', '#762a83', '#9970ab', '#c2a5cf', '#e7d4e8', '#f7f7f7', '#d9f0d3', '#a6dba0', '#5aae61', '#1b7837', '#00441b'],
+  'rd-gy': ['#67001f', '#b2182b', '#d6604d', '#f4a582', '#fddbc7', '#ffffff', '#e0e0e0', '#bababa', '#878787', '#4d4d4d', '#1a1a1a'],
+  spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2'],
+  'br-bg': ['#543005', '#8c510a', '#bf812d', '#dfc27d', '#f6e8c3', '#c7eae5', '#80cdc1', '#35978f', '#01665e', '#003c30'],
+  'pu-or': ['#2d004b', '#542788', '#8073ac', '#b2abd2', '#d8daeb', '#f7f7f7', '#fee0b6', '#fdb863', '#e08214', '#b35806', '#7f3b08'],
+  'rd-yl-gn': ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee08b', '#ffffbf', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850', '#006837'],
+  'rd-yl-bu': ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee090', '#ffffbf', '#e0f3f8', '#abd9e9', '#74add1', '#4575b4', '#313695'],
 };
 
 export function getRasterPalette(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
-  return rasterPalettes[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPalettes['blue-sequential']!;
+  return rasterPaletteCatalog[layer.styleDefault?.palette ?? layer.palette ?? ''] ?? rasterPaletteCatalog['blue-sequential']!;
 }
 
 export const rasterPaletteOptions = [
@@ -161,6 +200,40 @@ export const rasterPaletteOptions = [
   { value: 'blue-cyan-sequential', label: 'Azul-ciano · água' },
   { value: 'blue-sequential', label: 'Azul · contínua' },
   { value: 'blue-indigo-sequential', label: 'Azul-índigo · contínua' },
+  { value: 'viridis', label: 'Viridis · QGIS / cpt-city' },
+  { value: 'plasma', label: 'Plasma · QGIS / cpt-city' },
+  { value: 'inferno', label: 'Inferno · QGIS / cpt-city' },
+  { value: 'magma', label: 'Magma · QGIS / cpt-city' },
+  { value: 'cividis', label: 'Cividis · QGIS / cpt-city' },
+  { value: 'turbo', label: 'Turbo · QGIS / cpt-city' },
+  { value: 'terrain', label: 'Terrain · cpt-city' },
+  { value: 'blues', label: 'Blues · ColorBrewer' },
+  { value: 'bu-gn', label: 'BuGn · ColorBrewer' },
+  { value: 'bu-pu', label: 'BuPu · ColorBrewer' },
+  { value: 'gn-bu', label: 'GnBu · ColorBrewer' },
+  { value: 'greens', label: 'Greens · ColorBrewer' },
+  { value: 'greys', label: 'Greys · ColorBrewer' },
+  { value: 'reds', label: 'Reds · ColorBrewer' },
+  { value: 'oranges', label: 'Oranges · ColorBrewer' },
+  { value: 'or-rd', label: 'OrRd · ColorBrewer' },
+  { value: 'pu-bu', label: 'PuBu · ColorBrewer' },
+  { value: 'pu-bu-gn', label: 'PuBuGn · ColorBrewer' },
+  { value: 'pu-rd', label: 'PuRd · ColorBrewer' },
+  { value: 'purples', label: 'Purples · ColorBrewer' },
+  { value: 'rd-pu', label: 'RdPu · ColorBrewer' },
+  { value: 'yl-gn', label: 'YlGn · ColorBrewer' },
+  { value: 'yl-gn-bu', label: 'YlGnBu · ColorBrewer' },
+  { value: 'yl-or-br', label: 'YlOrBr · ColorBrewer' },
+  { value: 'yl-or-rd', label: 'YlOrRd · ColorBrewer' },
+  { value: 'rd-bu', label: 'RdBu · ColorBrewer divergente' },
+  { value: 'pi-yg', label: 'PiYG · ColorBrewer divergente' },
+  { value: 'pr-gn', label: 'PRGn · ColorBrewer divergente' },
+  { value: 'rd-gy', label: 'RdGy · ColorBrewer divergente' },
+  { value: 'spectral', label: 'Spectral · ColorBrewer divergente' },
+  { value: 'br-bg', label: 'BrBG · ColorBrewer divergente' },
+  { value: 'pu-or', label: 'PuOr · ColorBrewer divergente' },
+  { value: 'rd-yl-gn', label: 'RdYlGn · ColorBrewer divergente' },
+  { value: 'rd-yl-bu', label: 'RdYlBu · ColorBrewer divergente' },
 ] as const;
 
 export function getRasterGradient(layer: Pick<MapLayerDefinition, 'styleDefault' | 'palette'>) {
@@ -175,12 +248,13 @@ function rasterStyle(layer: MapLayerDefinition) {
     ? [palette[0]]
     : Array.from({ length: classCount }, (_, index) => palette[Math.round((index * (palette.length - 1)) / (classCount - 1))]);
   const band: unknown[] = ['band', 1];
+  const transparentSample = ['any', ['==', band, 0], ['!=', band, band]];
   if (layer.styleDefault?.colorInterpolation === 'continuous') {
     const expression: unknown[] = ['interpolate', ['linear'], band, ['var', 'rangeMin'], classColors[0]];
     classColors.slice(1).forEach((color, index) => expression.push(['+', ['var', 'rangeMin'], ['*', ['-', ['var', 'rangeMax'], ['var', 'rangeMin']], (index + 1) / Math.max(1, classColors.length - 1)], color]));
-    return { color: expression as any, variables: { rangeMin: min, rangeMax: max } };
+    return { color: ['case', transparentSample, ['color', 0, 0, 0, 0], expression] as any, variables: { rangeMin: min, rangeMax: max } };
   }
-  const expression: unknown[] = ['case'];
+  const expression: unknown[] = ['case', transparentSample, ['color', 0, 0, 0, 0]];
   classColors.slice(0, -1).forEach((color, index) => {
     const threshold = ['+', ['var', 'rangeMin'], ['*', ['-', ['var', 'rangeMax'], ['var', 'rangeMin']], (index + 1) / classColors.length]];
     expression.push(['<=', band, threshold], color);
@@ -207,6 +281,8 @@ function matchesFeatureFilter(properties: Record<string, unknown>, filter?: Feat
 
 export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', homeToken = 0, onMeasure, onFeatureSelect, onRasterRangeChange, onLayerFeatures, onMeasurementHistoryChange, clearMeasurementsToken = 0 }: MapCanvasProps) {
   const targetRef = useRef<HTMLDivElement>(null);
+  const scaleControlTargetRef = useRef<HTMLDivElement>(null);
+  const scaleStackRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const baseLayerRef = useRef<TileLayer<XYZ> | null>(null);
   const dataLayersRef = useRef(new globalThis.Map<string, RenderedDataLayer>());
@@ -240,7 +316,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       target: targetRef.current,
       layers: [],
       view: new View({ center: INITIAL_CENTER, zoom: 6.5, minZoom: 3, maxZoom: 19 }),
-      controls: [new ScaleLine({ units: 'metric', bar: true, steps: 4, text: false, minWidth: 110 })],
+      controls: [new ScaleLine({ target: scaleControlTargetRef.current ?? undefined, units: 'metric', bar: true, steps: 4, text: false, minWidth: 130 })],
     });
     const graticule = new Graticule({
       showLabels: true,
@@ -328,7 +404,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           if (pixelX < 0 || pixelY < 0 || pixelX >= image.getWidth() || pixelY >= image.getHeight()) continue;
           const samples = await image.readRasters({ window: [pixelX, pixelY, pixelX + 1, pixelY + 1], samples: [0], interleave: true });
           const value = Number((samples as unknown as ArrayLike<number>)[0]);
-          if (!Number.isFinite(value) || value === definition.noData) continue;
+          if (!Number.isFinite(value) || value === 0 || value === definition.noData) continue;
           selection = {
             layerId: definition.id,
             layerTitle: definition.title,
@@ -352,6 +428,13 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     map.on('singleclick', handleClick);
     const observer = new ResizeObserver(() => map.updateSize());
     observer.observe(targetRef.current);
+    const updateScaleWidth = () => {
+      const width = scaleControlTargetRef.current?.querySelector<HTMLElement>('.ol-scale-bar')?.getBoundingClientRect().width;
+      if (width && scaleStackRef.current) scaleStackRef.current.style.setProperty('--scale-width', `${width}px`);
+    };
+    const scaleWidthObserver = new ResizeObserver(updateScaleWidth);
+    if (scaleControlTargetRef.current) scaleWidthObserver.observe(scaleControlTargetRef.current);
+    requestAnimationFrame(updateScaleWidth);
     // Middle-button drag rotates around the map center, without taking over left-drag pan.
     const viewport = map.getViewport()!;
     let rotationPointerId: number | null = null;
@@ -392,6 +475,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     return () => {
       aliveRef.current = false;
       observer.disconnect();
+      scaleWidthObserver.disconnect();
       viewport.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
@@ -499,6 +583,11 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
         if (definition.kind === 'raster' && existing instanceof WebGLTileLayer) {
           const range = rasterRange(definition);
           existing.updateStyleVariables({ rangeMin: range.min, rangeMax: range.max });
+          const styleKey = JSON.stringify([definition.styleDefault?.palette ?? definition.palette ?? 'blue-sequential', definition.styleDefault?.classCount ?? 10, definition.styleDefault?.colorInterpolation ?? 'classified']);
+          if (existing.get('webgis:raster-style-key') !== styleKey) {
+            existing.setStyle(rasterStyle(definition));
+            existing.set('webgis:raster-style-key', styleKey);
+          }
           const previousRange = rasterRangesRef.current.get(definition.id);
           if (previousRange?.min !== range.min || previousRange.max !== range.max) {
             rasterRangesRef.current.set(definition.id, range);
@@ -528,7 +617,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       let rendered: RenderedDataLayer;
       if (definition.kind === 'raster') {
         const source = new GeoTIFF({
-          sources: [{ url: definition.url, nodata: definition.noData ?? 0, loader: loadGeoTiff }],
+          sources: [{ url: definition.url, ...(definition.noData === undefined ? {} : { nodata: definition.noData }), loader: loadGeoTiff }],
           normalize: false, convertToRGB: false,
           // OpenLayers' bilinear GeoTIFF resampling samples the configured 2×2 kernel.
           interpolate: definition.styleDefault?.resamplingMethod ? definition.styleDefault.resamplingMethod === 'bilinear' : true,
@@ -545,6 +634,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
           throw new Error(`${definition.title}: falha ao abrir o COG (${detail}).`);
         }
         rendered = new WebGLTileLayer({ source, opacity: definition.opacity ?? .82, style: rasterStyle(definition), properties: { id: definition.id, title: definition.title, kind: definition.kind }, zIndex: 10 });
+        rendered.set('webgis:raster-style-key', JSON.stringify([definition.styleDefault?.palette ?? definition.palette ?? 'blue-sequential', definition.styleDefault?.classCount ?? 10, definition.styleDefault?.colorInterpolation ?? 'classified']));
         const range = rasterRange(definition);
         rasterRangesRef.current.set(definition.id, range);
         rasterRangeCallbackRef.current?.(definition.id, range);
@@ -604,7 +694,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       <button type="button" onClick={resetView} aria-label="Repor vista"><i className="fa-solid fa-crosshairs" /></button>
       <button type="button" onClick={() => mapRef.current?.getView().animate({ rotation: 0, duration: 180 })} aria-label="Orientar norte" title="Orientar norte"><span className="map-north-arrow" style={{ transform: `rotate(${-rotation}rad)` }}>N<i className="fa-solid fa-location-arrow" /></span></button>
     </div>
-    {scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}
+    <div ref={scaleStackRef} className="map-scale-stack"><div ref={scaleControlTargetRef} className="map-scale-line-target" aria-label="Barra de escala gráfica" />{scaleDenominator > 0 && <div className="map-scale-denominator" aria-label={`Escala numérica 1 para ${scaleDenominator.toLocaleString('pt-BR')}`}><small>Escala numérica</small><strong>1 : {scaleDenominator.toLocaleString('pt-BR')}</strong></div>}</div>
     <div className="map-canvas-hint" aria-hidden="true">Botão do meio + arrastar para girar</div>
     {measurementHistory.length > 0 && <aside className="map-measure-history" aria-label="Histórico de medições">
       <header><strong>Medições</strong><span>{measurementHistory.length}</span></header>

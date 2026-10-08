@@ -15,7 +15,7 @@
   justify-content: center;
   gap: 8px;
   padding: 0 16px;
-  border: 1px solid var(--webgis-border);
+  border: 0;
   border-radius: 10px;
   color: var(--text);
   background: var(--surface);
@@ -28,17 +28,16 @@
 
 .webgis-print-form > footer button:hover {
   transform: translateY(-1px);
-  border-color: var(--brand-strong);
-  box-shadow: 0 6px 18px rgba(30, 40, 10, .12);
+  background: var(--brand-soft);
 }
 
 .webgis-print-form > footer button:focus-visible {
-  outline: 3px solid color-mix(in srgb, var(--brand-strong) 35%, transparent);
-  outline-offset: 2px;
+  outline: none;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .webgis-print-form > footer button[type='submit'] {
-  border-color: var(--brand-strong);
   color: var(--on-brand, #fff);
   background: var(--brand-strong);
 }

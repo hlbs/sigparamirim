@@ -66,10 +66,15 @@ function readLayerPreferences(uid?: string): UserLayerPreferences {
 // honest previews of the same public, keyless XYZ services used by OpenLayers.
 const baseMaps: BaseMapChoice[] = [
   { id: 'osm', title: 'OpenStreetMap', attribution: '© OpenStreetMap contributors', thumbnailUrl: 'https://tile.openstreetmap.org/7/48/68.png' },
-  { id: 'osm-hot' as MapBaseMap, title: 'Humanitário (HOT)', attribution: '© OpenStreetMap contributors · HOT', thumbnailUrl: 'https://a.tile.openstreetmap.fr/hot/7/48/68.png' },
-  { id: 'opentopomap' as MapBaseMap, title: 'OpenTopoMap', attribution: '© OpenStreetMap · SRTM · OpenTopoMap', thumbnailUrl: 'https://a.tile.opentopomap.org/7/48/68.png' },
-  { id: 'cyclosm' as MapBaseMap, title: 'CyclOSM', attribution: '© OpenStreetMap contributors · CyclOSM', thumbnailUrl: 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/7/48/68.png' },
-  { id: 'osm-de' as MapBaseMap, title: 'OpenStreetMap DE', attribution: '© OpenStreetMap contributors · openstreetmap.de', thumbnailUrl: 'https://tile.openstreetmap.de/7/48/68.png' },
+  { id: 'osm-hot', title: 'OpenStreetMap Humanitário', attribution: '© OpenStreetMap contributors · HOT', thumbnailUrl: 'https://a.tile.openstreetmap.fr/hot/7/48/68.png' },
+  { id: 'opentopomap', title: 'OpenTopoMap', attribution: '© OpenStreetMap · SRTM · OpenTopoMap', thumbnailUrl: 'https://a.tile.opentopomap.org/7/48/68.png' },
+  { id: 'cyclosm', title: 'CyclOSM', attribution: '© OpenStreetMap contributors · CyclOSM', thumbnailUrl: 'https://a.tile-cyclosm.openstreetmap.fr/cyclosm/7/48/68.png' },
+  { id: 'esri-street', title: 'Esri World Street Map', attribution: 'Tiles © Esri and data providers', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/7/68/48' },
+  { id: 'esri-topo', title: 'Esri World Topographic', attribution: 'Tiles © Esri, USGS, NOAA', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/7/68/48' },
+  { id: 'esri-imagery', title: 'Esri World Imagery', attribution: 'Tiles © Esri, Maxar, Earthstar Geographics', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/7/68/48' },
+  { id: 'esri-terrain', title: 'Esri World Terrain', attribution: 'Tiles © Esri, USGS, NOAA', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/7/68/48' },
+  { id: 'esri-natgeo', title: 'National Geographic', attribution: 'Tiles © Esri and National Geographic Society', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/7/68/48' },
+  { id: 'esri-relief', title: 'Esri Shaded Relief', attribution: 'Tiles © Esri, USGS', thumbnailUrl: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/7/68/48' },
 ];
 
 const defaultPowerBiUrl = 'https://app.powerbi.com/view?r=eyJrIjoiZDI4MDI2YWEtMjUyYS00Y2ViLWIxNWQtZDYyOWYzYzBhYTY3IiwidCI6ImRmNzFmNmJiLWUzY2MtNGY1Yi1iNTMyLTc5ZGUyNjFiNTFhMiJ9';
@@ -178,7 +183,7 @@ export function MapPage() {
   const featureLayers = useMemo(() => catalog.filter((layer) => layer.status === 'present'), [catalog]);
   const selectedLayers = useMemo<Array<MapLayerDefinition & { crs?: string }>>(() => featureLayers
     .filter((layer) => selectedIds.includes(layer.id) && layer.url)
-    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData ?? 0, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id], fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : undefined } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id], fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : undefined } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
   const filteredCatalog = useMemo(() => catalog.filter((layer) => {
     if (layer.status !== 'present' || !layer.url) return false;
     const matchesSearch = `${layer.title} ${layer.group}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));
@@ -314,7 +319,7 @@ function DashboardPanel({ url }: { url?: string }) {
 }
 
 function DashboardFocusView({ url }: { url: string }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   useEffect(() => {
     if (!expanded) return;
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setExpanded(false); };
