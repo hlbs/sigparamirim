@@ -423,13 +423,29 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
     map.on('singleclick', handleClick);
     const observer = new ResizeObserver(() => map.updateSize());
     observer.observe(targetRef.current);
-    const updateScaleWidth = () => {
-      const width = scaleControlTargetRef.current?.querySelector<HTMLElement>('.ol-scale-bar')?.getBoundingClientRect().width;
-      if (width && scaleStackRef.current) scaleStackRef.current.style.setProperty('--scale-width', `${width}px`);
+    const scaleControlTarget = scaleControlTargetRef.current;
+    const observedScaleBars = new WeakSet<Element>();
+    const scaleWidthObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const width = entry.target.getBoundingClientRect().width;
+        if (width > 0 && scaleStackRef.current) {
+          // Include the scale card's horizontal padding so its border always
+          // encloses the full OpenLayers bar and its endpoint labels.
+          scaleStackRef.current.style.setProperty('--scale-width', `${Math.ceil(width + 24)}px`);
+        }
+      }
+    });
+    const observeScaleBar = () => {
+      const scaleBar = scaleControlTarget?.querySelector<HTMLElement>('.ol-scale-bar');
+      if (scaleBar && !observedScaleBars.has(scaleBar)) {
+        observedScaleBars.add(scaleBar);
+        scaleWidthObserver.observe(scaleBar);
+      }
     };
-    const scaleWidthObserver = new ResizeObserver(updateScaleWidth);
-    if (scaleControlTargetRef.current) scaleWidthObserver.observe(scaleControlTargetRef.current);
-    requestAnimationFrame(updateScaleWidth);
+    const scaleMarkupObserver = new MutationObserver(observeScaleBar);
+    if (scaleControlTarget) scaleMarkupObserver.observe(scaleControlTarget, { childList: true, subtree: true });
+    observeScaleBar();
+    requestAnimationFrame(observeScaleBar);
     // Middle-button drag rotates around the map center, without taking over left-drag pan.
     const viewport = map.getViewport()!;
     let rotationPointerId: number | null = null;
@@ -471,6 +487,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       aliveRef.current = false;
       observer.disconnect();
       scaleWidthObserver.disconnect();
+      scaleMarkupObserver.disconnect();
       viewport.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);

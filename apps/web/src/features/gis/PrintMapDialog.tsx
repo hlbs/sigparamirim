@@ -169,7 +169,11 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       </div>
     </div>}
     <section ref={sheetRef} className="webgis-print-sheet" aria-hidden="true">
-      <header><div><small>SIG PARAMIRIM · PRODUTO CARTOGRÁFICO</small><h1>{title}</h1><p>{subtitle}</p></div><span>{printableDate()}</span></header>
+      <header className="webgis-print-heading">
+        <div className="webgis-print-heading-copy"><small>SIG PARAMIRIM · PRODUTO CARTOGRÁFICO</small><h1>{title}</h1><p>{subtitle}</p></div>
+        <div className="webgis-print-brand" aria-label="SIG Paramirim"><img src="/logo_w.svg" alt="SIG Paramirim" /></div>
+        <time>{printableDate()}</time>
+      </header>
       <div className="webgis-print-map">{includeNorth && <div className="webgis-print-north" aria-label="Norte">↑<small>N</small></div>}</div>
       {includeLegend && layers.length > 0 && <section className="webgis-print-legend"><h2>Legenda</h2>{layers.map((layer) => {
         const palette = layer.palette ? rasterPaletteCatalog[layer.palette] : undefined;

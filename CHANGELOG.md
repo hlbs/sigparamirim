@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.41] - 2026-10-08
+
+### Melhorias de escala e impressão
+
+- o cartão da escala numérica e gráfica agora acompanha a largura real da barra e se ajusta aos limites disponíveis no mapa;
+- no tema escuro, os filtros e opções selecionadas usam a mesma cor de destaque do menu principal;
+- o carimbo impresso agora traz a marca SIG Paramirim centralizada e legível;
+- na impressão em retrato, o mapa ocupa toda a moldura útil, mantendo a proporção cartográfica e priorizando a área central.
+
 ## [0.3.0-beta.40] - 2026-10-08
 
 ### Painéis flutuantes e leitura dos rasters
