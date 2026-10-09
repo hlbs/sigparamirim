@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.51] - 2026-10-09
+
+### Ajuste na impressão de camadas raster
+
+- corrigida uma validação excessiva que podia bloquear a impressão de rasters já carregados;
+- a composição continua aguardando a renderização do mapa e a decodificação da imagem antes de abrir a impressão.
+
 ## [0.3.0-beta.50] - 2026-10-09
 
 ### Captura de rasters na impressão
