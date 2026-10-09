@@ -10,6 +10,7 @@ import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
+import { GoogleAutoTranslate } from './features/i18n/GoogleAutoTranslate';
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
@@ -160,6 +161,7 @@ function PlatformShell() {
 
   return (
     <div className="app-shell">
+      <GoogleAutoTranslate />
       <header className="topbar">
         <button type="button" className="icon-button menu-button mobile-menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Recolher menu' : 'Abrir menu'} aria-expanded={sidebarOpen} aria-controls="main-sidebar">
           <UiIcon name={sidebarOpen ? 'chevronLeft' : 'chevronRight'} />
@@ -296,11 +298,13 @@ export function App() {
   }, [language, resolvedTheme]);
 
   return (
-    <Routes>
-      <Route path="/entrar" element={<AuthPage />} />
-      <Route path="/criar-conta" element={<Navigate to="/entrar" replace />} />
-      <Route path="/status-conta" element={<AccountStatusPage />} />
-      <Route path="*" element={<PlatformRoute><PlatformShell /></PlatformRoute>} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/entrar" element={<AuthPage />} />
+        <Route path="/criar-conta" element={<Navigate to="/entrar" replace />} />
+        <Route path="/status-conta" element={<AccountStatusPage />} />
+        <Route path="*" element={<PlatformRoute><PlatformShell /></PlatformRoute>} />
+      </Routes>
+    </>
   );
 }

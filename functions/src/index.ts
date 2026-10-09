@@ -4,6 +4,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
+import { translateText as googleTranslateText } from './translation.js';
 
 initializeApp();
 
@@ -211,3 +212,5 @@ export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
 
   return { id: input.requestId, status: input.decision };
 });
+
+export const translateText = googleTranslateText;

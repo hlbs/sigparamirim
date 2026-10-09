@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.53] - 2026-10-09
+
+### Tradução dinâmica da interface
+
+- o seletor de idioma agora traduz a interface carregada sem criar páginas ou rotas duplicadas;
+- a tradução acompanha conteúdo carregado dinamicamente, volta ao português original quando selecionado e guarda resultados no navegador para agilizar próximas visitas;
+- a função de tradução do Google valida idioma e tamanho dos lotes e exige uma conta autenticada ativa; credenciais não são enviadas ao navegador;
+- a preferência de idioma continua salva entre sessões. A configuração de execução está descrita em `docs/traducao-dinamica.md`.
+
 ## [0.3.0-beta.52] - 2026-10-09
 
 ### Impressão de mapas com camadas raster
