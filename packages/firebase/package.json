@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/firebase",
-  "version": "0.3.0-beta.49",
+  "version": "0.3.0-beta.50",
   "private": true,
   "type": "module",
   "exports": "./src/index.ts"

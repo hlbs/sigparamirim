@@ -15,7 +15,7 @@ type PageSize = 'A4' | 'A3';
 type Orientation = 'landscape' | 'portrait';
 type PageMargin = '6mm' | '10mm' | '15mm';
 
-function renderMapSnapshot(target: HTMLElement) {
+function renderMapSnapshot(target: HTMLElement, expectedRasterLayers: number) {
   const rect = target.getBoundingClientRect();
   const pixelRatio = window.devicePixelRatio || 1;
   const output = document.createElement('canvas');
@@ -27,10 +27,21 @@ function renderMapSnapshot(target: HTMLElement) {
 
   const canvases = target.querySelectorAll<HTMLCanvasElement>('.ol-layer canvas');
   let rendered = 0;
+  let rasterCanvases = 0;
   canvases.forEach((canvas) => {
     if (!canvas.width || !canvas.height) return;
     const canvasRect = canvas.getBoundingClientRect();
     if (!canvasRect.width || !canvasRect.height) return;
+    // GeoTIFF layers use OpenLayers' WebGL renderer. Wait for queued GPU work
+    // before copying its drawing buffer into the 2D print canvas. WebGL canvases
+    // are distinguishable from the regular 2D canvases used by vector layers.
+    const gl = canvas.getContext('webgl2')
+      ?? canvas.getContext('webgl')
+      ?? canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
+    if (gl) {
+      gl.finish();
+      rasterCanvases += 1;
+    }
     const layer = canvas.parentElement;
     const opacity = Number.parseFloat(layer ? getComputedStyle(layer).opacity : '1');
     const background = layer ? getComputedStyle(layer).backgroundColor : 'transparent';
@@ -51,6 +62,9 @@ function renderMapSnapshot(target: HTMLElement) {
   });
 
   if (!rendered) throw new Error('O mapa ainda não terminou de renderizar. Aguarde alguns segundos e tente novamente.');
+  if (rasterCanvases < expectedRasterLayers) {
+    throw new Error(`A imagem de ${expectedRasterLayers - rasterCanvases} camada(s) raster não ficou disponível para a impressão. Aguarde o raster terminar de carregar e tente novamente.`);
+  }
   try {
     return output.toDataURL('image/png');
   } catch {
@@ -151,13 +165,17 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       const rendered = nextMapRender(source);
       source.dispatchEvent(new Event('webgis:print-resize'));
       await rendered;
-      const snapshot = renderMapSnapshot(source);
+      // rendercomplete signals OpenLayers tile readiness; two paint frames also
+      // allow the browser compositor to present the WebGL result after resize.
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+      const snapshot = renderMapSnapshot(source, layers.filter((layer) => layer.kind === 'raster').length);
       mapHost.replaceChildren();
       const image = document.createElement('img');
       image.src = snapshot;
       image.alt = 'Mapa atual do WebGIS';
       image.className = 'webgis-print-map-image';
       mapHost.append(image);
+      await image.decode();
     } catch (error) {
       setPrintError(error instanceof Error ? error.message : 'Falha ao compor a impressão.');
       sheet.classList.remove('is-printing', 'is-composing');

@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.50] - 2026-10-09
+
+### Captura de rasters na impressão
+
+- a composição do mapa aguarda a renderização da GPU antes de capturar os canvases WebGL usados pelos rasters;
+- a impressão verifica se as camadas raster ativas foram incluídas na composição e informa quando alguma ainda não está pronta;
+- o PNG final é decodificado antes de abrir a janela de impressão, evitando capturas incompletas.
+
 ## [0.3.0-beta.49] - 2026-10-09
 
 ### Navegação e WebGIS adaptados para celular
