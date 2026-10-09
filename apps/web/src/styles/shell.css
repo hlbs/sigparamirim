@@ -79,4 +79,5 @@
   .topbar { height: 66px; }
   .sidebar { top: 66px; }
   .main-content { padding-top: 88px; }
+  .topbar .mobile-menu-button, .sidebar, .backdrop { display: none !important; }
 }

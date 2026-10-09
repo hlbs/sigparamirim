@@ -169,7 +169,7 @@ export function MapPage() {
   const [rasterRanges, setRasterRanges] = useState<Record<string, NumericRange>>(() => readLayerPreferences(user?.uid).rasterRanges);
   const [rasterPalette, setRasterPalette] = useState<Record<string, string>>(() => readLayerPreferences(user?.uid).rasterPalette);
   const [preferencesLoadedFor, setPreferencesLoadedFor] = useState<string | null>(user?.uid ?? null);
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(() => !window.matchMedia('(max-width: 680px)').matches);
   const [tool, setTool] = useState<MapTool>('identify');
   const [measure, setMeasure] = useState<{ value: number; unit: 'm' | 'km' | 'm²' | 'km²' } | null>(null);
   const [measurementHistory, setMeasurementHistory] = useState<MeasurementHistoryEntry[]>([]);
@@ -355,5 +355,6 @@ function DashboardFocusView({ url, onClose }: { url: string; onClose: () => void
         <header><strong>SIG Paramirim · Dashboard</strong><button type="button" aria-label="Fechar visualização ampliada" onClick={onClose}><i className="fa-solid fa-xmark" /></button></header>
         <div className="webgis-dashboard-focus-frame">{dashboard}</div>
       </section>
+      <button className="webgis-dashboard-mobile-close" type="button" aria-label="Fechar dashboard e voltar ao mapa" onClick={onClose}><i className="fa-solid fa-xmark" /></button>
     </div></div>, document.body);
 }

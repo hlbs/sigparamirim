@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.49] - 2026-10-09
+
+### Navegação e WebGIS adaptados para celular
+
+- no celular, a navegação principal aparece em uma única barra inferior; o menu lateral duplicado foi removido;
+- os atalhos dessa barra podem ser reorganizados ao arrastar, e a ordem escolhida fica salva neste navegador;
+- no WebGIS, o mapa permanece visível enquanto camadas, legenda e ferramentas ficam em um painel inferior que pode ser recolhido;
+- a apresentação do dashboard foi adaptada para a proporção 16:9 em telas de telefone, com fechamento direto de volta ao mapa;
+- celulares em orientação paisagem também mantêm os controles móveis e uma área de mapa utilizável.
+
 ## [0.3.0-beta.48] - 2026-10-08
 
 ### Otimização vetorial geral e legenda cartográfica

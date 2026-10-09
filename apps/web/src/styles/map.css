@@ -494,3 +494,104 @@
   .map-measure-history { width: min(300px, calc(50% - 22px)); left: 12px; }
   .webgis-identify-card { width: min(340px, calc(50% - 22px)); right: 12px; }
 }
+
+/* Mobile GIS: keep the map visible, with its tools in a dismissible bottom sheet. */
+@media (max-width: 680px) {
+  .main-content:has(.webgis-workspace), .main-content-expanded:has(.webgis-workspace) { padding: 66px 0 0; }
+  .webgis-workspace { height: calc(100dvh - 148px); min-height: 0; }
+  .webgis-topbar { min-height: 50px; gap: 6px; padding-inline: 8px; }
+  .webgis-main-tabs { height: 50px; flex: 1; gap: 0; }
+  .webgis-main-tabs button { min-width: 0; flex: 1; gap: 6px; padding-inline: 6px; font-size: .7rem; }
+  .webgis-topbar-meta { gap: 0; font-size: .62rem; }
+  .webgis-map-layout { position: relative; display: block; min-height: 0; }
+  .webgis-map-area { position: absolute; inset: 0; }
+  .webgis-tools-panel, .webgis-tools-panel.is-collapsed {
+    position: absolute; z-index: 20; top: auto; right: 9px; bottom: 10px; left: 9px;
+    box-sizing: border-box; width: auto; height: min(62dvh, 560px); max-height: calc(100% - 18px);
+    overflow: hidden; border: 0; border-radius: 18px; background: var(--webgis-panel);
+    box-shadow: 0 14px 38px rgba(20,25,10,.22); transform: none;
+  }
+  .webgis-tools-panel.is-collapsed {
+    left: 50%; width: min(390px, calc(100% - 24px)); height: 56px; max-height: none;
+    border-radius: 17px; background: transparent; box-shadow: none; transform: translateX(-50%);
+  }
+  .webgis-tools-panel.is-collapsed .webgis-panel-expand { display: none; }
+  .webgis-side-tabs, .webgis-tools-panel.is-collapsed .webgis-side-tabs {
+    display: grid; width: 100%; min-height: 54px; height: 54px; flex: 0 0 54px;
+    grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px;
+    border: 0; border-radius: 17px; background: color-mix(in srgb, var(--surface) 96%, transparent);
+    box-shadow: 0 8px 25px rgba(20,25,10,.17); backdrop-filter: blur(18px);
+  }
+  .webgis-side-tabs button, .webgis-tools-panel.is-collapsed .webgis-side-tabs button {
+    display: flex; width: auto; height: 46px; min-height: 46px; flex-direction: row; align-items: center;
+    justify-content: center; gap: 7px; margin: 0; padding: 0 7px; border: 0; border-radius: 12px;
+    font-size: .68rem;
+  }
+  .webgis-side-tabs button i { font-size: .86rem; }
+  .webgis-side-tabs button span { position: static; display: inline; width: auto; max-width: none; padding: 0; border: 0;
+    color: inherit; background: transparent; box-shadow: none; font-size: inherit; opacity: 1; transform: none; }
+  .webgis-side-tabs button.is-active { color: var(--brand-strong); background: var(--brand-soft); }
+  .webgis-side-tabs button.is-active::after { right: 24%; left: 24%; bottom: 1px; height: 2px; }
+  .webgis-tools-panel.is-collapsed .webgis-side-tabs button.is-active::after { inset: auto 24% 1px; width: auto; height: 2px; }
+  .webgis-side-content, .webgis-tools-panel.is-collapsed .webgis-side-content {
+    display: block; min-height: 0; flex: 1; overflow: auto; overscroll-behavior: contain;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .webgis-tools-panel.is-collapsed .webgis-side-content { display: none; }
+  .webgis-panel-title { position: sticky; z-index: 3; top: 0; padding-top: 12px; background: var(--webgis-panel); }
+  .webgis-layer-group-heading { top: 66px; }
+  .webgis-layer-kind-tabs { margin-inline: 10px; }
+  .webgis-layer-detail { position: fixed; z-index: 35; inset: 66px 0 82px; max-height: none; border-radius: 0; }
+  .webgis-print-dialog { width: min(100vw, 520px); max-height: calc(100dvh - 82px); overflow: auto; border-radius: 18px; }
+  .webgis-print-form { grid-template-columns: 1fr; padding: 15px; }
+  .webgis-print-form label:first-child, .webgis-print-form .webgis-print-checks, .webgis-print-note { grid-column: 1; }
+  .webgis-print-dialog > header, .webgis-print-dialog > footer { padding-inline: 15px; }
+  .main-content:has(.webgis-workspace) ~ .mobile-nav,
+  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: grid !important; }
+}
+
+/* A portrait phone can display the 16:9 report at landscape size without relying on unsupported orientation locks. */
+.webgis-dashboard-mobile-close { display: none; }
+@media (max-width: 680px) and (orientation: portrait) {
+  .webgis-dashboard-focus-backdrop { display: block; overflow: hidden; padding: 0; }
+  .webgis-dashboard-focus {
+    position: absolute; top: 50%; left: 50%; width: min(100dvh, calc(100dvw * 16 / 9));
+    max-height: none; border-radius: 0; transform: translate(-50%, -50%) rotate(90deg); transform-origin: center;
+  }
+  .webgis-dashboard-focus > header { display: none; }
+  .webgis-dashboard-focus-frame { width: 100%; height: auto; max-height: none; flex: 0 0 auto; aspect-ratio: 16 / 9; }
+  .webgis-dashboard-mobile-close { position: fixed; z-index: 11002; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); display: grid; width: 42px; height: 42px; place-items: center; border: 0; border-radius: 50%; color: #fff; background: rgba(20,24,16,.72); font-size: 1.1rem; }
+}
+@media (max-width: 680px) and (orientation: landscape) {
+  .webgis-dashboard-focus-backdrop { padding: 0; }
+  .webgis-dashboard-focus { width: min(100vw, calc((100dvh - 44px) * 16 / 9)); max-height: calc(100dvh - 44px); border-radius: 0; }
+  .webgis-dashboard-focus-frame { width: 100%; max-height: calc(100dvh - 44px); }
+}
+
+/* A phone in landscape has a wide CSS viewport; keep the same mobile controls based on its short height. */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .topbar { height: 54px; min-height: 54px; padding-inline: 10px; }
+  .topbar .mobile-menu-button, .sidebar, .backdrop { display: none !important; }
+  .main-content, .main-content-expanded { height: 100dvh; padding: 54px 0 0; }
+  .main-content:has(.webgis-workspace), .main-content-expanded:has(.webgis-workspace) { padding-top: 54px; }
+  .mobile-nav, .main-content:has(.webgis-workspace) ~ .mobile-nav,
+  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav {
+    position: fixed; z-index: 25; right: 50%; bottom: max(4px, env(safe-area-inset-bottom)); left: auto;
+    display: grid !important; width: min(560px, calc(100vw - 20px)); height: 54px; transform: translateX(50%);
+  }
+  .webgis-workspace { height: calc(100dvh - 120px); }
+  .webgis-topbar { min-height: 46px; padding-inline: 8px; }
+  .webgis-main-tabs { height: 46px; }
+  .webgis-map-layout { position: relative; display: block; min-height: 0; }
+  .webgis-map-area { position: absolute; inset: 0; }
+  .webgis-tools-panel { position: absolute; top: auto; right: 10px; bottom: 8px; left: 10px; width: auto; height: min(70dvh, 300px); max-height: calc(100% - 14px); border: 0; border-radius: 16px; }
+  .webgis-tools-panel.is-collapsed { left: 50%; width: min(560px, calc(100% - 24px)); height: 50px; transform: translateX(-50%); }
+  .webgis-side-tabs, .webgis-tools-panel.is-collapsed .webgis-side-tabs { min-height: 48px; height: 48px; flex-basis: 48px; grid-template-columns: repeat(3, minmax(0,1fr)); padding: 3px; }
+  .webgis-side-tabs button, .webgis-tools-panel.is-collapsed .webgis-side-tabs button { width: auto; height: 42px; min-height: 42px; flex-direction: row; gap: 7px; margin: 0; border-radius: 10px; font-size: .67rem; }
+  .webgis-panel-title { padding-top: 8px; }
+  .main-content:has(.webgis-workspace) ~ .mobile-nav,
+  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: grid !important; }
+  .webgis-dashboard-focus-backdrop { padding: 0; }
+  .webgis-dashboard-focus { width: min(100vw, calc((100dvh - 42px) * 16 / 9)); max-height: calc(100dvh - 42px); border-radius: 0; }
+  .webgis-dashboard-focus-frame { width: 100%; max-height: calc(100dvh - 42px); }
+}
