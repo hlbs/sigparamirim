@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
-import { LanguageCode, usePreferences } from './stores/preferences';
+import { usePreferences } from './stores/preferences';
 import { signOutUser, useAuth } from './features/auth';
 import { AuthLoading } from './components/AuthLoading';
 import { UserAvatar } from './components/UserAvatar';
@@ -10,7 +10,6 @@ import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
-import { GoogleAutoTranslate } from './features/i18n/GoogleAutoTranslate';
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
@@ -19,7 +18,6 @@ const navigation = [
   { path: '/ajuda', label: 'Ajuda', icon: 'help' },
 ];
 
-const languages: LanguageCode[] = ['PT', 'EN', 'ES', 'FR', 'ZH', 'DE', 'AR'];
 const mobileNavigationStorageKey = 'sigparamirim:mobile-navigation-order:v1';
 
 function readMobileNavigationOrder() {
@@ -67,7 +65,7 @@ function Placeholder({ title, description }: { title: string; description: strin
 }
 
 function PlatformShell() {
-  const { theme, setTheme, language, setLanguage, sidebarOpen, setSidebarOpen } = usePreferences();
+  const { theme, setTheme, sidebarOpen, setSidebarOpen } = usePreferences();
   const { user, loading } = useAuth();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -161,7 +159,6 @@ function PlatformShell() {
 
   return (
     <div className="app-shell">
-      <GoogleAutoTranslate />
       <header className="topbar">
         <button type="button" className="icon-button menu-button mobile-menu-button" onClick={() => setSidebarOpen(!sidebarOpen)} aria-label={sidebarOpen ? 'Recolher menu' : 'Abrir menu'} aria-expanded={sidebarOpen} aria-controls="main-sidebar">
           <UiIcon name={sidebarOpen ? 'chevronLeft' : 'chevronRight'} />
@@ -173,15 +170,6 @@ function PlatformShell() {
         <a className="version release-link" href={`https://github.com/hlbs/sigparamirim/releases/tag/v${__APP_VERSION__}`} target="_blank" rel="noreferrer" title={`Abrir release v${__APP_VERSION__} no GitHub`}>v{__APP_VERSION__}</a>
 
         <div className="topbar-actions">
-          <select
-            className="compact-select"
-            aria-label="Idioma"
-            value={language}
-            onChange={(event) => setLanguage(event.target.value as LanguageCode)}
-          >
-            {languages.map((code) => <option key={code}>{code}</option>)}
-          </select>
-
           <ThemeSwitch theme={resolvedTheme} onChange={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')} />
 
           <div className="notification-anchor">
@@ -285,7 +273,7 @@ function PlatformShell() {
 }
 
 export function App() {
-  const { theme, language } = usePreferences();
+  const { theme } = usePreferences();
   const resolvedTheme = useMemo(() => {
     if (theme !== 'system') return theme;
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -293,9 +281,9 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolvedTheme;
-    document.documentElement.lang = language === 'PT' ? 'pt-BR' : language.toLowerCase();
-    document.documentElement.dir = language === 'AR' ? 'rtl' : 'ltr';
-  }, [language, resolvedTheme]);
+    document.documentElement.lang = 'pt-BR';
+    document.documentElement.dir = 'ltr';
+  }, [resolvedTheme]);
 
   return (
     <>

@@ -2,6 +2,23 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.55] - 2026-10-09
+
+### Interface em português
+
+- removida a tradução automática para evitar chamadas a serviços externos e manter a experiência consistente em computadores e celulares;
+- removido o seletor de idioma sem tradução disponível; a plataforma permanece em português do Brasil.
+
+## [0.3.0-beta.54] - 2026-10-09
+
+### Tradução dinâmica da interface
+
+- replicada a tradução NMT do GeoAnalytics pela API Basic v2, com chave guardada apenas como segredo da função no Firebase;
+- adicionada uma trava global de 500.000 caracteres por mês, compartilhada por todos os usuários, para manter o consumo da ferramenta dentro do volume mensal previsto;
+- se um lote falhar no serviço do Google, os caracteres reservados são devolvidos à franquia interna;
+- textos enviados ao Google são decodificados antes de aparecer na interface, preservando acentos, pontuação e caracteres especiais;
+- respostas antigas de lotes interrompidos deixam de substituir traduções mais recentes após novas mudanças na página.
+
 ## [0.3.0-beta.53] - 2026-10-09
 
 ### Tradução dinâmica da interface

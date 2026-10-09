@@ -194,9 +194,11 @@ O incremento beta publica apenas afirmações factuais, métricas permitidas por
 - eventos duplicados não geram notificações inconsistentes;
 - retenção e política LGPD aprovadas.
 
-## Fase 7 — Tradução, RTL e refinamento mobile
+## Fase 7 — Tradução, RTL e refinamento mobile (fora do escopo atual)
 
 **Release-alvo:** `v0.7.0`
+
+> Tradução automática e RTL foram retirados do escopo no `v0.3.0-beta.55`; esta fase não está aprovada para implementação. O roadmap deve ser revisto antes de reabri-la.
 
 **Objetivos:**
 

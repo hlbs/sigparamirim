@@ -107,9 +107,9 @@ Catálogo de publicações com metadados estruturados, filtros compostos, detec�
 
 Tickets possuirão mensagens e eventos em subcoleções, anexos protegidos, histórico, responsável, estados e justificativa de encerramento. Usuários acessam apenas os próprios tickets; administradores gerenciam todos; editores não respondem tickets.
 
-### 5.7 Tradução dinâmica
+### 5.7 Idioma da interface
 
-O português brasileiro será armazenado como conteúdo canônico. A tradução ocorrerá em tempo real por um backend que encapsula a Google Cloud Translation API, com autenticação, App Check, rate limit, glossário e cache versionado. Segredos nunca serão expostos em variáveis `VITE_*`. DOI, URLs, siglas, números e fórmulas não deverão ser traduzidos. Árabe exige layout RTL completo.
+A interface é publicada em português brasileiro. A tradução automática foi retirada no beta.55 para evitar dependência de serviços externos e inconsistência entre navegadores e dispositivos. A reintrodução de outros idiomas exige nova decisão de produto e uma solução compatível com uso móvel.
 
 ### 5.8 Administração e workflow editorial
 

@@ -4,7 +4,6 @@ import { initializeApp } from 'firebase-admin/app';
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
-import { translateText as googleTranslateText } from './translation.js';
 
 initializeApp();
 
@@ -85,7 +84,6 @@ export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, asy
     providerIds,
     role: 'user' as const,
     accountStatus: 'active' as const,
-    language: 'pt-BR',
     theme: 'system',
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
@@ -212,5 +210,3 @@ export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
 
   return { id: input.requestId, status: input.decision };
 });
-
-export const translateText = googleTranslateText;
