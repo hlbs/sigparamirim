@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.52] - 2026-10-09
+
+### Impressão de mapas com camadas raster
+
+- corrigida a composição da imagem do mapa na impressão: agora o OpenLayers renderiza em conjunto o mapa-base, os rasters e as camadas vetoriais;
+- o raster deixa de depender da cópia isolada de canvas WebGL, que podia produzir uma impressão sem a imagem raster mesmo quando a camada estava visível no mapa;
+- o mapa interativo volta ao seu painel após a captura, inclusive se a renderização de impressão exceder o tempo limite.
+
 ## [0.3.0-beta.51] - 2026-10-09
 
 ### Ajuste na impressão de camadas raster

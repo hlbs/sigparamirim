@@ -18,51 +18,27 @@ type PageMargin = '6mm' | '10mm' | '15mm';
 function renderMapSnapshot(target: HTMLElement) {
   const rect = target.getBoundingClientRect();
   const pixelRatio = window.devicePixelRatio || 1;
-  const output = document.createElement('canvas');
-  output.width = Math.max(1, Math.round(rect.width * pixelRatio));
-  output.height = Math.max(1, Math.round(rect.height * pixelRatio));
-  const context = output.getContext('2d');
-  if (!context) throw new Error('Não foi possível preparar a imagem do mapa.');
-  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  if (!rect.width || !rect.height) throw new Error('Não foi possível calcular o tamanho do mapa para impressão.');
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(rect.width * pixelRatio));
+  canvas.height = Math.max(1, Math.round(rect.height * pixelRatio));
+  canvas.style.cssText = `position:fixed;left:-10000px;top:0;width:${rect.width}px;height:${rect.height}px;`;
+  canvas.setAttribute('aria-hidden', 'true');
 
-  const canvases = target.querySelectorAll<HTMLCanvasElement>('.ol-layer canvas');
-  let rendered = 0;
-  canvases.forEach((canvas) => {
-    if (!canvas.width || !canvas.height) return;
-    const canvasRect = canvas.getBoundingClientRect();
-    if (!canvasRect.width || !canvasRect.height) return;
-    // GeoTIFF layers use OpenLayers' WebGL renderer. Wait for queued GPU work
-    // before copying its drawing buffer into the 2D print canvas. WebGL canvases
-    // are distinguishable from the regular 2D canvases used by vector layers.
-    const gl = canvas.getContext('webgl2')
-      ?? canvas.getContext('webgl')
-      ?? canvas.getContext('experimental-webgl') as WebGLRenderingContext | null;
-    gl?.finish();
-    const layer = canvas.parentElement;
-    const opacity = Number.parseFloat(layer ? getComputedStyle(layer).opacity : '1');
-    const background = layer ? getComputedStyle(layer).backgroundColor : 'transparent';
-    context.save();
-    context.globalAlpha = Number.isFinite(opacity) ? opacity : 1;
-    // Use the canvas' rendered viewport bounds. OpenLayers moves buffered layer
-    // canvases with CSS transforms; replaying only the transform matrix drops
-    // its layout offset and leaves a large blank strip in the print frame.
-    const x = canvasRect.left - rect.left;
-    const y = canvasRect.top - rect.top;
-    if (background && background !== 'rgba(0, 0, 0, 0)') {
-      context.fillStyle = background;
-      context.fillRect(x, y, canvasRect.width, canvasRect.height);
-    }
-    context.drawImage(canvas, x, y, canvasRect.width, canvasRect.height);
-    context.restore();
-    rendered += 1;
+  return new Promise<string>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(new Error('O OpenLayers não concluiu a composição das camadas para impressão. Tente novamente.')), 15000);
+    const done = (capture: () => void) => {
+      window.clearTimeout(timeout);
+      capture();
+    };
+    target.dispatchEvent(new CustomEvent('webgis:print-capture', {
+      detail: {
+        canvas,
+        resolve: (dataUrl: string) => done(() => resolve(dataUrl)),
+        reject: (error: Error) => done(() => reject(error)),
+      },
+    }));
   });
-
-  if (!rendered) throw new Error('O mapa ainda não terminou de renderizar. Aguarde alguns segundos e tente novamente.');
-  try {
-    return output.toDataURL('image/png');
-  } catch {
-    throw new Error('Não foi possível compor a impressão porque uma camada externa bloqueou a captura. Verifique as permissões CORS do serviço de mapas.');
-  }
 }
 
 function nextMapRender(target: HTMLElement) {
@@ -161,7 +137,7 @@ export function PrintMapDialog({ layers = [], triggerClassName = 'webgis-print-t
       // rendercomplete signals OpenLayers tile readiness; two paint frames also
       // allow the browser compositor to present the WebGL result after resize.
       await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-      const snapshot = renderMapSnapshot(source);
+      const snapshot = await renderMapSnapshot(source);
       mapHost.replaceChildren();
       const image = document.createElement('img');
       image.src = snapshot;

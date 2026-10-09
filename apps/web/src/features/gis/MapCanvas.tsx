@@ -82,6 +82,11 @@ type MapCanvasProps = {
 type RenderedDataLayer = VectorLayer<VectorSource> | WebGLTileLayer;
 type PackedFeature = { id?: number | string; properties: Record<string, unknown>; geometry: PackedGeometry | null };
 type LayerLoadingStatus = { title: string; message: string; progress?: number };
+type PrintCaptureRequest = {
+  canvas: HTMLCanvasElement;
+  resolve: (dataUrl: string) => void;
+  reject: (error: Error) => void;
+};
 
 function readVectorInWorker(url: string, dataProjection: string, signal: AbortSignal): Promise<PackedFeature[]> {
   return new Promise((resolve, reject) => {
@@ -471,7 +476,51 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       map.updateSize();
       map.renderSync();
     };
+    const handlePrintCapture = (event: Event) => {
+      const request = (event as CustomEvent<PrintCaptureRequest>).detail;
+      const originalTarget = map.getTargetElement();
+      if (!request || !originalTarget) {
+        request?.reject(new Error('Não foi possível preparar o renderizador do mapa para impressão.'));
+        return;
+      }
+
+      let settled = false;
+      const restoreTarget = () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(renderTimeout);
+        map.setTarget(originalTarget);
+        map.updateSize();
+        map.renderSync();
+      };
+      const renderTimeout = window.setTimeout(() => {
+        unByKey(renderKey);
+        restoreTarget();
+        request.reject(new Error('O OpenLayers não concluiu a composição das camadas para impressão.'));
+      }, 14000);
+      const renderKey = map.once('rendercomplete', () => {
+        try {
+          request.resolve(request.canvas.toDataURL('image/png'));
+        } catch {
+          request.reject(new Error('O navegador não conseguiu exportar o mapa composto.'));
+        } finally {
+          unByKey(renderKey);
+          restoreTarget();
+        }
+      });
+
+      try {
+        map.setTarget(request.canvas);
+        map.updateSize();
+        map.renderSync();
+      } catch (reason) {
+        unByKey(renderKey);
+        restoreTarget();
+        request.reject(reason instanceof Error ? reason : new Error('Falha ao renderizar o mapa para impressão.'));
+      }
+    };
     mapTarget.addEventListener('webgis:print-resize', handlePrintResize);
+    mapTarget.addEventListener('webgis:print-capture', handlePrintCapture);
     const renderCompleteKey = map.on('rendercomplete', () => {
       mapTarget.dispatchEvent(new Event('webgis:rendercomplete'));
     });
@@ -544,6 +593,7 @@ export function MapCanvas({ layers = [], baseMap = 'osm', tool = 'identify', hom
       scaleWidthObserver.disconnect();
       scaleMarkupObserver.disconnect();
       mapTarget.removeEventListener('webgis:print-resize', handlePrintResize);
+      mapTarget.removeEventListener('webgis:print-capture', handlePrintCapture);
       unByKey(renderCompleteKey);
       viewport.removeEventListener('pointerdown', onPointerDown);
       window.removeEventListener('pointermove', onPointerMove);
