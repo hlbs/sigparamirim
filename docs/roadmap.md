@@ -176,6 +176,8 @@ O incremento beta publica apenas afirmações factuais, métricas permitidas por
 
 **Release-alvo:** `v0.6.0`
 
+> Entrega inicial de helpdesk e notificações in-app concluída no `v0.3.0-beta.56`. Uploads, SLA formal, e-mail/push e demais módulos administrativos continuam condicionados às decisões de segurança e produto abaixo.
+
 **Objetivos:**
 
 - implementar tickets, mensagens, anexos e histórico;

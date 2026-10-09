@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.56] - 2026-10-09
+
+### Central de atendimento e notificações
+
+- criada a abertura de chamados com assunto, categoria, prioridade e descrição, além de fila pesquisável com filtros de estado;
+- solicitantes acompanham respostas e histórico; administradores recebem a fila global, respondem e atualizam o estado do atendimento;
+- respostas, mudanças de estado e novos chamados geram notificações persistidas, em tempo real, com link direto para a conversa;
+- o backend valida autoria e permissões, mantém mensagens/eventos protegidos e registra as mudanças do atendimento.
+
 ## [0.3.0-beta.55] - 2026-10-09
 
 ### Interface em português

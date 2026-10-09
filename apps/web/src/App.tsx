@@ -10,6 +10,8 @@ import { AuthPage } from './pages/AuthPage';
 import { AccessDeniedPage, AccountStatusPage, AdminPage, EditorialPage, ProfilePage } from './pages/AccountPages';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
+import { HelpdeskPage } from './pages/HelpdeskPage';
+import { NotificationMenu } from './features/notifications/NotificationMenu';
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
@@ -67,7 +69,6 @@ function Placeholder({ title, description }: { title: string; description: strin
 function PlatformShell() {
   const { theme, setTheme, sidebarOpen, setSidebarOpen } = usePreferences();
   const { user, loading } = useAuth();
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileNavDragRef = useRef<{ path: string; pointerId: number; startX: number; dragging: boolean } | null>(null);
@@ -172,23 +173,7 @@ function PlatformShell() {
         <div className="topbar-actions">
           <ThemeSwitch theme={resolvedTheme} onChange={() => setTheme(resolvedTheme === 'light' ? 'dark' : 'light')} />
 
-          <div className="notification-anchor">
-            <button
-              className="icon-button"
-              aria-label="Notificações"
-              aria-expanded={notificationsOpen}
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-            >
-              <UiIcon name="bell" />
-            </button>
-            {notificationsOpen && (
-              <div className="notification-popover" role="dialog" aria-label="Notificações recentes">
-                <strong>Notificações</strong>
-                <p>Nenhuma notificação nesta etapa.</p>
-                <button className="text-button">Ver histórico completo</button>
-              </div>
-            )}
-          </div>
+          <NotificationMenu />
 
           {user ? (
             <div className="profile-menu-anchor" ref={profileMenuRef}>
@@ -252,7 +237,7 @@ function PlatformShell() {
           <Route path="/" element={<HomePage />} />
           <Route path="/mapa" element={<MapPage />} />
           <Route path="/observatorio" element={<Placeholder title="Observatório Científico Paramirim" description="Acervo pesquisável de publicações, fontes e estudos sobre a bacia." />} />
-          <Route path="/ajuda" element={<Placeholder title="Central de ajuda" description="Abertura e acompanhamento de tickets com histórico e anexos protegidos." />} />
+          <Route path="/ajuda" element={<HelpdeskPage />} />
           <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/editorial" element={<RoleRoute allowed={['editor', 'admin']}><EditorialPage /></RoleRoute>} />
           <Route path="/administracao" element={<RoleRoute allowed={['admin']}><AdminPage /></RoleRoute>} />

@@ -33,12 +33,21 @@ beforeEach(async () => {
     const db = context.firestore();
     await Promise.all([
       db.doc('users/alice').set({ role: 'user', accountStatus: 'pending', displayName: 'Alice' }),
+      db.doc('users/active-user').set({ role: 'user', accountStatus: 'active', displayName: 'Usuário ativo' }),
+      db.doc('users/other-user').set({ role: 'user', accountStatus: 'active', displayName: 'Outro usuário' }),
+      db.doc('users/admin-a').set({ role: 'admin', accountStatus: 'active', displayName: 'Administradora' }),
       db.doc('users/editor-a').set({ role: 'editor', accountStatus: 'active' }),
       db.doc('layers/public-layer').set({ status: 'published' }),
       db.doc('layers/draft-layer').set({ status: 'draft' }),
       db.doc('changeRequests/own-request').set({ requestedBy: 'editor-a', status: 'pending' }),
       db.doc('changeRequests/other-request').set({ requestedBy: 'editor-b', status: 'pending' }),
       db.doc('auditLogs/event-1').set({ type: 'test' }),
+      db.doc('tickets/ticket-own').set({ ownerUid: 'active-user', status: 'open' }),
+      db.doc('tickets/ticket-other').set({ ownerUid: 'other-user', status: 'open' }),
+      db.doc('tickets/ticket-own/messages/message-1').set({ body: 'Solicitação inicial' }),
+      db.doc('tickets/ticket-own/events/event-1').set({ action: 'created' }),
+      db.doc('users/active-user/notifications/notice-own').set({ title: 'Atualização do atendimento', readAt: null }),
+      db.doc('users/other-user/notifications/notice-other').set({ title: 'Aviso privado', readAt: null }),
     ]);
   });
 });
@@ -136,5 +145,42 @@ describe('regras Firestore do SIG Paramirim', () => {
     }).firestore();
     await assertFails(editorDb.doc('auditLogs/event-1').get());
     await assertSucceeds(adminDb.doc('auditLogs/event-1').get());
+  });
+
+  test('solicitante lê apenas os próprios chamados, mensagens e eventos; admin lê a fila', async () => {
+    const ownerDb = environment.authenticatedContext('active-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    const otherDb = environment.authenticatedContext('other-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    const adminDb = environment.authenticatedContext('admin-a', {
+      role: 'admin', accountStatus: 'active',
+    }).firestore();
+
+    await assertSucceeds(ownerDb.doc('tickets/ticket-own').get());
+    await assertFails(ownerDb.doc('tickets/ticket-other').get());
+    await assertSucceeds(ownerDb.doc('tickets/ticket-own/messages/message-1').get());
+    await assertSucceeds(ownerDb.doc('tickets/ticket-own/events/event-1').get());
+    await assertFails(otherDb.doc('tickets/ticket-own/messages/message-1').get());
+    await assertFails(otherDb.doc('tickets/ticket-own/events/event-1').get());
+    await assertSucceeds(adminDb.doc('tickets/ticket-other').get());
+    await assertFails(ownerDb.doc('tickets/ticket-own').update({ status: 'closed' }));
+    await assertFails(ownerDb.doc('tickets/ticket-own/messages/message-2').set({ body: 'Resposta direta' }));
+  });
+
+  test('notificações são privadas e o usuário pode marcar somente readAt', async () => {
+    const ownerDb = environment.authenticatedContext('active-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    const otherDb = environment.authenticatedContext('other-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+
+    await assertSucceeds(ownerDb.doc('users/active-user/notifications/notice-own').get());
+    await assertFails(ownerDb.doc('users/other-user/notifications/notice-other').get());
+    await assertSucceeds(ownerDb.doc('users/active-user/notifications/notice-own').update({ readAt: new Date() }));
+    await assertFails(ownerDb.doc('users/active-user/notifications/notice-own').update({ title: 'Conteúdo alterado' }));
+    await assertFails(otherDb.doc('users/active-user/notifications/fake').set({ title: 'Falso aviso' }));
   });
 });

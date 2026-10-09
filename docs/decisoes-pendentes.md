@@ -42,7 +42,7 @@ Este registro reúne definições que não podem ser inventadas. A ausência de 
 | DP-024 | Definir expectativa de funcionamento offline | afeta cache, IndexedDB e volume de dados | antes do aceite PWA |
 | DP-025 | Definir se Electron integra o primeiro release ou uma fase futura | altera pipeline, testes e distribuição | antes do congelamento de escopo da versão 1.0 |
 | DP-026 | Aprovar o nome comercial “Observatório Científico Paramirim” | afeta navegação, conteúdo e divulgação | antes da revisão editorial final |
-| DP-027 | Definir política de reabertura, SLA e prioridades do helpdesk | afeta estados, métricas e notificações | antes do aceite do helpdesk |
+| DP-027 | Parcialmente resolvida no beta.56: estados, prioridade normal/alta e reabertura por resposta do solicitante estão implementados; definir metas de SLA | afeta métricas e expectativas do atendimento | antes de divulgar prazos de resposta |
 | DP-028 | Definir política de revisão humana das traduções científicas | afeta publicação e responsabilidade editorial | antes de ativar idiomas em produção |
 | DP-029 | Definir glossário técnico multilíngue e responsável por sua manutenção | afeta consistência de tradução | antes do aceite da tradução científica |
 | DP-030 | Definir métricas-alvo de desempenho e navegadores/dispositivos suportados | afeta critérios de aceite e otimizações | antes da homologação |

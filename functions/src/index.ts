@@ -210,3 +210,5 @@ export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
 
   return { id: input.requestId, status: input.decision };
 });
+
+export { createTicket, replyToTicket, updateTicketStatus } from './helpdesk.js';

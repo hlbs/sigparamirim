@@ -105,7 +105,7 @@ Catálogo de publicações com metadados estruturados, filtros compostos, detec�
 
 ### 5.6 Helpdesk
 
-Tickets possuirão mensagens e eventos em subcoleções, anexos protegidos, histórico, responsável, estados e justificativa de encerramento. Usuários acessam apenas os próprios tickets; administradores gerenciam todos; editores não respondem tickets.
+Chamados usam `tickets/{ticketId}` com mensagens e eventos imutáveis em subcoleções. Usuários e editores veem somente os próprios chamados; administradores acompanham a fila global, respondem e atualizam estados. A interface recebe atualizações em tempo real pelo Firestore, enquanto Functions validam autoria, papéis, transições e criam notificações in-app na mesma operação. Anexos e avisos por e-mail/push permanecem fora do escopo até aprovação das políticas correspondentes.
 
 ### 5.7 Idioma da interface
 
