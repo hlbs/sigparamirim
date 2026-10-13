@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.69] - 2026-10-13
+
+### Central de administração
+
+- a página provisória de Administração foi substituída por uma central organizada em abas: visão geral, contas e acessos, revisões, atendimento e auditoria;
+- administradores podem pesquisar contas, alterar papéis e situação de acesso com justificativa obrigatória; as mudanças continuam registradas e protegidas pela função administrativa do servidor;
+- solicitações editoriais podem ser aprovadas ou recusadas diretamente na fila, com justificativa;
+- a fila de chamados agora tem um resumo administrativo com acesso direto à conversa;
+- o histórico recente de auditoria passou a ser consultável na própria central;
+- o layout acompanha a identidade verde institucional e se reorganiza para telas menores.
+
 ## [0.3.0-beta.68] - 2026-10-13
 
 ### Refinamento dos heros institucionais

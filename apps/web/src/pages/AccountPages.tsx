@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, Navigate } from 'react-router-dom';
 import { AuthLoading } from '../components/AuthLoading';
 import { signOutUser, updateUserProfile, useAuth } from '../features/auth';
 import { UserAvatar } from '../components/UserAvatar';
 import { ThemeDetail } from '../components/ThemeDetail';
 import { migrateLegacyGeospatial, reviewEditorialChange, submitLayerChange, uploadLayerDraft, watchEditorialChanges, watchPublishedLayers, type EditorialChange } from '../features/editorial/service';
+import { updateAdminUserAccess, watchAdminUsers, watchAuditRecords, type AdminUser, type AuditRecord } from '../features/admin/service';
+import { watchTickets, type TicketRecord } from '../features/helpdesk/service';
 
 export function AccountStatusPage() {
   const { user, loading, canAccessPlatform, accountStatus } = useAuth();
@@ -317,18 +319,84 @@ export function EditorialPage() {
 }
 
 export function AdminPage() {
-  return <WorkspacePage eyebrow="Administração" title="Central de governança" description="Gerencie pessoas, permissões, solicitações e aprovações em um único ambiente." items={['Usuários e acessos', 'Fila de aprovações', 'Tickets em atendimento']} />;
-}
+  const { user } = useAuth();
+  const [tab, setTab] = useState<'overview' | 'users' | 'reviews' | 'support' | 'audit'>('overview');
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [requests, setRequests] = useState<EditorialChange[]>([]);
+  const [audit, setAudit] = useState<AuditRecord[]>([]);
+  const [tickets, setTickets] = useState<TicketRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [editingUid, setEditingUid] = useState('');
+  const [accessDraft, setAccessDraft] = useState<{ role: AdminUser['role']; accountStatus: AdminUser['accountStatus']; justification: string }>({ role: 'user', accountStatus: 'active', justification: '' });
+  const [decisionText, setDecisionText] = useState('Revisado e aprovado.');
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
 
-function WorkspacePage({ eyebrow, title, description, items }: { eyebrow: string; title: string; description: string; items: string[] }) {
-  return (
-    <section className="account-page">
-      <div className="account-heading"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>
-      <div className="workspace-grid">
-        {items.map((item, index) => <article key={item}><span>0{index + 1}</span><h2>{item}</h2><p>Módulo preparado para conexão com os fluxos operacionais da próxima entrega.</p><button className="text-button">Acessar módulo →</button></article>)}
-      </div>
-    </section>
-  );
+  useEffect(() => {
+    if (!user) return undefined;
+    let active = true;
+    let pending = 4;
+    const settled = () => { pending -= 1; if (pending <= 0 && active) setLoading(false); };
+    let stopUsers: (() => void) | undefined;
+    let stopRequests: (() => void) | undefined;
+    let stopAudit: (() => void) | undefined;
+    let stopTickets: (() => void) | undefined;
+    void watchAdminUsers((items) => { if (active) setUsers(items); settled(); }, (error) => { if (active) setMessage(error.message); settled(); }).then((unsubscribe) => { if (active) stopUsers = unsubscribe; else unsubscribe(); }).catch((error: unknown) => { if (active) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar as contas.'); settled(); });
+    void watchEditorialChanges(user.uid, true, (items) => { if (active) setRequests(items); settled(); }, (error) => { if (active) setMessage(error.message); settled(); }).then((unsubscribe) => { if (active) stopRequests = unsubscribe; else unsubscribe(); }).catch((error: unknown) => { if (active) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar as revisões.'); settled(); });
+    void watchAuditRecords((items) => { if (active) setAudit(items); settled(); }, (error) => { if (active) setMessage(error.message); settled(); }).then((unsubscribe) => { if (active) stopAudit = unsubscribe; else unsubscribe(); }).catch((error: unknown) => { if (active) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar a auditoria.'); settled(); });
+    void watchTickets(user.uid, true, (items) => { if (active) setTickets(items); settled(); }, (error) => { if (active) setMessage(error.message); settled(); }).then((unsubscribe) => { if (active) stopTickets = unsubscribe; else unsubscribe(); }).catch((error: unknown) => { if (active) setMessage(error instanceof Error ? error.message : 'Não foi possível carregar os chamados.'); settled(); });
+    return () => { active = false; stopUsers?.(); stopRequests?.(); stopAudit?.(); stopTickets?.(); };
+  }, [user]);
+
+  const pendingRequests = useMemo(() => requests.filter((item) => item.status === 'pending'), [requests]);
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('pt-BR');
+    if (!term) return users;
+    return users.filter((item) => `${item.displayName ?? ''} ${item.email ?? ''} ${item.uid}`.toLocaleLowerCase('pt-BR').includes(term));
+  }, [search, users]);
+  const beginAccessEdit = (item: AdminUser) => {
+    setEditingUid(item.uid);
+    setAccessDraft({ role: item.role ?? 'user', accountStatus: item.accountStatus ?? 'pending', justification: '' });
+  };
+  const saveAccess = async (item: AdminUser) => {
+    if (accessDraft.justification.trim().length < 10) return;
+    setBusy(true); setMessage('');
+    try {
+      await updateAdminUserAccess({ uid: item.uid, ...accessDraft, justification: accessDraft.justification.trim() });
+      setEditingUid(''); setMessage(`Acesso de ${item.displayName || item.email || 'usuário'} atualizado.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar o acesso.'); }
+    finally { setBusy(false); }
+  };
+  const review = async (item: EditorialChange, decision: 'approved' | 'rejected') => {
+    if (decisionText.trim().length < 10) { setMessage('Registre uma justificativa com pelo menos 10 caracteres antes de revisar.'); return; }
+    setBusy(true); setMessage('');
+    try {
+      await reviewEditorialChange({ requestId: item.id, decision, justification: decisionText.trim() });
+      setMessage(decision === 'approved' ? 'Solicitação aprovada e publicada.' : 'Solicitação recusada.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível concluir a revisão.'); }
+    finally { setBusy(false); }
+  };
+  const dateLabel = (value: unknown) => {
+    const date = value && typeof value === 'object' && 'toDate' in value && typeof value.toDate === 'function' ? (value.toDate as () => Date)() : value instanceof Date ? value : null;
+    return date ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(date) : 'Data não disponível';
+  };
+  const roleName = (role: AdminUser['role']) => role === 'admin' ? 'Administrador' : role === 'editor' ? 'Editor' : 'Usuário';
+  const statusName = (status: AdminUser['accountStatus']) => status === 'active' ? 'Ativo' : status === 'suspended' ? 'Suspenso' : 'Pendente';
+
+  const openTickets = tickets.filter((ticket) => !['resolved', 'closed', 'cancelled'].includes(ticket.status)).length;
+  return <section className="account-page admin-page">
+    <article className="admin-hero"><ThemeDetail className="admin-detail" /><div className="admin-hero-copy"><span className="admin-eyebrow"><i className="fa-solid fa-shield-halved" /> Governança da plataforma</span><h1>Administração</h1><p>Contas, publicações e decisões da plataforma em um só lugar.</p></div><Link to="/ajuda" className="admin-hero-action"><i className="fa-solid fa-headset" /> Central de atendimento</Link>
+      <div className="admin-metrics"><article><span><i className="fa-solid fa-users" /></span><div><strong>{users.length}</strong><small>Contas cadastradas</small></div></article><article><span><i className="fa-solid fa-user-clock" /></span><div><strong>{users.filter((item) => item.accountStatus === 'pending').length}</strong><small>Aguardando acesso</small></div></article><article><span><i className="fa-solid fa-inbox" /></span><div><strong>{pendingRequests.length}</strong><small>Revisões pendentes</small></div></article><article><span><i className="fa-solid fa-headset" /></span><div><strong>{openTickets}</strong><small>Chamados em aberto</small></div></article></div>
+    </article>
+    <nav className="admin-tabs" role="tablist" aria-label="Seções administrativas">{([['overview', 'Visão geral', 'fa-chart-pie'], ['users', 'Contas e acessos', 'fa-users'], ['reviews', 'Revisões', 'fa-list-check'], ['support', 'Atendimento', 'fa-headset'], ['audit', 'Auditoria', 'fa-clock-rotate-left']] as const).map(([id, label, icon]) => <button key={id} role="tab" type="button" aria-selected={tab === id} className={tab === id ? 'is-active' : ''} onClick={() => setTab(id)}><i className={`fa-solid ${icon}`} /><span>{label}</span>{id === 'reviews' && pendingRequests.length > 0 && <small>{pendingRequests.length}</small>}{id === 'support' && openTickets > 0 && <small>{openTickets}</small>}</button>)}</nav>
+    {message && <div className="admin-message" role="status"><i className="fa-solid fa-circle-info" />{message}<button type="button" aria-label="Fechar aviso" onClick={() => setMessage('')}><i className="fa-solid fa-xmark" /></button></div>}
+    {tab === 'overview' && <section className="admin-content"><div className="admin-section-heading"><div><span>Resumo operacional</span><h2>Bem-vindo à central de governança</h2><p>Acompanhe pendências e siga diretamente para a tarefa que precisa de atenção.</p></div></div><div className="admin-quick-grid"><button type="button" onClick={() => setTab('users')}><span><i className="fa-solid fa-user-gear" /></span><strong>Gerenciar contas</strong><small>Aprovar acessos e administrar papéis</small><i className="fa-solid fa-arrow-right" /></button><button type="button" onClick={() => setTab('reviews')}><span><i className="fa-solid fa-list-check" /></span><strong>Revisar publicações</strong><small>{pendingRequests.length ? `${pendingRequests.length} solicitação(ões) aguardando decisão` : 'Nenhuma solicitação pendente'}</small><i className="fa-solid fa-arrow-right" /></button><button type="button" onClick={() => setTab('support')}><span><i className="fa-solid fa-headset" /></span><strong>Atendimento</strong><small>{openTickets ? `${openTickets} chamado(s) em aberto` : 'Nenhum chamado pendente'}</small><i className="fa-solid fa-arrow-right" /></button><button type="button" onClick={() => setTab('audit')}><span><i className="fa-solid fa-clock-rotate-left" /></span><strong>Consultar auditoria</strong><small>Histórico recente de decisões</small><i className="fa-solid fa-arrow-right" /></button></div><div className="admin-recent"><div className="admin-section-heading"><div><span>Atividade registrada</span><h2>Últimos eventos</h2></div><button type="button" onClick={() => setTab('audit')}>Ver auditoria <i className="fa-solid fa-arrow-right" /></button></div>{audit.slice(0, 4).map((event) => <article key={event.id}><span><i className="fa-solid fa-check" /></span><div><strong>{event.type === 'user.access.updated' ? 'Acesso de usuário atualizado' : event.type ?? 'Evento administrativo'}</strong><small>{event.justification || `Conta ${event.targetUid ?? ''}`}</small></div><time>{dateLabel(event.createdAt)}</time></article>)}{!loading && audit.length === 0 && <p className="admin-empty">As próximas ações administrativas aparecerão aqui.</p>}</div></section>}
+    {tab === 'users' && <section className="admin-content"><div className="admin-section-heading"><div><span>Identidades e permissões</span><h2>Contas da plataforma</h2><p>Gerencie a situação de acesso e o papel de cada pessoa. Toda alteração exige justificativa e fica registrada.</p></div><strong className="admin-count">{filteredUsers.length} contas</strong></div><label className="admin-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, e-mail ou identificador" /></label>{loading ? <p className="admin-empty"><i className="fa-solid fa-spinner fa-spin" /> Carregando contas e registros…</p> : filteredUsers.length ? <div className="admin-user-list">{filteredUsers.map((item) => <article key={item.uid} className="admin-user-row"><UserAvatar name={item.displayName} email={item.email} photoURL={item.photoURL} /><div className="admin-user-identity"><strong>{item.displayName || 'Nome não informado'}</strong><span>{item.email || item.uid}</span>{item.institution && <small>{item.institution}</small>}</div><span className={`admin-status status-${item.accountStatus}`}>{statusName(item.accountStatus)}</span><span className="admin-role">{roleName(item.role)}</span>{item.uid === user?.uid ? <span className="admin-self-note">Sua conta</span> : <button type="button" className="admin-row-action" onClick={() => editingUid === item.uid ? setEditingUid('') : beginAccessEdit(item)}>{editingUid === item.uid ? 'Cancelar' : 'Gerenciar'}</button>}{editingUid === item.uid && <div className="admin-access-editor"><label>Papel<select value={accessDraft.role} onChange={(event) => setAccessDraft({ ...accessDraft, role: event.target.value as AdminUser['role'] })}><option value="user">Usuário</option><option value="editor">Editor</option><option value="admin">Administrador</option></select></label><label>Acesso<select value={accessDraft.accountStatus} onChange={(event) => setAccessDraft({ ...accessDraft, accountStatus: event.target.value as AdminUser['accountStatus'] })}><option value="pending">Pendente</option><option value="active">Ativo</option><option value="suspended">Suspenso</option></select></label><label className="admin-justification">Justificativa<textarea rows={2} minLength={10} maxLength={500} value={accessDraft.justification} onChange={(event) => setAccessDraft({ ...accessDraft, justification: event.target.value })} placeholder="Explique a alteração (mínimo de 10 caracteres)" /></label><button type="button" className="admin-save-action" disabled={busy || accessDraft.justification.trim().length < 10} onClick={() => void saveAccess(item)}><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-floppy-disk'}`} /> {busy ? 'Salvando…' : 'Salvar alteração'}</button></div>}</article>)}</div> : <p className="admin-empty">Nenhuma conta corresponde à busca.</p>}</section>}
+    {tab === 'reviews' && <section className="admin-content"><div className="admin-section-heading"><div><span>Fluxo editorial</span><h2>Fila de revisões</h2><p>As alterações de editores só chegam ao público depois da aprovação administrativa.</p></div><strong className="admin-count">{pendingRequests.length} pendentes</strong></div><label className="admin-review-note">Justificativa para a decisão<textarea rows={2} value={decisionText} onChange={(event) => setDecisionText(event.target.value)} placeholder="Mínimo de 10 caracteres" /></label>{requests.length ? <div className="admin-review-list">{requests.map((item) => <article key={item.id}><div className="admin-review-top"><span className={`admin-status status-${item.status === 'pending' ? 'pending' : 'active'}`}>{item.status === 'pending' ? 'Aguardando revisão' : item.status === 'approved' ? 'Aprovada' : 'Recusada'}</span><small>{item.resourceType} · {item.operation} · {dateLabel(item.requestedAt)}</small></div><h3>{item.summary}</h3><p>Identificador: {item.resourceId}</p>{item.status === 'pending' && <div className="admin-review-actions"><button type="button" disabled={busy || decisionText.trim().length < 10} onClick={() => void review(item, 'approved')}><i className="fa-solid fa-check" /> Aprovar e publicar</button><button type="button" className="is-reject" disabled={busy || decisionText.trim().length < 10} onClick={() => void review(item, 'rejected')}><i className="fa-solid fa-xmark" /> Recusar</button></div>}</article>)}</div> : <p className="admin-empty">Nenhuma solicitação editorial registrada.</p>}</section>}
+    {tab === 'support' && <section className="admin-content"><div className="admin-section-heading"><div><span>Central de atendimento</span><h2>Chamados de suporte</h2><p>Acompanhe a fila e responda às solicitações da comunidade.</p></div><strong className="admin-count">{openTickets} em andamento</strong></div>{tickets.length ? <div className="admin-ticket-list">{tickets.slice(0, 12).map((ticket) => <article key={ticket.id}><div><strong>{ticket.subject}</strong><small>{ticket.ownerName} · {ticket.ownerEmail} · {dateLabel(ticket.updatedAt)}</small></div><span className={`admin-status status-${['resolved', 'closed', 'cancelled'].includes(ticket.status) ? 'active' : 'pending'}`}>{ticket.status === 'in_progress' ? 'Em atendimento' : ticket.status === 'waiting_for_user' ? 'Aguardando usuário' : ticket.status === 'resolved' ? 'Resolvido' : ticket.status === 'closed' ? 'Encerrado' : ticket.status === 'cancelled' ? 'Cancelado' : 'Aberto'}</span><Link to={`/ajuda?ticket=${ticket.id}`}>Abrir chamado <i className="fa-solid fa-arrow-up-right-from-square" /></Link></article>)}</div> : <p className="admin-empty">{loading ? 'Carregando chamados…' : 'Nenhum chamado registrado.'}</p>}<Link to="/ajuda" className="admin-all-tickets">Abrir central de atendimento <i className="fa-solid fa-arrow-right" /></Link></section>}
+    {tab === 'audit' && <section className="admin-content"><div className="admin-section-heading"><div><span>Rastreabilidade</span><h2>Registro de auditoria</h2><p>Histórico recente de decisões administrativas e alterações de acesso.</p></div><strong className="admin-count">Últimos {audit.length}</strong></div>{audit.length ? <div className="admin-audit-list">{audit.map((event) => <article key={event.id}><span><i className="fa-solid fa-shield-halved" /></span><div><strong>{event.type === 'user.access.updated' ? 'Permissão de conta alterada' : event.type ?? 'Evento administrativo'}</strong><small>Responsável: {event.actorUid || 'Não informado'} · Conta afetada: {event.targetUid || '—'}</small>{event.justification && <p>{event.justification}</p>}{event.next && <small>Novo papel: {roleName(String(event.next.role ?? 'user') as AdminUser['role'])} · Acesso: {statusName(String(event.next.accountStatus ?? 'pending') as AdminUser['accountStatus'])}</small>}</div><time>{dateLabel(event.createdAt)}</time></article>)}</div> : <p className="admin-empty">Nenhuma ação administrativa foi registrada até o momento.</p>}</section>}
+  </section>;
 }
 
 export function AccessDeniedPage() {
