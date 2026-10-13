@@ -12,12 +12,13 @@ import { EditorialPage } from './pages/EditorialPage';
 import { HomePage } from './pages/HomePage';
 import { MapPage } from './pages/MapPage';
 import { HelpdeskPage } from './pages/HelpdeskPage';
+import { ObservatoryPage } from './pages/ObservatoryPage';
 import { NotificationMenu } from './features/notifications/NotificationMenu';
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
   { path: '/mapa', label: 'Mapa', icon: 'map' },
-  { path: '/observatorio', label: 'Observatório', icon: 'chart' },
+  { path: '/observatorio', label: 'Observatório', icon: 'observatory' },
   { path: '/ajuda', label: 'Ajuda', icon: 'help' },
 ];
 
@@ -32,10 +33,10 @@ function readMobileNavigationOrder() {
   }
 }
 
-type IconName = 'home' | 'map' | 'chart' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout';
+type IconName = 'home' | 'map' | 'chart' | 'observatory' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout';
 function UiIcon({ name }: { name: IconName }) {
   const classes: Record<IconName, string> = {
-    home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', help: 'fa-solid fa-circle-question',
+    home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', observatory: 'fa-solid fa-book-open-reader', help: 'fa-solid fa-circle-question',
     menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
     edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear', chevron: 'fa-solid fa-chevron-down',
     chevronLeft: 'fa-solid fa-chevron-left', chevronRight: 'fa-solid fa-chevron-right',
@@ -237,7 +238,7 @@ function PlatformShell() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/mapa" element={<MapPage />} />
-          <Route path="/observatorio" element={<Placeholder title="Observatório Científico Paramirim" description="Acervo pesquisável de publicações, fontes e estudos sobre a bacia." />} />
+          <Route path="/observatorio" element={<ObservatoryPage />} />
           <Route path="/ajuda" element={<HelpdeskPage />} />
           <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/editorial" element={<RoleRoute allowed={['editor', 'admin']}><EditorialPage /></RoleRoute>} />

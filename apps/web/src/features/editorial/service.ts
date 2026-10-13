@@ -42,8 +42,17 @@ export async function uploadLayerDraft(uid: string, requestId: string, file: Fil
   return { stagingPath: path, fileName: safeName, contentType: file.type || 'application/octet-stream' };
 }
 
+export async function uploadPublicationDraft(uid: string, requestId: string, file: File) {
+  if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+    throw new Error('Selecione um arquivo PDF para o Observatório.');
+  }
+  if (file.size > 50 * 1024 * 1024) throw new Error('O PDF deve ter no máximo 50 MB.');
+  return uploadLayerDraft(uid, requestId, file);
+}
+
 export async function submitLayerChange(input: {
   requestId: string;
+  resourceType?: 'layer' | 'dashboard' | 'publication';
   resourceId: string;
   operation: 'create' | 'update' | 'archive';
   summary: string;
@@ -51,7 +60,7 @@ export async function submitLayerChange(input: {
 }) {
   const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
   const callable = httpsCallable<typeof input, { id: string; status: 'pending' | 'approved' }>(functions, 'submitChangeRequest');
-  return (await callable(input)).data;
+  return (await callable({ ...input, resourceType: input.resourceType ?? 'layer' })).data;
 }
 
 export async function watchEditorialChanges(
@@ -80,6 +89,28 @@ export async function watchPublishedLayers(
   return onSnapshot(query(collection(db, 'layers'), where('status', 'in', ['published', 'archived'])), (snapshot) => {
     onLayers(snapshot.docs.map((document) => ({ id: document.id, ...document.data() })));
   }, onError);
+}
+
+export type ObservatoryPublication = Record<string, unknown> & { id: string };
+
+export async function watchPublishedPublications(
+  onPublications: (publications: ObservatoryPublication[]) => void,
+  onError: (error: Error) => void,
+): Promise<Unsubscribe> {
+  const [{ collection, onSnapshot, query, where }, db] = await Promise.all([import('firebase/firestore'), getDatabase()]);
+  return onSnapshot(query(collection(db, 'publications'), where('status', '==', 'published')), (snapshot) => {
+    onPublications(snapshot.docs.map((document) => ({ id: document.id, ...document.data() })));
+  }, onError);
+}
+
+export async function submitPublicationChange(input: {
+  requestId: string;
+  resourceId: string;
+  operation: 'create' | 'update' | 'archive';
+  summary: string;
+  payload: Record<string, unknown>;
+}) {
+  return submitLayerChange({ ...input, resourceType: 'publication' });
 }
 
 export async function reviewEditorialChange(input: { requestId: string; decision: 'approved' | 'rejected'; justification: string }) {

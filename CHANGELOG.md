@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.64] - 2026-10-13
+
+### Observatório científico e acervo de publicações
+
+- a antiga tela provisória do Observatório foi substituída por um catálogo público, responsivo e coerente com a identidade visual da plataforma;
+- a busca pode ser refinada dinamicamente por ano, tipo de publicação, município e área de estudo, além de localizar termos em títulos, autores, palavras-chave e referências;
+- administradores e editores ganharam uma área de gestão para incluir, revisar e arquivar materiais; propostas de editores dependem da aprovação de um administrador;
+- os PDFs são enviados primeiro para uma área temporária e só chegam à pasta pública `Observatorio/` do Storage após a publicação autorizada;
+- foi preparada a importação conjunta dos seis trabalhos enviados, com referências bibliográficas e metadados iniciais para facilitar o primeiro cadastro;
+- o ícone do menu lateral agora representa leitura e pesquisa científica.
+
 ## [0.3.0-beta.63] - 2026-10-13
 
 ### Organização visual da área editorial

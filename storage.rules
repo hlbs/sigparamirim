@@ -63,6 +63,13 @@ service firebase.storage {
       allow write: if false;
     }
 
+    // Observatory PDFs are public once published; trusted Cloud Functions copy
+    // approved uploads from staging into this namespace.
+    match /Observatorio/{publicationId}/{revision}/{fileId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /exports/{uid}/{jobId}/{fileId} {
       allow read: if admin() || (active() && request.auth.uid == uid);
       allow write: if false;

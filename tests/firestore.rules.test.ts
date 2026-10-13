@@ -39,6 +39,8 @@ beforeEach(async () => {
       db.doc('users/editor-a').set({ role: 'editor', accountStatus: 'active' }),
       db.doc('layers/public-layer').set({ status: 'published' }),
       db.doc('layers/draft-layer').set({ status: 'draft' }),
+      db.doc('publications/public-entry').set({ status: 'published', title: 'Publicação pública' }),
+      db.doc('publications/draft-entry').set({ status: 'pending', title: 'Proposta editorial' }),
       db.doc('changeRequests/own-request').set({ requestedBy: 'editor-a', status: 'pending' }),
       db.doc('changeRequests/other-request').set({ requestedBy: 'editor-b', status: 'pending' }),
       db.doc('auditLogs/event-1').set({ type: 'test' }),
@@ -54,6 +56,8 @@ beforeEach(async () => {
   await environment.withSecurityRulesDisabled(async (context) => {
     await context.storage().ref('webgis/vetor/layer-1/1/data.geojson')
       .putString('{}', 'raw', { contentType: 'application/geo+json' });
+    await context.storage().ref('Observatorio/publicacao-1/1/trabalho.pdf')
+      .putString('pdf de teste', 'raw', { contentType: 'application/pdf' });
   });
 });
 
@@ -89,6 +93,9 @@ describe('regras Storage do SIG Paramirim', () => {
     await assertSucceeds(anonymousStorage.ref('webgis/vetor/layer-1/1/data.geojson').getDownloadURL());
     await assertFails(adminStorage.ref('webgis/vetor/layer-1/1/data.geojson')
       .putString('{}', 'raw', { contentType: 'application/geo+json' }));
+    await assertSucceeds(anonymousStorage.ref('Observatorio/publicacao-1/1/trabalho.pdf').getDownloadURL());
+    await assertFails(adminStorage.ref('Observatorio/publicacao-1/1/novo.pdf')
+      .putString('arquivo', 'raw', { contentType: 'application/pdf' }));
   });
 });
 
@@ -105,6 +112,16 @@ describe('regras Firestore do SIG Paramirim', () => {
     await assertSucceeds(anonymousDb.doc('layers/public-layer').get());
     await assertFails(anonymousDb.doc('layers/draft-layer').get());
     await assertSucceeds(pendingDb.doc('layers/public-layer').get());
+  });
+
+  test('publicações publicadas são públicas e propostas não aparecem no acervo', async () => {
+    const anonymousDb = environment.unauthenticatedContext().firestore();
+    const editorDb = environment.authenticatedContext('editor-a', {
+      role: 'editor', accountStatus: 'active',
+    }).firestore();
+    await assertSucceeds(anonymousDb.doc('publications/public-entry').get());
+    await assertFails(anonymousDb.doc('publications/draft-entry').get());
+    await assertSucceeds(editorDb.doc('publications/draft-entry').get());
   });
 
   test('permite conteúdo publicado a contas ativas e reserva rascunhos a editores', async () => {

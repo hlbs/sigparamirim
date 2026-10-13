@@ -68,7 +68,7 @@ service cloud.firestore {
     }
 
     match /publications/{publicationId} {
-      allow read: if active() && (published() || editor());
+      allow read: if published() || (active() && editor());
       allow write: if false;
     }
 

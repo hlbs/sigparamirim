@@ -59,6 +59,27 @@ const layerChangeSchema = z.object({
     context.addIssue({ code: 'custom', path: ['layer', 'statistics'], message: 'O valor mínimo deve ser menor que o máximo.' });
   }
 });
+const publicationChangeSchema = z.object({
+  publication: z.object({
+    id: z.string().regex(/^[a-z0-9][a-z0-9-]{0,119}$/),
+    title: z.string().trim().min(5).max(240),
+    authors: z.array(z.string().trim().min(2).max(120)).min(1).max(30),
+    year: z.number().int().min(1800).max(2200),
+    type: z.enum(['article', 'thesis', 'dissertation', 'monograph', 'map', 'report', 'book', 'atlas', 'other']),
+    reference: z.string().trim().min(10).max(2000),
+    abstract: z.string().trim().max(5000).optional(),
+    studyArea: z.string().trim().max(240).optional(),
+    municipalities: z.array(z.string().trim().min(2).max(100)).max(50),
+    keywords: z.array(z.string().trim().min(2).max(80)).max(30),
+    doi: z.string().trim().max(300).optional(),
+    externalUrl: z.string().url().max(1000).optional().or(z.literal('')),
+    storagePath: z.string().trim().max(1024).optional(),
+    fileName: z.string().trim().max(255).optional(),
+    contentType: z.string().trim().max(160).optional(),
+    sizeBytes: z.number().int().nonnegative().max(50 * 1024 * 1024).optional(),
+  }).strict(),
+  stagingPath: z.string().trim().min(1).max(1024).optional(),
+}).strict();
 
 function requireAuthentication(auth: { uid: string; token: Record<string, unknown> } | undefined) {
   if (!auth) throw new HttpsError('unauthenticated', 'Autenticação necessária.');
@@ -93,7 +114,7 @@ function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
 export const healthcheck = onCall({ enforceAppCheck: appCheckEnabled }, (request) => {
   const auth = requireAuthentication(request.auth);
   logger.info('Verificação de integridade concluída.', { uid: auth.uid });
-  return { status: 'ok', version: '0.3.0-beta.61' };
+  return { status: 'ok', version: '0.3.0-beta.64' };
 });
 
 export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
@@ -187,9 +208,10 @@ export const submitChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
     ? db.collection('changeRequests').doc(input.requestId)
     : db.collection('changeRequests').doc();
   const { requestId: _requestId, ...requestData } = input;
-  const directAdminPublish = actor.role === 'admin' && input.resourceType === 'layer';
+  const directAdminPublish = actor.role === 'admin' && ['layer', 'publication'].includes(input.resourceType);
   if (directAdminPublish) {
-    await publishApprovedLayer({ ...input, requestedBy: actor.uid }, requestRef.id);
+    if (input.resourceType === 'layer') await publishApprovedLayer({ ...input, requestedBy: actor.uid }, requestRef.id);
+    if (input.resourceType === 'publication') await publishApprovedPublication({ ...input, requestedBy: actor.uid }, requestRef.id);
   }
   const admins = await db.collection('users').where('role', '==', 'admin')
     .where('accountStatus', '==', 'active').limit(100).get();
@@ -239,8 +261,19 @@ export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
     if (input.decision === 'approved' && requestData.resourceType === 'layer') {
       await publishApprovedLayer(requestData, input.requestId);
     }
+    if (input.decision === 'approved' && requestData.resourceType === 'publication') {
+      await publishApprovedPublication(requestData, input.requestId);
+    }
     if (input.decision === 'rejected' && requestData.resourceType === 'layer') {
       const rejected = layerChangeSchema.safeParse(requestData.payload);
+      const stagingPath = rejected.success ? rejected.data.stagingPath : undefined;
+      const requestedBy = requestData.requestedBy;
+      if (stagingPath && typeof requestedBy === 'string' && stagingPath.startsWith(`staging/${requestedBy}/`)) {
+        await getStorage().bucket().file(stagingPath).delete({ ignoreNotFound: true });
+      }
+    }
+    if (input.decision === 'rejected' && requestData.resourceType === 'publication') {
+      const rejected = publicationChangeSchema.safeParse(requestData.payload);
       const stagingPath = rejected.success ? rejected.data.stagingPath : undefined;
       const requestedBy = requestData.requestedBy;
       if (stagingPath && typeof requestedBy === 'string' && stagingPath.startsWith(`staging/${requestedBy}/`)) {
@@ -462,6 +495,75 @@ async function publishApprovedLayer(changeRequest: Record<string, unknown>, _req
   await layerRef.set({
     ...layer, ...(sizeBytes !== undefined ? { sizeBytes } : {}), storagePath, status: 'published', revision,
     lastChangeRequestId: _requestId,
+    updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
+  if (stagedSource) await stagedSource.delete({ ignoreNotFound: true });
+}
+
+async function publishApprovedPublication(changeRequest: Record<string, unknown>, requestId: string): Promise<void> {
+  const parsed = publicationChangeSchema.safeParse(changeRequest.payload);
+  if (!parsed.success) throw new HttpsError('invalid-argument', 'Os dados da publicação são inválidos.');
+  const { publication, stagingPath } = parsed.data;
+  if (changeRequest.resourceId !== publication.id) throw new HttpsError('invalid-argument', 'O identificador da publicação não corresponde à solicitação.');
+  const publicationRef = db.collection('publications').doc(publication.id);
+  const existing = await publicationRef.get();
+  if (existing.get('lastChangeRequestId') === requestId) return;
+  const operation = changeRequest.operation;
+  if (operation === 'create' && existing.exists) throw new HttpsError('already-exists', 'Esta publicação já existe.');
+  if ((operation === 'update' || operation === 'archive') && !existing.exists) throw new HttpsError('not-found', 'A publicação que seria alterada não existe.');
+  const revision = Number(existing.get('revision') ?? 0) + 1;
+  let storagePath = typeof existing.get('storagePath') === 'string' ? existing.get('storagePath') as string : undefined;
+  let fileName = publication.fileName ?? (existing.get('fileName') as string | undefined);
+  let sizeBytes = publication.sizeBytes ?? (existing.get('sizeBytes') as number | undefined);
+  let downloadUrl = existing.get('downloadUrl') as string | undefined;
+
+  if (operation === 'archive') {
+    await publicationRef.update({ status: 'archived', revision, lastChangeRequestId: requestId, updatedAt: FieldValue.serverTimestamp() });
+    return;
+  }
+
+  let stagedSource: { delete(options: { ignoreNotFound: boolean }): Promise<unknown> } | undefined;
+  if (stagingPath) {
+    const requestedBy = changeRequest.requestedBy;
+    if (typeof requestedBy !== 'string' || !stagingPath.startsWith(`staging/${requestedBy}/`) || stagingPath.split('/').some((part) => part === '.' || part === '..')) {
+      throw new HttpsError('invalid-argument', 'O arquivo temporário não corresponde ao autor da solicitação.');
+    }
+    const parsedName = publication.fileName?.split(/[\\/]/).at(-1)?.replace(/[^a-zA-Z0-9._-]/g, '_');
+    if (!parsedName || !parsedName.toLowerCase().endsWith('.pdf')) throw new HttpsError('invalid-argument', 'O Observatório aceita arquivos PDF.');
+    const source = getStorage().bucket().file(stagingPath);
+    const [sourceExists] = await source.exists();
+    if (!sourceExists) throw new HttpsError('not-found', 'O PDF temporário não foi encontrado.');
+    const [metadata] = await source.getMetadata();
+    const actualSize = Number(metadata.size ?? 0);
+    if (actualSize > 50 * 1024 * 1024 || (metadata.contentType && metadata.contentType !== 'application/pdf')) {
+      throw new HttpsError('invalid-argument', 'O arquivo precisa ser um PDF de até 50 MB.');
+    }
+    const bucket = getStorage().bucket();
+    storagePath = `Observatorio/${publication.id}/${revision}/${parsedName}`;
+    const token = crypto.randomUUID();
+    const destination = bucket.file(storagePath);
+    await source.copy(destination);
+    await destination.setMetadata({
+      contentType: 'application/pdf',
+      cacheControl: 'public,max-age=3600',
+      metadata: { firebaseStorageDownloadTokens: token },
+    });
+    downloadUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(storagePath)}?alt=media&token=${token}`;
+    fileName = parsedName;
+    sizeBytes = actualSize;
+    stagedSource = source;
+  } else if (typeof storagePath !== 'string' && operation === 'create') {
+    throw new HttpsError('invalid-argument', 'Inclua o PDF da publicação.');
+  }
+
+  await publicationRef.set({
+    ...publication,
+    ...(storagePath ? { storagePath } : {}),
+    ...(downloadUrl ? { downloadUrl } : {}),
+    ...(fileName ? { fileName } : {}),
+    ...(sizeBytes !== undefined ? { sizeBytes } : {}),
+    status: 'published', revision, lastChangeRequestId: requestId,
+    publishedAt: existing.get('publishedAt') ?? FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   }, { merge: true });
   if (stagedSource) await stagedSource.delete({ ignoreNotFound: true });
