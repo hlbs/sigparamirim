@@ -469,8 +469,19 @@
 :root[data-theme="dark"] .webgis-layer-kind-tabs button.is-active,
 :root[data-theme="dark"] .webgis-tool-grid button.is-active,
 :root[data-theme="dark"] .webgis-layer-detail > nav button.is-active,
-:root[data-theme="dark"] .webgis-basemap-row.is-active { border-color: var(--brand) !important; color: #fff !important; background: var(--brand) !important; }
-:root[data-theme="dark"] .webgis-tool-grid button.is-active i { color: #fff; background: rgba(255,255,255,.16); }
+:root[data-theme="dark"] .webgis-basemap-row.is-active { border-color: var(--brand) !important; color: var(--on-brand) !important; background: var(--brand) !important; }
+:root[data-theme="dark"] .webgis-tool-grid button.is-active i { color: var(--on-brand); background: color-mix(in srgb, var(--on-brand) 14%, transparent); }
+
+/* Dark-mode selection states keep the platform's olive highlight with legible dark text. */
+:root[data-theme="dark"] .nav-item.active,
+:root[data-theme="dark"] .helpdesk-filter-row button.active,
+:root[data-theme="dark"] .territory-tab-list button.is-active,
+:root[data-theme="dark"] .editorial-filter button.is-active,
+:root[data-theme="dark"] .editorial-request-filters button.is-active,
+:root[data-theme="dark"] .webgis-layer-kind-tabs button.is-active,
+:root[data-theme="dark"] .webgis-tool-grid button.is-active,
+:root[data-theme="dark"] .webgis-layer-detail > nav button.is-active,
+:root[data-theme="dark"] .webgis-basemap-row.is-active { color: var(--on-brand) !important; }
 @media (max-width: 680px) { .map-scale-stack { max-width: calc(100cqw - 20px); padding: 12px 10px 14px; } .map-scale-line-target .ol-scale-bar { max-width: calc(100cqw - 40px); } }
 
 /* Floating map panels remain movable, bounded by the map, and clear of the scale and controls. */

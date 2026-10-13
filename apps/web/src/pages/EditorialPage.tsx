@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useAuth } from '../features/auth';
+import { ThemeDetail } from '../components/ThemeDetail';
 import {
   migrateLegacyGeospatial,
   reviewEditorialChange,
@@ -52,6 +53,7 @@ export function EditorialPage() {
   const [layers, setLayers] = useState<Layer[]>([]);
   const [view, setView] = useState<EditorialView>('catalog');
   const [layerFilter, setLayerFilter] = useState<LayerFilter>('all');
+  const [groupFilter, setGroupFilter] = useState('all');
   const [requestFilter, setRequestFilter] = useState<RequestFilter>('pending');
   const [search, setSearch] = useState('');
   const [operation, setOperation] = useState<Operation>('create');
@@ -59,6 +61,7 @@ export function EditorialPage() {
   const [layerId, setLayerId] = useState('');
   const [title, setTitle] = useState('');
   const [group, setGroup] = useState('');
+  const [subgroup, setSubgroup] = useState('');
   const [kind, setKind] = useState<'vector' | 'raster'>('vector');
   const [crs, setCrs] = useState('EPSG:4674');
   const [source, setSource] = useState('');
@@ -95,6 +98,7 @@ export function EditorialPage() {
     if (!selected) return;
     setTitle(String(selected.title ?? ''));
     setGroup(String(selected.group ?? ''));
+    setSubgroup(String(selected.subgroup ?? selected.subGroup ?? selected.subgroupName ?? ''));
     setKind(selected.kind === 'raster' ? 'raster' : 'vector');
     setCrs(String(selected.crs ?? ''));
     setSource(String(selected.source ?? ''));
@@ -111,10 +115,45 @@ export function EditorialPage() {
     const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR');
     return layers.filter((layer) => {
       const matchesKind = layerFilter === 'all' || layer.kind === layerFilter;
-      const text = `${layer.title ?? ''} ${layer.group ?? ''} ${layer.id}`.toLocaleLowerCase('pt-BR');
-      return matchesKind && (!normalizedSearch || text.includes(normalizedSearch));
+      const group = String(layer.group ?? 'Sem grupo');
+      const subgroup = layer.subgroup ?? layer.subGroup ?? layer.subgroupName ?? '';
+      const text = `${layer.title ?? ''} ${group} ${subgroup} ${layer.id}`.toLocaleLowerCase('pt-BR');
+      return matchesKind && (groupFilter === 'all' || group === groupFilter) && (!normalizedSearch || text.includes(normalizedSearch));
     });
-  }, [layers, layerFilter, search]);
+  }, [layers, layerFilter, groupFilter, search]);
+
+  const availableGroups = useMemo(() => [...new Set(layers
+    .filter((layer) => layerFilter === 'all' || layer.kind === layerFilter)
+    .map((layer) => String(layer.group ?? 'Sem grupo')))]
+    .sort((left, right) => left.localeCompare(right, 'pt-BR')),
+  [layers, layerFilter]);
+
+  const groupedLayers = useMemo(() => (['vector', 'raster'] as const)
+    .filter((kind) => layerFilter === 'all' || layerFilter === kind)
+    .map((kind) => {
+      const typedLayers = visibleLayers.filter((layer) => layer.kind === kind);
+      const groups = new Map<string, Map<string, Layer[]>>();
+      typedLayers.forEach((layer) => {
+        const groupName = String(layer.group ?? 'Sem grupo');
+        const subgroupName = String(layer.subgroup ?? layer.subGroup ?? layer.subgroupName ?? 'Geral');
+        const subgroups = groups.get(groupName) ?? new Map<string, Layer[]>();
+        subgroups.set(subgroupName, [...(subgroups.get(subgroupName) ?? []), layer]);
+        groups.set(groupName, subgroups);
+      });
+      return {
+        kind,
+        title: kind === 'vector' ? 'Camadas vetoriais' : 'Camadas raster',
+        icon: kind === 'vector' ? 'fa-draw-polygon' : 'fa-image',
+        count: typedLayers.length,
+        groups: [...groups.entries()].sort(([left], [right]) => left.localeCompare(right, 'pt-BR'))
+          .map(([name, subgroups]) => ({
+            name,
+            count: [...subgroups.values()].reduce((total, items) => total + items.length, 0),
+            subgroups: [...subgroups.entries()].sort(([left], [right]) => left.localeCompare(right, 'pt-BR'))
+              .map(([subgroup, items]) => ({ name: subgroup, layers: items })),
+          })),
+      };
+    }), [visibleLayers, layerFilter]);
 
   const visibleRequests = useMemo(() => requests.filter((item) => {
     if (requestFilter === 'pending') return item.status === 'pending' || item.status === 'processing';
@@ -125,7 +164,7 @@ export function EditorialPage() {
   if (!user) return null;
 
   const resetEditor = () => {
-    setOperation('create'); setLayerId(''); setTitle(''); setGroup(''); setKind('vector'); setCrs('EPSG:4674');
+    setOperation('create'); setLayerId(''); setTitle(''); setGroup(''); setSubgroup(''); setKind('vector'); setCrs('EPSG:4674');
     setSource(''); setRasterMin(''); setRasterMax(''); setNoData(''); setStyleJson('{}'); setSummary(''); setFile(null);
   };
 
@@ -166,8 +205,8 @@ export function EditorialPage() {
       setMessage('Registrando alteração…');
       const selectedLayer = layers.find((item) => item.id === safeId);
       const layer = operation === 'archive'
-        ? { id: safeId, title: String(selectedLayer?.title ?? title), group: String(selectedLayer?.group ?? group), kind: selectedLayer?.kind === 'raster' ? 'raster' : 'vector' }
-        : { id: safeId, title: title.trim(), group: group.trim(), kind, crs: crs.trim(), source: source.trim(), styleDefault,
+        ? { id: safeId, title: String(selectedLayer?.title ?? title), group: String(selectedLayer?.group ?? group), subgroup: String(selectedLayer?.subgroup ?? selectedLayer?.subGroup ?? subgroup), kind: selectedLayer?.kind === 'raster' ? 'raster' : 'vector' }
+        : { id: safeId, title: title.trim(), group: group.trim(), ...(subgroup.trim() ? { subgroup: subgroup.trim() } : {}), kind, crs: crs.trim(), source: source.trim(), styleDefault,
           ...(kind === 'raster' && rasterMin !== '' && rasterMax !== '' ? { statistics: { min: Number(rasterMin), max: Number(rasterMax) } } : {}),
           ...(kind === 'raster' && noData !== '' ? { noData: Number(noData) } : {}) };
       const result = await submitLayerChange({
@@ -193,6 +232,7 @@ export function EditorialPage() {
 
   return <main className="account-page editorial-page">
     <header className="editorial-hero">
+      <ThemeDetail className="editorial-detail" />
       <div className="editorial-hero-copy">
         <span className="editorial-kicker"><i className="fa-solid fa-compass-drafting" /> INTELIGÊNCIA TERRITORIAL · EDITORIAL</span>
         <h1>Conteúdo que constrói o mapa.</h1>
@@ -224,19 +264,31 @@ export function EditorialPage() {
       </div>
       <div className="editorial-catalog-tools">
         <label className="editorial-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar por nome, grupo ou identificador" /></label>
+        <label className="editorial-group-select"><i className="fa-solid fa-filter" /><span>Grupo</span><select value={groupFilter} onChange={(event) => setGroupFilter(event.target.value)}><option value="all">Todos os grupos</option>{availableGroups.map((group) => <option key={group} value={group}>{group}</option>)}</select></label>
         <div className="editorial-filter" role="group" aria-label="Filtrar camadas">
-          {([{ id: 'all', label: 'Todas' }, { id: 'vector', label: 'Vetoriais' }, { id: 'raster', label: 'Rasters' }] as const).map((filter) => <button key={filter.id} type="button" className={layerFilter === filter.id ? 'is-active' : ''} aria-pressed={layerFilter === filter.id} onClick={() => setLayerFilter(filter.id)}>{filter.label}</button>)}
+          {([{ id: 'all', label: 'Todas' }, { id: 'vector', label: 'Vetoriais' }, { id: 'raster', label: 'Rasters' }] as const).map((filter) => <button key={filter.id} type="button" className={layerFilter === filter.id ? 'is-active' : ''} aria-pressed={layerFilter === filter.id} onClick={() => { setLayerFilter(filter.id); setGroupFilter('all'); }}>{filter.label}</button>)}
         </div>
       </div>
-      {visibleLayers.length ? <div className="editorial-layer-list">{visibleLayers.map((layer) => {
-        const raster = layer.kind === 'raster';
-        const statistics = layer.statistics && typeof layer.statistics === 'object' ? layer.statistics as Record<string, unknown> : {};
-        return <article className="editorial-layer-card" key={layer.id}>
-          <span className={`editorial-layer-symbol ${raster ? 'is-raster' : 'is-vector'}`}><i className={`fa-solid ${raster ? 'fa-image' : 'fa-draw-polygon'}`} /></span>
-          <div className="editorial-layer-copy"><div className="editorial-layer-title"><h3>{String(layer.title ?? layer.id)}</h3><span className={`editorial-type-tag ${raster ? 'is-raster' : ''}`}>{raster ? 'Raster' : 'Vetor'}</span></div><p>{String(layer.group ?? 'Sem grupo')} <span>·</span> {String(layer.crs ?? 'CRS não informado')}</p><div className="editorial-layer-meta"><span><i className="fa-solid fa-hard-drive" /> {formatBytes(layer.sizeBytes)}</span><span><i className="fa-solid fa-code-branch" /> Revisão {String(layer.revision ?? 1)}</span>{raster && statistics.min !== undefined && statistics.max !== undefined && <span><i className="fa-solid fa-arrows-left-right" /> {Number(statistics.min).toLocaleString('pt-BR')} – {Number(statistics.max).toLocaleString('pt-BR')}</span>}</div></div>
-          <div className="editorial-layer-actions"><button type="button" aria-label={`Editar ${String(layer.title ?? layer.id)}`} title="Editar camada" onClick={() => startEdit(layer, 'update')}><i className="fa-solid fa-sliders" /><span>Editar</span></button><button type="button" className="is-archive" aria-label={`Arquivar ${String(layer.title ?? layer.id)}`} title="Remover do catálogo" onClick={() => startEdit(layer, 'archive')}><i className="fa-solid fa-box-archive" /><span>Arquivar</span></button></div>
-        </article>;
-      })}</div> : <div className="editorial-catalog-empty"><span><i className="fa-solid fa-layer-group" /></span><h3>{search ? 'Nenhuma camada encontrada' : 'O catálogo está pronto para crescer'}</h3><p>{search ? 'Experimente outro nome, grupo ou identificador.' : 'Adicione um arquivo vetorial GeoJSON ou raster GeoTIFF/COG. Editores enviam alterações para aprovação; administradores podem publicar diretamente.'}</p>{!search && <button type="button" className="editorial-primary-action" onClick={startCreate}><i className="fa-solid fa-plus" /> Adicionar primeira camada</button>}</div>}
+      {visibleLayers.length ? <div className="editorial-layer-catalog">
+        {groupedLayers.filter((section) => section.count > 0).map((section) => <section className={`editorial-kind-section is-${section.kind}`} key={section.kind}>
+          <header className="editorial-kind-heading"><span><i className={`fa-solid ${section.icon}`} />{section.title}</span><small>{section.count}</small></header>
+          {section.groups.map((group) => <details className="editorial-group-card" key={group.name} open>
+            <summary><span><i className="fa-solid fa-folder-tree" />{group.name}</span><small>{group.count}</small><i className="fa-solid fa-chevron-down editorial-group-chevron" /></summary>
+            <div className="editorial-subgroups">{group.subgroups.map((subgroup) => <section className="editorial-subgroup" key={subgroup.name}>
+              <h4><span>{subgroup.name}</span><small>{subgroup.layers.length}</small></h4>
+              <div className="editorial-layer-list">{subgroup.layers.map((layer) => {
+                const raster = section.kind === 'raster';
+                const statistics = layer.statistics && typeof layer.statistics === 'object' ? layer.statistics as Record<string, unknown> : {};
+                return <article className="editorial-layer-card" key={layer.id}>
+                  <span className={`editorial-layer-symbol ${raster ? 'is-raster' : 'is-vector'}`}><i className={`fa-solid ${raster ? 'fa-image' : 'fa-draw-polygon'}`} /></span>
+                  <div className="editorial-layer-copy"><div className="editorial-layer-title"><h3>{String(layer.title ?? layer.id)}</h3><span className={`editorial-type-tag ${raster ? 'is-raster' : ''}`}>{raster ? 'Raster' : 'Vetor'}</span></div><p>{String(layer.crs ?? 'CRS não informado')}</p><div className="editorial-layer-meta"><span><i className="fa-solid fa-hard-drive" /> {formatBytes(layer.sizeBytes)}</span><span><i className="fa-solid fa-code-branch" /> Revisão {String(layer.revision ?? 1)}</span>{raster && statistics.min !== undefined && statistics.max !== undefined && <span><i className="fa-solid fa-arrows-left-right" /> {Number(statistics.min).toLocaleString('pt-BR')} – {Number(statistics.max).toLocaleString('pt-BR')}</span>}</div></div>
+                  <div className="editorial-layer-actions"><button type="button" aria-label={`Editar ${String(layer.title ?? layer.id)}`} title="Editar camada" onClick={() => startEdit(layer, 'update')}><i className="fa-solid fa-sliders" /><span>Editar</span></button><button type="button" className="is-archive" aria-label={`Arquivar ${String(layer.title ?? layer.id)}`} title="Remover do catálogo" onClick={() => startEdit(layer, 'archive')}><i className="fa-solid fa-box-archive" /><span>Arquivar</span></button></div>
+                </article>;
+              })}</div>
+            </section>)}</div>
+          </details>)}
+        </section>)}
+      </div> : <div className="editorial-catalog-empty"><span><i className="fa-solid fa-layer-group" /></span><h3>{search || groupFilter !== 'all' || layerFilter !== 'all' ? 'Nenhuma camada encontrada' : 'O catálogo está pronto para crescer'}</h3><p>{search || groupFilter !== 'all' || layerFilter !== 'all' ? 'Revise os filtros ou tente outro termo de busca.' : 'Adicione um arquivo vetorial GeoJSON ou raster GeoTIFF/COG. Editores enviam alterações para aprovação; administradores podem publicar diretamente.'}</p>{!search && <button type="button" className="editorial-primary-action" onClick={startCreate}><i className="fa-solid fa-plus" /> Adicionar primeira camada</button>}</div>}
     </section> : <section className="editorial-review" aria-label="Solicitações editoriais">
       <div className="editorial-review-heading"><div><span className="editorial-section-kicker">RASTREABILIDADE · GOVERNANÇA</span><h2>{isAdmin ? 'Fila de revisão' : 'Acompanhe suas solicitações'}</h2><p>{isAdmin ? 'Revise cada alteração antes que ela chegue ao WebGIS.' : 'Veja o andamento e o resultado das alterações que você enviou.'}</p></div><span className="editorial-review-total"><strong>{visibleRequests.length}</strong> {visibleRequests.length === 1 ? 'solicitação' : 'solicitações'}</span></div>
       <div className="editorial-request-filters" role="group" aria-label="Filtrar solicitações">
@@ -260,6 +312,7 @@ export function EditorialPage() {
               {operation === 'create' && <label>Identificador estável<input value={layerId} onChange={(event) => setLayerId(event.target.value)} placeholder="ex.: uso-solo-2025" /><small>Gerado a partir do nome se deixado em branco.</small></label>}
               <label className="field-wide">Nome da camada<input required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ex.: Uso e cobertura do solo" /></label>
               <label>Grupo temático<input required value={group} onChange={(event) => setGroup(event.target.value)} placeholder="Ex.: Hidrografia" /></label>
+              <label>Subgrupo<input value={subgroup} onChange={(event) => setSubgroup(event.target.value)} placeholder="Ex.: Drenagem principal (opcional)" /></label>
               <label>Formato<select value={kind} onChange={(event) => { setKind(event.target.value as typeof kind); setFile(null); }}><option value="vector">Vetor · GeoJSON</option><option value="raster">Raster · GeoTIFF / COG</option></select></label>
               <label>Sistema de coordenadas<input value={crs} onChange={(event) => setCrs(event.target.value)} placeholder="EPSG:4674" /></label>
               <label className="field-wide">Fonte dos dados<input value={source} onChange={(event) => setSource(event.target.value)} placeholder="Instituição, levantamento ou referência" /></label>

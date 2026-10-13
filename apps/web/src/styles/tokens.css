@@ -4,6 +4,7 @@
   --brand-strong: #3f4305;
   --brand-soft: #e9ebc9;
   --brand-glow: rgba(209, 219, 92, .32);
+  --on-brand: #fffef4;
   --surface: #fffef8;
   --surface-muted: #f1f2e7;
   --text: #181a11;
@@ -19,6 +20,7 @@
   --brand-strong: #d6dc82;
   --brand-soft: #303519;
   --brand-glow: rgba(193, 204, 91, .22);
+  --on-brand: #25280f;
   --surface: #20231a;
   --surface-muted: #171911;
   --text: #f7f8e9;

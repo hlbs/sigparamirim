@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.63] - 2026-10-13
+
+### Organização visual da área editorial
+
+- a página usa melhor a largura disponível, aproximando seus espaçamentos laterais dos demais espaços da plataforma;
+- a identidade visual verde foi reforçada com o detalhe gráfico já usado em outras páginas;
+- o catálogo separa camadas vetoriais e raster, organiza os itens por grupo e subgrupo e permite filtrar por tipo, grupo ou busca;
+- o cadastro e a edição de camadas permitem informar um subgrupo;
+- no modo escuro, os textos dos botões selecionados ficam escuros sobre o destaque verde-oliva, melhorando a leitura em toda a plataforma.
+
 ## [0.3.0-beta.62] - 2026-10-13
 
 ### Área editorial e catálogo do WebGIS
