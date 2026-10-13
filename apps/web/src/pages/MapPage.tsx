@@ -146,6 +146,7 @@ function displayValue(value: unknown) {
 export function MapPage() {
   const { user } = useAuth();
   const [catalog, setCatalog] = useState<CatalogLayer[]>(initialLayers);
+  const [publishedCatalogError, setPublishedCatalogError] = useState<string | null>(null);
   const [version, setVersion] = useState('');
   const [tab, setTab] = useState<MainTab>('map');
   const [sideTab, setSideTab] = useState<SideTab>('layers');
@@ -220,7 +221,8 @@ export function MapPage() {
     void watchPublishedLayers((documents) => {
       const currentGeneration = ++generation;
       const archivedIds = new Set(documents.filter((document) => document.status === 'archived').map((document) => document.id));
-      void Promise.all(documents.filter((document) => document.status === 'published').map(async (document): Promise<CatalogLayer | null> => {
+      const publishedDocuments = documents.filter((document) => document.status === 'published');
+      void Promise.all(publishedDocuments.map(async (document): Promise<CatalogLayer | null> => {
         const storagePath = document.storagePath;
         if (typeof storagePath !== 'string') return null;
         try {
@@ -245,19 +247,28 @@ export function MapPage() {
             noData: typeof document.noData === 'number' ? document.noData : undefined,
             visibleByDefault: Boolean(document.visibleByDefault),
           };
-        } catch {
+        } catch (reason) {
+          console.error(`Não foi possível resolver a camada publicada “${document.id}” no Storage.`, reason);
           return null;
         }
       })).then((published) => {
         if (!active || currentGeneration !== generation) return;
         const publishedLayers = published.filter((layer): layer is CatalogLayer => layer !== null);
+        setPublishedCatalogError(publishedLayers.length < publishedDocuments.length
+          ? 'Algumas camadas publicadas não puderam ser lidas no Storage. Verifique o CORS do bucket Firebase Storage.'
+          : null);
         setCatalog((current) => {
           const byId = new Map(current.filter((layer) => !archivedIds.has(layer.id)).map((layer) => [layer.id, layer]));
           publishedLayers.forEach((layer) => byId.set(layer.id, layer));
           return [...byId.values()];
         });
       });
-    }, () => undefined).then((stop) => { if (active) unsubscribe = stop; else stop(); });
+    }, (error) => {
+      if (active) {
+        console.error('Não foi possível consultar as camadas publicadas do WebGIS.', error);
+        setPublishedCatalogError('Não foi possível atualizar as camadas publicadas. Tente recarregar o mapa.');
+      }
+    }).then((stop) => { if (active) unsubscribe = stop; else stop(); });
     return () => { active = false; unsubscribe?.(); };
   }, []);
 
@@ -333,6 +344,7 @@ export function MapPage() {
           {sideTab === 'layers' && <div className={`webgis-side-content ${layerView ? 'is-details-open' : ''}`}>
             <div className="webgis-panel-title"><div><small>Conteúdo do mapa</small><h2>Catálogo de camadas</h2></div><button type="button" onClick={() => setToolsOpen(false)} title="Recolher painel" aria-label="Recolher painel"><i className="fa-solid fa-chevron-right" /></button></div>
             <label className="webgis-search"><i className="fa-solid fa-magnifying-glass" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar camada" /></label>
+            {publishedCatalogError && <p className="webgis-catalog-warning" role="status">{publishedCatalogError}</p>}
             <div className="webgis-layer-kind-tabs" role="group" aria-label="Filtrar tipo de camada">
               {(['all', 'basemap', 'vector', 'raster'] as const).map((kind) => {
                 const item = { all: { title: 'Todas', icon: 'fa-layer-group', count: baseMaps.length + featureLayers.length }, basemap: { title: 'Base', icon: 'fa-map', count: baseMaps.length }, vector: { title: 'Vetoriais', icon: 'fa-draw-polygon', count: featureLayers.filter((layer) => layer.kind === 'vector').length }, raster: { title: 'Rasters', icon: 'fa-image', count: featureLayers.filter((layer) => layer.kind === 'raster').length } }[kind];

@@ -107,6 +107,7 @@
 .webgis-layer-row-copy { display: grid; min-width: 0; gap: 4px; }
 .webgis-layer-kind-icon { color: var(--text-muted); font-size: .68rem; }
 .webgis-panel-hint { margin: 14px; color: var(--text-muted); font-size: .72rem; line-height: 1.55; }
+.webgis-catalog-warning { margin: 0 13px 10px; padding: 10px 12px; border-radius: 8px; color: #704a00; background: #fff4d4; font-size: .72rem; line-height: 1.45; }
 .webgis-legend-row { display: grid; min-height: 61px; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 10px; padding: 8px 15px; border-bottom: 1px solid var(--webgis-border); }
 .webgis-legend-row > div { display: grid; gap: 4px; }
 .webgis-legend-row strong { font-size: .71rem; }

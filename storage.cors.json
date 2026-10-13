@@ -1,0 +1,25 @@
+[
+  {
+    "origin": [
+      "https://sigparamirim.web.app",
+      "https://sigparamirim.firebaseapp.com",
+      "https://ppgeol-tools.web.app",
+      "https://ppgeol-tools.firebaseapp.com",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
+    ],
+    "method": ["GET", "HEAD"],
+    "responseHeader": [
+      "Authorization",
+      "Accept-Ranges",
+      "Content-Length",
+      "Content-Range",
+      "Content-Type",
+      "ETag",
+      "Range",
+      "X-Firebase-AppCheck",
+      "X-Firebase-GMPID"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

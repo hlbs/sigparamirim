@@ -11,6 +11,7 @@ export type EditorialChange = {
   status: string;
   requestedBy: string;
   requestedAt?: unknown;
+  reviewJustification?: string;
 };
 
 async function getFunctionsClient() {

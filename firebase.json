@@ -26,6 +26,7 @@
     "rules": "storage.rules"
   },
   "hosting": {
+    "site": "sigparamirim",
     "public": "apps/web/dist",
     "ignore": [
       "firebase.json",

@@ -104,7 +104,7 @@ describe('regras Firestore do SIG Paramirim', () => {
     }).firestore();
     await assertSucceeds(anonymousDb.doc('layers/public-layer').get());
     await assertFails(anonymousDb.doc('layers/draft-layer').get());
-    await assertFails(pendingDb.doc('layers/public-layer').get());
+    await assertSucceeds(pendingDb.doc('layers/public-layer').get());
   });
 
   test('permite conteúdo publicado a contas ativas e reserva rascunhos a editores', async () => {

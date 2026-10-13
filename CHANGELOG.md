@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.62] - 2026-10-13
+
+### Área editorial e catálogo do WebGIS
+
+- a área editorial ganhou uma organização própria para consultar camadas publicadas e acompanhar solicitações de inclusão, atualização e retirada;
+- a tela de cadastro e edição apresenta os campos de publicação de forma mais clara e adaptável a telas menores;
+- administradores podem revisar alterações propostas por editores, com justificativa registrada no histórico;
+- o catálogo informa quando uma camada publicada não pôde ser carregada, ajudando a identificar problemas de acesso aos dados;
+- o endereço principal do Hosting passa a publicar no site `sigparamirim`.
+
 ## [0.3.0-beta.61] - 2026-10-13
 
 ### Ajustes na abertura e no acompanhamento de chamados
