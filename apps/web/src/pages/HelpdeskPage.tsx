@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { UserAvatar } from '../components/UserAvatar';
+import { ThemeDetail } from '../components/ThemeDetail';
 import { useAuth } from '../features/auth';
 import {
   allowedTicketAttachmentTypes,
@@ -278,7 +279,8 @@ export function HelpdeskPage() {
 
   return (
     <section className="helpdesk-page" aria-labelledby="helpdesk-title">
-      <header className="helpdesk-heading">
+      <header className="helpdesk-heading helpdesk-hero">
+        <ThemeDetail className="helpdesk-detail" />
         <div className="helpdesk-heading-copy">
           <span className="eyebrow"><i className="fa-solid fa-headset" /> Central de atendimento</span>
           <h1 id="helpdesk-title">Como podemos ajudar?</h1>

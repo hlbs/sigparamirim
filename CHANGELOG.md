@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.66] - 2026-10-13
+
+### Identidade visual e acervo do Observatório
+
+- removidos os círculos decorativos dos cards verdes do Observatório e da área Editorial; o detalhe gráfico oficial da plataforma foi mantido;
+- a página de Ajuda agora apresenta um card verde de abertura integrado à identidade visual das demais páginas;
+- removido o controle de importação em lote dos seis PDFs, pois os arquivos já foram enviados ao acervo.
+
 ## [0.3.0-beta.65] - 2026-10-13
 
 ### Ajustes visuais do Observatório
