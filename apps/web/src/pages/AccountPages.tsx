@@ -4,6 +4,7 @@ import { AuthLoading } from '../components/AuthLoading';
 import { signOutUser, updateUserProfile, useAuth } from '../features/auth';
 import { UserAvatar } from '../components/UserAvatar';
 import { ThemeDetail } from '../components/ThemeDetail';
+import { migrateLegacyGeospatial, reviewEditorialChange, submitLayerChange, uploadLayerDraft, watchEditorialChanges, watchPublishedLayers, type EditorialChange } from '../features/editorial/service';
 
 export function AccountStatusPage() {
   const { user, loading, canAccessPlatform, accountStatus } = useAuth();
@@ -182,7 +183,137 @@ export function ProfilePage() {
 }
 
 export function EditorialPage() {
-  return <WorkspacePage eyebrow="Fluxo editorial" title="Gestão de conteúdo" description="Prepare alterações em camadas, dashboards e no Acervo Paramirim. Toda publicação segue para validação administrativa." items={['Alterações em rascunho', 'Aguardando aprovação', 'Histórico de decisões']} />;
+  const { user, role } = useAuth();
+  const [requests, setRequests] = useState<EditorialChange[]>([]);
+  const [layers, setLayers] = useState<Array<Record<string, unknown> & { id: string }>>([]);
+  const [operation, setOperation] = useState<'create' | 'update' | 'archive'>('create');
+  const [layerId, setLayerId] = useState('');
+  const [title, setTitle] = useState('');
+  const [group, setGroup] = useState('');
+  const [kind, setKind] = useState<'vector' | 'raster'>('vector');
+  const [crs, setCrs] = useState('EPSG:4674');
+  const [source, setSource] = useState('');
+  const [rasterMin, setRasterMin] = useState('');
+  const [rasterMax, setRasterMax] = useState('');
+  const [noData, setNoData] = useState('');
+  const [styleJson, setStyleJson] = useState('{}');
+  const [summary, setSummary] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [decisionText, setDecisionText] = useState('Revisado e aprovado.');
+
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    let stopChanges: (() => void) | undefined;
+    let stopLayers: (() => void) | undefined;
+    void watchEditorialChanges(user.uid, role === 'admin', (items) => { if (active) setRequests(items); }, (error) => { if (active) setMessage(error.message); })
+      .then((unsubscribe) => { if (active) stopChanges = unsubscribe; else unsubscribe(); });
+    void watchPublishedLayers((items) => { if (active) setLayers(items.filter((item) => item.status === 'published')); }, (error) => { if (active) setMessage(error.message); })
+      .then((unsubscribe) => { if (active) stopLayers = unsubscribe; else unsubscribe(); });
+    return () => { active = false; stopChanges?.(); stopLayers?.(); };
+  }, [user, role]);
+
+  useEffect(() => {
+    if (operation === 'create') { setLayerId(''); setTitle(''); setGroup(''); setSource(''); setRasterMin(''); setRasterMax(''); setNoData(''); setFile(null); return; }
+    const selected = layers.find((layer) => layer.id === layerId);
+    if (!selected) return;
+    setTitle(String(selected.title ?? ''));
+    setGroup(String(selected.group ?? ''));
+    setKind(selected.kind === 'raster' ? 'raster' : 'vector');
+    setCrs(String(selected.crs ?? ''));
+    setSource(String(selected.source ?? ''));
+    setStyleJson(JSON.stringify(selected.styleDefault ?? {}, null, 2));
+    const statistics = selected.statistics && typeof selected.statistics === 'object' ? selected.statistics as Record<string, unknown> : {};
+    setRasterMin(statistics.min === undefined ? '' : String(statistics.min));
+    setRasterMax(statistics.max === undefined ? '' : String(statistics.max));
+    setNoData(selected.noData === undefined ? '' : String(selected.noData));
+    setFile(null);
+  }, [operation, layerId, layers]);
+
+  if (!user) return null;
+  const isAdmin = role === 'admin';
+  const finishChange = async (item: EditorialChange, decision: 'approved' | 'rejected') => {
+    if (decisionText.trim().length < 10) { setMessage('Informe uma justificativa com pelo menos 10 caracteres.'); return; }
+    setBusy(true); setMessage('');
+    try {
+      await reviewEditorialChange({ requestId: item.id, decision, justification: decisionText.trim() });
+      setMessage(decision === 'approved' ? 'Camada aprovada e publicada.' : 'Alteração recusada.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível revisar a alteração.'); }
+    finally { setBusy(false); }
+  };
+  const migrateExistingLayers = async () => {
+    if (!isAdmin || !window.confirm('Migrar as camadas já publicadas para webgis/raster e webgis/vetor no Storage?')) return;
+    setBusy(true); setMessage('Migrando camadas publicadas…');
+    try {
+      const result = await migrateLegacyGeospatial();
+      setMessage(result.migrated ? `Migração concluída: ${result.migrated} camada(s) transferida(s), ${result.skipped} já existentes ou arquivadas.` : 'As camadas já estavam migradas.');
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível migrar o catálogo.'); }
+    finally { setBusy(false); }
+  };
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); setBusy(true); setMessage('');
+    try {
+      const safeId = (operation === 'create' ? layerId || title : layerId).trim().toLocaleLowerCase('en').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+      if (!safeId) throw new Error('Informe o identificador da camada.');
+      if (operation !== 'archive' && (!title.trim() || !group.trim())) throw new Error('Informe o nome e o grupo da camada.');
+      if (operation === 'create' && !file) throw new Error('Selecione o arquivo da camada.');
+      let styleDefault: Record<string, unknown> = {};
+      try { styleDefault = JSON.parse(styleJson || '{}') as Record<string, unknown>; }
+      catch { throw new Error('O estilo deve estar em formato JSON válido.'); }
+      const requestId = crypto.randomUUID();
+      if (file) setMessage('Enviando arquivo para a área de preparação…');
+      const uploaded = file ? { ...await uploadLayerDraft(user.uid, requestId, file), sizeBytes: file.size } : {};
+      setMessage('Registrando alteração…');
+      const selectedLayer = layers.find((item) => item.id === safeId);
+      const layer = operation === 'archive'
+        ? { id: safeId, title: String(selectedLayer?.title ?? title), group: String(selectedLayer?.group ?? group), kind: selectedLayer?.kind === 'raster' ? 'raster' : 'vector' }
+        : { id: safeId, title: title.trim(), group: group.trim(), kind, crs: crs.trim(), source: source.trim(), styleDefault,
+          ...(kind === 'raster' && rasterMin !== '' && rasterMax !== '' ? { statistics: { min: Number(rasterMin), max: Number(rasterMax) } } : {}),
+          ...(kind === 'raster' && noData !== '' ? { noData: Number(noData) } : {}) };
+      const result = await submitLayerChange({
+        requestId, resourceId: safeId, operation,
+        summary: summary.trim() || `${operation === 'create' ? 'Nova camada' : operation === 'update' ? 'Atualização da camada' : 'Remoção da camada'}: ${title || safeId}`,
+        payload: { layer, ...uploaded },
+      });
+      setMessage(result.status === 'approved' ? 'Alteração publicada.' : 'Alteração enviada para aprovação administrativa.');
+      if (operation === 'create') { setLayerId(''); setTitle(''); setGroup(''); setSource(''); setFile(null); }
+    } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível enviar a alteração.'); }
+    finally { setBusy(false); }
+  };
+
+  return <section className="account-page editorial-page">
+    <div className="account-heading"><span className="eyebrow">Fluxo editorial · WebGIS</span><h1>Gestão de camadas</h1><p>Envie ou ajuste camadas. Arquivos ficam em preparação até a aprovação de um administrador; publicações aprovadas são armazenadas no Firebase Storage.</p></div>
+    <form className="editorial-form" onSubmit={(event) => void submit(event)}>
+      <div className="editorial-form-heading"><div><span className="eyebrow">Catálogo de conteúdo</span><h2>{operation === 'create' ? 'Adicionar camada' : operation === 'update' ? 'Editar camada' : 'Remover camada'}</h2></div><div className="editorial-heading-actions">{isAdmin && <button type="button" className="button button-outline" onClick={() => void migrateExistingLayers()} disabled={busy}>Migrar catálogo atual para Storage</button>}<span className="editorial-role-pill">{isAdmin ? 'Publicação administrativa' : 'Aguardará aprovação'}</span></div></div>
+      <div className="editorial-form-grid">
+        <label>Operação<select value={operation} onChange={(event) => setOperation(event.target.value as typeof operation)}><option value="create">Adicionar camada</option><option value="update">Editar camada</option><option value="archive">Remover do catálogo</option></select></label>
+        {operation !== 'create' && <label>Camada<select required value={layerId} onChange={(event) => setLayerId(event.target.value)}><option value="">Selecione</option>{layers.map((layer) => <option value={layer.id} key={layer.id}>{String(layer.title ?? layer.id)}</option>)}</select></label>}
+        {operation !== 'archive' && <>
+          {operation === 'create' && <label>Identificador<input value={layerId} onChange={(event) => setLayerId(event.target.value)} placeholder="ex.: uso-solo-2025" /></label>}
+          <label>Nome da camada<input required value={title} onChange={(event) => setTitle(event.target.value)} /></label>
+          <label>Grupo<input required value={group} onChange={(event) => setGroup(event.target.value)} placeholder="ex.: Hidrografia" /></label>
+          <label>Tipo<select value={kind} onChange={(event) => setKind(event.target.value as typeof kind)}><option value="vector">Vetor GeoJSON</option><option value="raster">Raster GeoTIFF/COG</option></select></label>
+          <label>CRS<input value={crs} onChange={(event) => setCrs(event.target.value)} placeholder="EPSG:4674" /></label>
+          <label>Fonte dos dados<input value={source} onChange={(event) => setSource(event.target.value)} /></label>
+          {kind === 'raster' && <>
+            <label>Valor mínimo observado<input type="number" step="any" value={rasterMin} onChange={(event) => setRasterMin(event.target.value)} /></label>
+            <label>Valor máximo observado<input type="number" step="any" value={rasterMax} onChange={(event) => setRasterMax(event.target.value)} /></label>
+            <label>Valor NoData (opcional)<input type="number" step="any" value={noData} onChange={(event) => setNoData(event.target.value)} /></label>
+          </>}
+          <label className="editorial-wide">Arquivo {operation === 'update' ? '(opcional para manter o arquivo atual)' : ''}<input type="file" accept={kind === 'raster' ? '.tif,.tiff' : '.geojson,.json,application/geo+json,application/json'} required={operation === 'create'} onChange={(event) => setFile(event.target.files?.[0] ?? null)} /></label>
+          <label className="editorial-wide">Estilo padrão (JSON)<textarea rows={3} value={styleJson} onChange={(event) => setStyleJson(event.target.value)} /></label>
+        </>}
+        <label className="editorial-wide">Resumo da alteração<input value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="Opcional; ajuda o administrador a revisar" /></label>
+      </div>
+      <div className="editorial-submit-row"><button type="submit" className="button button-primary" disabled={busy || (operation !== 'create' && !layerId)}>{busy ? 'Processando…' : isAdmin ? 'Salvar publicação' : 'Enviar para aprovação'}</button>{message && <span role="status">{message}</span>}</div>
+    </form>
+    <section className="editorial-requests"><div className="editorial-form-heading"><div><span className="eyebrow">Rastreabilidade</span><h2>{isAdmin ? 'Solicitações de alteração' : 'Minhas alterações'}</h2></div></div>
+      {isAdmin && <label className="editorial-justification">Justificativa da decisão<textarea rows={2} value={decisionText} onChange={(event) => setDecisionText(event.target.value)} /></label>}
+      {requests.length === 0 ? <p className="editorial-empty">Nenhuma solicitação registrada.</p> : requests.map((item) => <article className="editorial-request" key={item.id}><div><strong>{item.summary}</strong><span>{item.resourceType} · {item.resourceId} · {item.status}</span></div>{isAdmin && item.status === 'pending' && <div className="editorial-request-actions"><button type="button" className="button button-primary" disabled={busy} onClick={() => void finishChange(item, 'approved')}>Aprovar e publicar</button><button type="button" className="button button-outline" disabled={busy} onClick={() => void finishChange(item, 'rejected')}>Recusar</button></div>}</article>)}
+    </section>
+  </section>;
 }
 
 export function AdminPage() {

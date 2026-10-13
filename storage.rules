@@ -41,17 +41,19 @@ service firebase.storage {
       allow read: if admin() || (editor() && request.auth.uid == editorUid);
       allow create: if editor()
         && request.auth.uid == editorUid
-        && request.resource.size <= 250 * 1024 * 1024;
+        && request.resource.size <= 1024 * 1024 * 1024;
       allow update, delete: if false;
     }
 
-    match /layers/{layerId}/{revision}/{fileId} {
-      allow read: if active();
+    // Published geospatial files are public data. Only trusted Cloud Functions
+    // write to these paths after an administrator approves a change request.
+    match /webgis/raster/{layerId}/{revision}/{fileId} {
+      allow read: if true;
       allow write: if false;
     }
 
-    match /publications/{publicationId}/{revision}/{fileId} {
-      allow read: if active();
+    match /webgis/vetor/{layerId}/{revision}/{fileId} {
+      allow read: if true;
       allow write: if false;
     }
 
@@ -65,4 +67,3 @@ service firebase.storage {
     }
   }
 }
-

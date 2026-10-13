@@ -58,7 +58,7 @@ service cloud.firestore {
     }
 
     match /layers/{layerId} {
-      allow read: if active() && (published() || editor());
+      allow read: if published() || resource.data.status == 'archived' || (active() && editor());
       allow write: if false;
     }
 

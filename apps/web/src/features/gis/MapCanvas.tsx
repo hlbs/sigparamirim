@@ -44,7 +44,7 @@ export type MapLayerDefinition = {
   sizeBytes?: number; featureCount?: number; geometryTypes?: Record<string, number>; crs?: string;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
   palette?: string;
-  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string };
+  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string; stroke?: string; fill?: string; strokeWidth?: number; pointRadius?: number };
   /** Interactive display range; defaults to p2–p98 and affects colors, not source values. */
   range?: RasterRange;
   /** Per-layer vector symbology supplied by the layer controls. */

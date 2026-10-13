@@ -5,6 +5,8 @@ import { PrintMapDialog } from '../features/gis/PrintMapDialog';
 import { vectorGeometrySymbol } from '../features/gis/printLegendSymbol';
 import { useDraggableMapPanel } from '../features/gis/useDraggableMapPanel';
 import { useAuth } from '../features/auth';
+import { firebase } from '../lib/firebase';
+import { watchPublishedLayers } from '../features/editorial/service';
 
 type CatalogLayer = {
   id: string;
@@ -23,7 +25,7 @@ type CatalogLayer = {
   width?: number;
   height?: number;
   statistics?: { min?: number; max?: number; p2?: number; p98?: number };
-  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string };
+  styleDefault?: { palette?: string; colorInterpolation?: string; classificationMethod?: string; classCount?: number; resamplingMethod?: string; resamplingKernel?: string; noDataColor?: string; stroke?: string; fill?: string; strokeWidth?: number; pointRadius?: number };
   noData?: number;
   visibleByDefault?: boolean;
 };
@@ -210,10 +212,59 @@ export function MapPage() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!firebase.app) return;
+    let active = true;
+    let generation = 0;
+    let unsubscribe: (() => void) | undefined;
+    void watchPublishedLayers((documents) => {
+      const currentGeneration = ++generation;
+      const archivedIds = new Set(documents.filter((document) => document.status === 'archived').map((document) => document.id));
+      void Promise.all(documents.filter((document) => document.status === 'published').map(async (document): Promise<CatalogLayer | null> => {
+        const storagePath = document.storagePath;
+        if (typeof storagePath !== 'string') return null;
+        try {
+          const { getDownloadURL, getStorage, ref } = await import('firebase/storage');
+          const storage = getStorage(firebase.app!);
+          const url = await getDownloadURL(ref(storage, storagePath));
+          const kind = document.kind === 'raster' ? 'raster' : 'vector';
+          return {
+            id: document.id,
+            title: String(document.title ?? document.id),
+            group: String(document.group ?? 'Sem grupo definido no catálogo'),
+            status: 'present', kind, url,
+            crs: typeof document.crs === 'string' ? document.crs : undefined,
+            source: typeof document.source === 'string' ? document.source : undefined,
+            sizeBytes: typeof document.sizeBytes === 'number' ? document.sizeBytes : undefined,
+            width: typeof document.width === 'number' ? document.width : undefined,
+            height: typeof document.height === 'number' ? document.height : undefined,
+            featureCount: typeof document.featureCount === 'number' ? document.featureCount : undefined,
+            geometryTypes: document.geometryTypes as Record<string, number> | undefined,
+            statistics: document.statistics as CatalogLayer['statistics'],
+            styleDefault: document.styleDefault as CatalogLayer['styleDefault'],
+            noData: typeof document.noData === 'number' ? document.noData : undefined,
+            visibleByDefault: Boolean(document.visibleByDefault),
+          };
+        } catch {
+          return null;
+        }
+      })).then((published) => {
+        if (!active || currentGeneration !== generation) return;
+        const publishedLayers = published.filter((layer): layer is CatalogLayer => layer !== null);
+        setCatalog((current) => {
+          const byId = new Map(current.filter((layer) => !archivedIds.has(layer.id)).map((layer) => [layer.id, layer]));
+          publishedLayers.forEach((layer) => byId.set(layer.id, layer));
+          return [...byId.values()];
+        });
+      });
+    }, () => undefined).then((stop) => { if (active) unsubscribe = stop; else stop(); });
+    return () => { active = false; unsubscribe?.(); };
+  }, []);
+
   const featureLayers = useMemo(() => catalog.filter((layer) => layer.status === 'present'), [catalog]);
   const selectedLayers = useMemo<Array<MapLayerDefinition & { crs?: string }>>(() => featureLayers
     .filter((layer) => selectedIds.includes(layer.id) && layer.url)
-    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, sizeBytes: layer.sizeBytes, featureCount: layer.featureCount, geometryTypes: layer.geometryTypes, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id], fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : undefined } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
+    .map((layer) => ({ id: layer.id, title: layer.title, url: layer.url as string, kind: layer.kind, group: layer.group, crs: layer.crs, sizeBytes: layer.sizeBytes, featureCount: layer.featureCount, geometryTypes: layer.geometryTypes, statistics: layer.statistics, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette, styleDefault: { ...layer.styleDefault, palette: rasterPalette[layer.id] ?? layer.styleDefault?.palette }, noData: layer.noData, opacity: opacity[layer.id] ?? (layer.kind === 'raster' ? 0.82 : 1), range: layer.kind === 'raster' ? (rasterRanges[layer.id] ?? { min: layer.statistics?.p2 ?? layer.statistics?.min ?? 0, max: layer.statistics?.p98 ?? layer.statistics?.max ?? 1 }) : undefined, vectorStyle: layer.kind === 'vector' ? { stroke: vectorColor[layer.id] ?? layer.styleDefault?.stroke, fill: vectorColor[layer.id] ? `${vectorColor[layer.id]}33` : layer.styleDefault?.fill, strokeWidth: layer.styleDefault?.strokeWidth, pointRadius: layer.styleDefault?.pointRadius } : undefined, featureFilter: vectorFilters[layer.id], identifyEnabled: identifyEnabled[layer.id] ?? layer.kind === 'vector' })), [featureLayers, identifyEnabled, opacity, rasterPalette, rasterRanges, selectedIds, vectorColor, vectorFilters]);
   const filteredCatalog = useMemo(() => catalog.filter((layer) => {
     if (layer.status !== 'present' || !layer.url) return false;
     const matchesSearch = `${layer.title} ${layer.group}`.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR'));

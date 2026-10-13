@@ -142,7 +142,9 @@ Todos os documentos terão schema, versão, timestamps de servidor e campos de a
 ## 7. Limites de segurança
 
 - Regras do Storage não podem consultar o banco nomeado; autorização de arquivos usará UID, claims, caminhos seguros, metadados imutáveis e promoção administrativa via Admin SDK.
-- Uploads entram em `staging`, passam por validação e somente são promovidos após aprovação.
+- Arquivos geoespaciais publicados usam os prefixos `webgis/raster/{layerId}/{revision}/` e `webgis/vetor/{layerId}/{revision}/`; leitura é pública e escrita por clientes é bloqueada.
+- Uploads de editores entram em `staging/{uid}/{requestId}/`; a aprovação de administrador promove o arquivo, atualiza `layers/{layerId}` e registra o histórico. Publicações administrativas são diretas e auditadas.
+- A migração inicial das camadas existentes é uma ação administrativa única, transmitida do Hosting ao Storage sem carregar os arquivos inteiros na memória da função.
 - App Check com reCAPTCHA Enterprise deve começar em observação e migrar para enforcement após análise.
 - Functions acionadas por eventos serão idempotentes porque a entrega pode ocorrer mais de uma vez e fora de ordem.
 - Segredos backend ficarão no Secret Manager. Arquivos `.env` reais jamais serão versionados; apenas `.env.example` sem valores reais será permitido.

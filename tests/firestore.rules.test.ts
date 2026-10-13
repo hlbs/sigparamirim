@@ -50,6 +50,10 @@ beforeEach(async () => {
       db.doc('users/other-user/notifications/notice-other').set({ title: 'Aviso privado', readAt: null }),
     ]);
   });
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await context.storage().ref('webgis/vetor/layer-1/1/data.geojson')
+      .putString('{}', 'raw', { contentType: 'application/geo+json' });
+  });
 });
 
 describe('regras Storage do SIG Paramirim', () => {
@@ -76,11 +80,13 @@ describe('regras Storage do SIG Paramirim', () => {
       .putString('{}', 'raw', { contentType: 'application/geo+json' }));
   });
 
-  test('nenhum cliente altera arquivos canônicos de camadas', async () => {
+  test('dados publicados são públicos e apenas a função publica arquivos canônicos', async () => {
+    const anonymousStorage = environment.unauthenticatedContext().storage();
     const adminStorage = environment.authenticatedContext('admin-a', {
       role: 'admin', accountStatus: 'active',
     }).storage();
-    await assertFails(adminStorage.ref('layers/layer-1/revision-1/data.geojson')
+    await assertSucceeds(anonymousStorage.ref('webgis/vetor/layer-1/1/data.geojson').getDownloadURL());
+    await assertFails(adminStorage.ref('webgis/vetor/layer-1/1/data.geojson')
       .putString('{}', 'raw', { contentType: 'application/geo+json' }));
   });
 });
@@ -90,12 +96,13 @@ afterAll(async () => {
 });
 
 describe('regras Firestore do SIG Paramirim', () => {
-  test('bloqueia conteúdo para anônimos e contas ainda não ativas', async () => {
+  test('permite leitura pública das camadas publicadas e bloqueia rascunhos', async () => {
     const anonymousDb = environment.unauthenticatedContext().firestore();
     const pendingDb = environment.authenticatedContext('alice', {
       role: 'user', accountStatus: 'pending',
     }).firestore();
-    await assertFails(anonymousDb.doc('layers/public-layer').get());
+    await assertSucceeds(anonymousDb.doc('layers/public-layer').get());
+    await assertFails(anonymousDb.doc('layers/draft-layer').get());
     await assertFails(pendingDb.doc('layers/public-layer').get());
   });
 

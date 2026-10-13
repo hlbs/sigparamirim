@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.57] - 2026-10-13
+
+### Publicação de camadas no WebGIS
+
+- camadas vetoriais e rasters aprovadas passam a ter destino organizado no Firebase Storage: `webgis/vetor` e `webgis/raster`;
+- editores podem enviar GeoJSON e GeoTIFF/COG e propor inclusão, atualização, estilo padrão ou retirada de camadas; essas mudanças só aparecem no mapa após aprovação administrativa;
+- administradores podem publicar alterações diretamente, e o histórico editorial registra o resultado;
+- as camadas publicadas são carregadas pelo catálogo em tempo real; uma ferramenta de migração das camadas existentes também foi adicionada.
+- para preservar o desempenho, o envio de arquivos grandes é retomável e os rasters continuam preparados como COG no fluxo de migração.
+
 ## [0.3.0-beta.56] - 2026-10-09
 
 ### Central de atendimento e notificações
