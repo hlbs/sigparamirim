@@ -101,7 +101,7 @@
 }
 
 /* Central administrativa: governança real dentro do sistema visual institucional. */
-.admin-page { display: grid; gap: 22px; }
+.account-page.admin-page { display: grid; width: 100%; max-width: 1480px; gap: 22px; margin-inline: auto; }
 .admin-hero { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 24px; align-items: center; overflow: hidden; min-height: 280px; padding: clamp(26px, 3.4vw, 44px); border-radius: 26px; color: #fffef4; background: linear-gradient(116deg, #4b5008 0%, #717819 100%); box-shadow: 0 18px 42px rgb(52 56 5 / 16%); }
 .admin-hero > *:not(.theme-detail) { position: relative; z-index: 1; }
 .admin-hero .theme-detail { position: absolute; z-index: 0; inset: 0; width: 100%; height: 100%; pointer-events: none; }

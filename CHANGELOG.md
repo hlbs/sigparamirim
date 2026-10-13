@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.70] - 2026-10-13
+
+### Padronização das margens da Administração
+
+- a página de Administração agora usa a mesma largura útil e o mesmo recuo lateral das demais páginas institucionais;
+- a diretriz de manter os contêineres centralizados e os espaçamentos consistentes foi registrada para as próximas páginas e ajustes.
+
 ## [0.3.0-beta.69] - 2026-10-13
 
 ### Central de administração
