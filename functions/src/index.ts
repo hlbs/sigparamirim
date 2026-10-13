@@ -93,7 +93,7 @@ function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
 export const healthcheck = onCall({ enforceAppCheck: appCheckEnabled }, (request) => {
   const auth = requireAuthentication(request.auth);
   logger.info('Verificação de integridade concluída.', { uid: auth.uid });
-  return { status: 'ok', version: '0.3.0-beta.57' };
+  return { status: 'ok', version: '0.3.0-beta.58' };
 });
 
 export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
@@ -467,4 +467,4 @@ async function publishApprovedLayer(changeRequest: Record<string, unknown>, _req
   if (stagedSource) await stagedSource.delete({ ignoreNotFound: true });
 }
 
-export { createTicket, replyToTicket, updateTicketStatus } from './helpdesk.js';
+export { createTicket, migrateLegacyTicketPriorities, replyToTicket, updateTicketPriority, updateTicketStatus } from './helpdesk.js';

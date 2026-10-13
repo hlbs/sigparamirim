@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { UserAvatar } from '../components/UserAvatar';
 import { useAuth } from '../features/auth';
 import {
   createTicket,
+  migrateLegacyTicketPriorities,
   replyToTicket,
+  updateTicketPriority,
   updateTicketStatus,
   watchTicketEvents,
   watchTicketMessages,
+  watchTicketPriorities,
   watchTickets,
   type TicketCategory,
   type TicketEvent,
@@ -70,6 +74,7 @@ export function HelpdeskPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const ticketParam = searchParams.get('ticket');
   const [tickets, setTickets] = useState<TicketRecord[]>([]);
+  const [priorities, setPriorities] = useState<Record<string, TicketPriority>>({});
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [events, setEvents] = useState<TicketEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,7 +86,7 @@ export function HelpdeskPage() {
   const [ticketError, setTicketError] = useState('');
   const [busy, setBusy] = useState(false);
   const [streamError, setStreamError] = useState('');
-  const [draftTicket, setDraftTicket] = useState({ subject: '', category: 'other' as TicketCategory, priority: 'normal' as TicketPriority, message: '' });
+  const [draftTicket, setDraftTicket] = useState({ subject: '', category: 'other' as TicketCategory, message: '' });
   const messageEndRef = useRef<HTMLDivElement>(null);
   const selectedTicket = tickets.find((ticket) => ticket.id === ticketParam) ?? null;
 
@@ -105,6 +110,30 @@ export function HelpdeskPage() {
       if (disposed) return;
       setStreamError(errorMessage(error));
       setLoading(false);
+    });
+    return () => { disposed = true; stop?.(); };
+  }, [isAdmin, user]);
+
+  useEffect(() => {
+    if (!user || !isAdmin) {
+      setPriorities({});
+      return undefined;
+    }
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void migrateLegacyTicketPriorities().catch((error: unknown) => {
+      if (!disposed) setStreamError(errorMessage(error));
+    });
+    void watchTicketPriorities((items) => {
+      if (disposed) return;
+      setPriorities(Object.fromEntries(items.map((item) => [item.id, item.priority])));
+    }, (error) => {
+      if (!disposed) setStreamError(errorMessage(error));
+    }).then((unsubscribe) => {
+      if (disposed) unsubscribe();
+      else stop = unsubscribe;
+    }).catch((error: unknown) => {
+      if (!disposed) setStreamError(errorMessage(error));
     });
     return () => { disposed = true; stop?.(); };
   }, [isAdmin, user]);
@@ -164,9 +193,9 @@ export function HelpdeskPage() {
     if (busy) return;
     setBusy(true); setTicketError('');
     try {
-      const result = await createTicket(draftTicket);
+      const result = await createTicket({ ...draftTicket, subject: draftTicket.subject.trim(), message: draftTicket.message.trim() });
       setShowCreate(false);
-      setDraftTicket({ subject: '', category: 'other', priority: 'normal', message: '' });
+      setDraftTicket({ subject: '', category: 'other', message: '' });
       selectTicket(result.ticketId);
     } catch (error) { setTicketError(errorMessage(error)); }
     finally { setBusy(false); }
@@ -188,6 +217,15 @@ export function HelpdeskPage() {
     setBusy(true); setTicketError('');
     try { await updateTicketStatus({ ticketId: selectedTicket.id, status }); }
     catch (error) { setTicketError(errorMessage(error)); }
+    finally { setBusy(false); }
+  };
+
+  const changePriority = async (priority: TicketPriority) => {
+    if (!selectedTicket || !isAdmin || busy) return;
+    setBusy(true); setTicketError('');
+    try {
+      await updateTicketPriority({ ticketId: selectedTicket.id, priority });
+    } catch (error) { setTicketError(errorMessage(error)); }
     finally { setBusy(false); }
   };
 
@@ -236,7 +274,7 @@ export function HelpdeskPage() {
               <button type="button" key={ticket.id} className={`helpdesk-ticket-card ${ticket.id === ticketParam ? 'selected' : ''}`} onClick={() => selectTicket(ticket.id)}>
                 <div className="helpdesk-ticket-card-top"><span>{ticketLabel(ticket.id)}</span><span className={`helpdesk-status status-${ticket.status}`}>{statuses[ticket.status]}</span></div>
                 <strong>{ticket.subject}</strong>
-                <div className="helpdesk-ticket-card-meta"><span>{categories[ticket.category]}</span>{ticket.priority === 'high' && <span className="helpdesk-priority"><i className="fa-solid fa-bolt" /> Prioritário</span>}</div>
+                <div className="helpdesk-ticket-card-meta"><span>{categories[ticket.category]}</span>{isAdmin && priorities[ticket.id] === 'high' && <span className="helpdesk-priority"><i className="fa-solid fa-bolt" /> Prioritário</span>}</div>
                 <div className="helpdesk-ticket-card-bottom"><span>{isAdmin ? ticket.ownerName : formatDate(ticket.updatedAt)}</span><span><i className="fa-regular fa-message" /> {ticket.messageCount}</span></div>
               </button>
             ))}
@@ -251,9 +289,9 @@ export function HelpdeskPage() {
               <div className="helpdesk-conversation-title"><div className="helpdesk-conversation-id">{ticketLabel(selectedTicket.id)} <span>·</span> {categories[selectedTicket.category]}</div><h2>{selectedTicket.subject}</h2><p>{isAdmin ? `Solicitado por ${selectedTicket.ownerName}${selectedTicket.ownerEmail ? ` · ${selectedTicket.ownerEmail}` : ''}` : `Aberto em ${formatDate(selectedTicket.createdAt)}`}</p></div>
               <span className={`helpdesk-status status-${selectedTicket.status}`}>{statuses[selectedTicket.status]}</span>
             </header>
-            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><label>Estado<select value={selectedTicket.status} disabled={busy} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{statusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div>}
+            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><div className="helpdesk-admin-controls"><label>Prioridade<select value={priorities[selectedTicket.id] ?? 'normal'} disabled={busy} onChange={(event) => void changePriority(event.target.value as TicketPriority)}><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Estado<select value={selectedTicket.status} disabled={busy} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{statusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div></div>}
             <div className="helpdesk-conversation-scroll">
-              <div className="helpdesk-opened-note"><span><i className="fa-solid fa-paper-plane" /></span><div><strong>Chamado recebido</strong><small>{formatDate(selectedTicket.createdAt)}{selectedTicket.priority === 'high' ? ' · Prioridade alta' : ''}</small></div></div>
+              <div className="helpdesk-opened-note"><span><i className="fa-solid fa-paper-plane" /></span><div><strong>Chamado recebido</strong><small>{formatDate(selectedTicket.createdAt)}</small></div></div>
               {detailLoading && <div className="helpdesk-list-state"><span className="loading-spinner" />Carregando histórico…</div>}
               {!detailLoading && messages.map((message) => {
                 const ownMessage = message.authorUid === user?.uid;
@@ -285,7 +323,7 @@ export function HelpdeskPage() {
         </main>
       </div>
 
-      {showCreate && <div className="helpdesk-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !busy) setShowCreate(false); }}>
+      {showCreate && createPortal(<div className="helpdesk-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target && !busy) setShowCreate(false); }}>
         <section className="helpdesk-create-modal" role="dialog" aria-modal="true" aria-labelledby="helpdesk-create-title">
           <button type="button" className="helpdesk-modal-close" onClick={() => setShowCreate(false)} disabled={busy} aria-label="Fechar formulário"><i className="fa-solid fa-xmark" /></button>
           <span className="eyebrow"><i className="fa-solid fa-headset" /> Novo atendimento</span>
@@ -293,13 +331,13 @@ export function HelpdeskPage() {
           <p>Informe o assunto e os detalhes. Você poderá acompanhar as respostas pelo histórico e pelas notificações.</p>
           <form onSubmit={(event) => void submitTicket(event)}>
             <label>Assunto<input required minLength={5} maxLength={140} value={draftTicket.subject} onChange={(event) => setDraftTicket((current) => ({ ...current, subject: event.target.value }))} placeholder="Ex.: Não consigo visualizar uma camada" /></label>
-            <div className="helpdesk-form-row"><label>Categoria<select value={draftTicket.category} onChange={(event) => setDraftTicket((current) => ({ ...current, category: event.target.value as TicketCategory }))}>{Object.entries(categories).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label><label>Prioridade<select value={draftTicket.priority} onChange={(event) => setDraftTicket((current) => ({ ...current, priority: event.target.value as TicketPriority }))}><option value="normal">Normal</option><option value="high">Alta</option></select></label></div>
+            <label>Categoria<select value={draftTicket.category} onChange={(event) => setDraftTicket((current) => ({ ...current, category: event.target.value as TicketCategory }))}>{Object.entries(categories).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
             <label>Descrição<textarea required minLength={20} maxLength={5000} rows={6} value={draftTicket.message} onChange={(event) => setDraftTicket((current) => ({ ...current, message: event.target.value }))} placeholder="Descreva o que aconteceu, o que você esperava e, se possível, os passos para reproduzir." /><small>{draftTicket.message.length.toLocaleString('pt-BR')} / 5.000 caracteres</small></label>
             {ticketError && <div className="helpdesk-inline-error" role="alert">{ticketError}</div>}
             <div className="helpdesk-modal-actions"><button type="button" className="button button-outline" disabled={busy} onClick={() => setShowCreate(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={busy || draftTicket.subject.trim().length < 5 || draftTicket.message.trim().length < 20}><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} /> {busy ? 'Enviando chamado…' : 'Enviar chamado'}</button></div>
           </form>
         </section>
-      </div>}
+      </div>, document.body)}
     </section>
   );
 }

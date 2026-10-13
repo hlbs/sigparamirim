@@ -44,6 +44,7 @@ beforeEach(async () => {
       db.doc('auditLogs/event-1').set({ type: 'test' }),
       db.doc('tickets/ticket-own').set({ ownerUid: 'active-user', status: 'open' }),
       db.doc('tickets/ticket-other').set({ ownerUid: 'other-user', status: 'open' }),
+      db.doc('ticketManagement/ticket-own').set({ priority: 'high' }),
       db.doc('tickets/ticket-own/messages/message-1').set({ body: 'Solicitação inicial' }),
       db.doc('tickets/ticket-own/events/event-1').set({ action: 'created' }),
       db.doc('users/active-user/notifications/notice-own').set({ title: 'Atualização do atendimento', readAt: null }),
@@ -174,6 +175,23 @@ describe('regras Firestore do SIG Paramirim', () => {
     await assertSucceeds(adminDb.doc('tickets/ticket-other').get());
     await assertFails(ownerDb.doc('tickets/ticket-own').update({ status: 'closed' }));
     await assertFails(ownerDb.doc('tickets/ticket-own/messages/message-2').set({ body: 'Resposta direta' }));
+  });
+
+  test('prioridade dos chamados é legível somente por gestores', async () => {
+    const ownerDb = environment.authenticatedContext('active-user', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    const editorDb = environment.authenticatedContext('editor-a', {
+      role: 'editor', accountStatus: 'active',
+    }).firestore();
+    const adminDb = environment.authenticatedContext('admin-a', {
+      role: 'admin', accountStatus: 'active',
+    }).firestore();
+
+    await assertFails(ownerDb.doc('ticketManagement/ticket-own').get());
+    await assertFails(editorDb.doc('ticketManagement/ticket-own').get());
+    await assertSucceeds(adminDb.doc('ticketManagement/ticket-own').get());
+    await assertFails(adminDb.doc('ticketManagement/ticket-own').update({ priority: 'normal' }));
   });
 
   test('notificações são privadas e o usuário pode marcar somente readAt', async () => {

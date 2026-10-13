@@ -1,4 +1,4 @@
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldPath, FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
@@ -12,12 +12,12 @@ const categorySchema = z.enum(['access', 'map', 'data', 'dashboard', 'bug', 'oth
 const createTicketSchema = z.object({
   subject: z.string().trim().min(5).max(140),
   category: categorySchema,
-  priority: prioritySchema,
   message: z.string().trim().min(20).max(5_000),
 });
 const ticketIdSchema = z.string().trim().min(1).max(160);
 const replySchema = z.object({ ticketId: ticketIdSchema, message: z.string().trim().min(2).max(5_000) });
 const statusSchema = z.object({ ticketId: ticketIdSchema, status: ticketStatusSchema });
+const priorityUpdateSchema = z.object({ ticketId: ticketIdSchema, priority: prioritySchema });
 
 type Actor = { uid: string; role: z.infer<typeof roleSchema>; name: string; email: string };
 type TicketStatus = z.infer<typeof ticketStatusSchema>;
@@ -68,6 +68,7 @@ export const createTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstan
   const input = parse(createTicketSchema, request.data);
   const db = getDb();
   const ticketRef = db.collection('tickets').doc();
+  const managementRef = db.collection('ticketManagement').doc(ticketRef.id);
   const messageRef = ticketRef.collection('messages').doc();
   const eventRef = ticketRef.collection('events').doc();
   const admins = await getActiveAdmins(db);
@@ -81,12 +82,16 @@ export const createTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstan
     ownerEmail: actor.email,
     subject: input.subject,
     category: input.category,
-    priority: input.priority,
     status: 'open',
     messageCount: 1,
     createdAt: now,
     updatedAt: now,
     lastMessageAt: now,
+  });
+  batch.create(managementRef, {
+    priority: 'normal',
+    updatedAt: now,
+    updatedByUid: actor.uid,
   });
   batch.create(messageRef, {
     authorUid: actor.uid,
@@ -114,6 +119,73 @@ export const createTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstan
   await batch.commit();
   logger.info('Chamado criado.', { ticketId: ticketRef.id, ownerUid: actor.uid, category: input.category });
   return { ticketId: ticketRef.id, status: 'open' as const };
+});
+
+export const updateTicketPriority = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
+  const actor = await requireActiveActor(request.auth);
+  if (actor.role !== 'admin') throw new HttpsError('permission-denied', 'Somente gestores podem classificar a prioridade dos chamados.');
+  const input = parse(priorityUpdateSchema, request.data);
+  const db = getDb();
+  const ticketRef = db.collection('tickets').doc(input.ticketId);
+  const managementRef = db.collection('ticketManagement').doc(input.ticketId);
+  const auditRef = db.collection('auditLogs').doc();
+
+  await db.runTransaction(async (transaction) => {
+    const [ticket, management] = await Promise.all([transaction.get(ticketRef), transaction.get(managementRef)]);
+    if (!ticket.exists) throw new HttpsError('not-found', 'Chamado não encontrado.');
+    const previousPriority = prioritySchema.catch('normal').parse(management.get('priority') ?? ticket.get('priority'));
+    if (previousPriority === input.priority) return;
+    transaction.set(managementRef, {
+      priority: input.priority,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedByUid: actor.uid,
+    }, { merge: true });
+    transaction.update(ticketRef, { priority: FieldValue.delete() });
+    transaction.create(auditRef, {
+      type: 'ticket.priority_changed',
+      resourceType: 'ticket',
+      resourceId: input.ticketId,
+      actorUid: actor.uid,
+      actorName: actor.name,
+      previousPriority,
+      priority: input.priority,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  });
+  return { ticketId: input.ticketId, priority: input.priority };
+});
+
+export const migrateLegacyTicketPriorities = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 2, timeoutSeconds: 300 }, async (request) => {
+  const actor = await requireActiveActor(request.auth);
+  if (actor.role !== 'admin') throw new HttpsError('permission-denied', 'Somente gestores podem executar a migração da triagem.');
+  const db = getDb();
+  let migrated = 0;
+  let lastDocument: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+
+  while (true) {
+    let query = db.collection('tickets')
+      .where('priority', 'in', ['normal', 'high'])
+      .orderBy(FieldPath.documentId())
+      .limit(400);
+    if (lastDocument) query = query.startAfter(lastDocument);
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
+    const batch = db.batch();
+    snapshot.docs.forEach((ticket) => {
+      batch.set(db.collection('ticketManagement').doc(ticket.id), {
+        priority: prioritySchema.catch('normal').parse(ticket.get('priority')),
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedByUid: actor.uid,
+      }, { merge: true });
+      batch.update(ticket.ref, { priority: FieldValue.delete() });
+    });
+    await batch.commit();
+    migrated += snapshot.size;
+    lastDocument = snapshot.docs.at(-1);
+    if (snapshot.size < 400) break;
+  }
+  logger.info('Triagem antiga de chamados migrada para área restrita.', { migrated, actorUid: actor.uid });
+  return { migrated };
 });
 
 export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {

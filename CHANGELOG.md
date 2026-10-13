@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.58] - 2026-10-13
+
+### Ajustes na central de atendimento
+
+- corrigido o botão de abertura de chamado: o formulário agora aparece acima do restante da plataforma e informa o resultado do envio;
+- chamados novos recebem prioridade normal automaticamente, sem pedir que o solicitante classifique a urgência;
+- a prioridade pode ser consultada e alterada apenas por administradores, em área protegida separada das conversas;
+- prioridades registradas anteriormente são transferidas para essa área restrita ao abrir a central como administrador.
+
 ## [0.3.0-beta.57] - 2026-10-13
 
 ### Publicação de camadas no WebGIS

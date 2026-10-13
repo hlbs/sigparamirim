@@ -11,7 +11,6 @@ export type TicketRecord = {
   ownerEmail: string;
   subject: string;
   category: TicketCategory;
-  priority: TicketPriority;
   status: TicketStatus;
   messageCount: number;
   lastMessagePreview?: string;
@@ -19,6 +18,7 @@ export type TicketRecord = {
   updatedAt?: unknown;
   lastMessageAt?: unknown;
 };
+export type TicketPriorityRecord = { id: string; priority: TicketPriority };
 export type TicketMessage = {
   id: string;
   authorUid: string;
@@ -66,6 +66,16 @@ export async function watchTickets(
   }, (error) => onError(error));
 }
 
+export async function watchTicketPriorities(
+  onPriorities: (priorities: TicketPriorityRecord[]) => void,
+  onError: (error: Error) => void,
+): Promise<Unsubscribe> {
+  const [{ collection, onSnapshot }, db] = await Promise.all([import('firebase/firestore'), getDatabase()]);
+  return onSnapshot(collection(db, 'ticketManagement'), (snapshot) => {
+    onPriorities(snapshot.docs.map((document) => ({ id: document.id, ...document.data() }) as TicketPriorityRecord));
+  }, onError);
+}
+
 export async function watchTicketMessages(
   ticketId: string,
   onMessages: (messages: TicketMessage[]) => void,
@@ -90,10 +100,22 @@ export async function watchTicketEvents(
   }, onError);
 }
 
-export async function createTicket(input: { subject: string; category: TicketCategory; priority: TicketPriority; message: string }) {
+export async function createTicket(input: { subject: string; category: TicketCategory; message: string }) {
   const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
   const callable = httpsCallable<typeof input, { ticketId: string; status: TicketStatus }>(functions, 'createTicket');
   return (await callable(input)).data;
+}
+
+export async function updateTicketPriority(input: { ticketId: string; priority: TicketPriority }) {
+  const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
+  const callable = httpsCallable<typeof input, { ticketId: string; priority: TicketPriority }>(functions, 'updateTicketPriority');
+  return (await callable(input)).data;
+}
+
+export async function migrateLegacyTicketPriorities() {
+  const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
+  const callable = httpsCallable<void, { migrated: number }>(functions, 'migrateLegacyTicketPriorities', { timeout: 300_000 });
+  return (await callable()).data;
 }
 
 export async function replyToTicket(input: { ticketId: string; message: string }) {
