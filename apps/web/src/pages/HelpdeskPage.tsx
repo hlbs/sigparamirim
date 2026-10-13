@@ -282,11 +282,10 @@ export function HelpdeskPage() {
       <header className="helpdesk-heading helpdesk-hero">
         <ThemeDetail className="helpdesk-detail" />
         <div className="helpdesk-heading-copy">
-          <span className="eyebrow"><i className="fa-solid fa-headset" /> Central de atendimento</span>
           <h1 id="helpdesk-title">Como podemos ajudar?</h1>
           <p>Abra um chamado e acompanhe cada resposta e atualização em um só lugar.</p>
         </div>
-        <button className="button button-primary helpdesk-new-button" type="button" onClick={openTicketForm}>
+        <button className="button button-primary brand-hero-action helpdesk-new-button" type="button" onClick={openTicketForm}>
           <i className="fa-solid fa-plus" /> Novo chamado
         </button>
         <div className="helpdesk-stats" aria-label="Resumo dos chamados">

@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.68] - 2026-10-13
+
+### Refinamento dos heros institucionais
+
+- os textos de identificação acima dos títulos foram retirados do Observatório, da Ajuda e da área Editorial;
+- indicadores dessas páginas agora compartilham o mesmo tamanho, tipografia e alinhamento central;
+- os botões de ação dos heros seguem uma única escala de altura, fonte, cor e animação;
+- o hero do perfil ficou mais compacto, ganhou espaço antes do conteúdo seguinte e o botão de saída recebeu o mesmo estilo dos demais;
+- o detalhe gráfico ficou mais visível no tema claro e passou a ter opacidade uniforme no tema escuro.
+
 ## [0.3.0-beta.67] - 2026-10-13
 
 ### Padronização visual dos heros

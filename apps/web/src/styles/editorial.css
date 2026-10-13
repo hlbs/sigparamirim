@@ -28,7 +28,6 @@
 }
 
 .editorial-hero-copy, .editorial-hero-actions, .editorial-metrics { position: relative; z-index: 1; }
-.editorial-detail { opacity: .14; }
 .editorial-hero-copy { align-self: center; max-width: 760px; }
 .editorial-kicker, .editorial-section-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: .65rem; font-weight: 850; letter-spacing: .14em; }
 .editorial-kicker { color: #e6e8ae; }

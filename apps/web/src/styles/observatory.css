@@ -23,7 +23,6 @@
   box-shadow: 0 22px 55px rgb(45 49 8 / 15%);
 }
 .observatory-hero-copy { position: relative; z-index: 1; max-width: 850px; }
-.observatory-detail { opacity: .18; }
 .observatory-kicker, .observatory-eyebrow { display: inline-flex; align-items: center; gap: 8px; color: #e3e987; font-size: .67rem; font-weight: 820; letter-spacing: .15em; text-transform: uppercase; }
 .observatory-hero h1 { max-width: 780px; margin: 16px 0 10px; font-size: clamp(2.15rem, 4.5vw, 4rem); letter-spacing: -.065em; line-height: 1.02; }
 .observatory-hero-copy > p { max-width: 690px; margin: 0; color: rgb(255 255 255 / 81%); font-size: clamp(.87rem, 1.3vw, 1.02rem); line-height: 1.65; }

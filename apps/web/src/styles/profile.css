@@ -25,7 +25,6 @@
 .profile-heading { margin-bottom: 24px; }
 .profile-hero { position: relative; isolation: isolate; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 24px; min-height: 205px; overflow: hidden; padding: clamp(24px, 4vw, 42px); border: 0; border-radius: 28px; background: radial-gradient(ellipse at 94% 4%, rgb(239 242 180 / 17%), transparent 38%), linear-gradient(128deg, #414608 0%, #62680b 61%, #74791a 100%); color: #fbfcef; box-shadow: 0 22px 55px rgb(45 49 8 / 17%); }
 .profile-hero > :not(.profile-detail) { position: relative; z-index: 1; }
-.profile-detail { opacity: .18; }
 .profile-hero-avatar { position: relative; }
 .profile-avatar-edit { position: relative; display: block; padding: 0; border: 0; border-radius: 50%; background: transparent; cursor: pointer; }
 .profile-avatar-edit::after { position: absolute; inset: 0; border: 3px solid transparent; border-radius: 50%; content: ''; transition: border-color 180ms ease, transform 180ms var(--ease-premium); }

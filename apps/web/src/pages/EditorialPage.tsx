@@ -234,13 +234,12 @@ export function EditorialPage() {
     <header className="editorial-hero">
       <ThemeDetail className="editorial-detail" />
       <div className="editorial-hero-copy">
-        <span className="editorial-kicker"><i className="fa-solid fa-compass-drafting" /> INTELIGÊNCIA TERRITORIAL · EDITORIAL</span>
         <h1>Conteúdo que constrói o mapa.</h1>
         <p>Organize as camadas do WebGIS e acompanhe, com transparência, cada publicação e decisão editorial.</p>
       </div>
       <div className="editorial-hero-actions">
         <span className={`editorial-role-chip ${isAdmin ? 'is-admin' : ''}`}><i className={`fa-solid ${isAdmin ? 'fa-shield-halved' : 'fa-pen-to-square'}`} />{isAdmin ? 'Administrador' : 'Editor'}</span>
-        <button type="button" className="editorial-primary-action" onClick={startCreate}><i className="fa-solid fa-plus" /> Nova camada</button>
+        <button type="button" className="editorial-primary-action brand-hero-action" onClick={startCreate}><i className="fa-solid fa-plus" /> Nova camada</button>
       </div>
       <div className="editorial-metrics" aria-label="Resumo editorial">
         <article><span className="editorial-metric-icon"><i className="fa-solid fa-layer-group" /></span><div><strong>{layers.length}</strong><span>Camadas publicadas</span></div></article>

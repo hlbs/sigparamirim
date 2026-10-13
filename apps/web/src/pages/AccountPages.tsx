@@ -143,7 +143,7 @@ export function ProfilePage() {
           <p>{user.email}</p>
           <div className="profile-hero-meta"><span className="role-badge">{roleLabel}</span><span><i className="fa-solid fa-location-dot" /> {fields.city || 'Localização não informada'}</span></div>
         </div>
-        <button className="button button-ghost profile-signout" type="button" onClick={() => void signOutUser()}><i className="fa-solid fa-arrow-right-from-bracket" /> Sair da conta</button>
+        <button className="button button-ghost brand-hero-action profile-signout" type="button" onClick={() => void signOutUser()}><i className="fa-solid fa-arrow-right-from-bracket" /> Sair da conta</button>
       </article>
 
       {photoEditorOpen && <div className="profile-photo-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setPhotoEditorOpen(false); }}>
