@@ -1,7 +1,7 @@
 import type { Unsubscribe } from 'firebase/firestore';
 import { firebase } from '../../lib/firebase';
 
-export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_user' | 'resolved' | 'closed';
+export type TicketStatus = 'open' | 'in_progress' | 'waiting_for_user' | 'resolved' | 'closed' | 'cancelled';
 export type TicketPriority = 'normal' | 'high';
 export type TicketCategory = 'access' | 'map' | 'data' | 'dashboard' | 'bug' | 'other';
 export type TicketRecord = {
@@ -19,12 +19,20 @@ export type TicketRecord = {
   lastMessageAt?: unknown;
 };
 export type TicketPriorityRecord = { id: string; priority: TicketPriority };
+export type TicketAttachment = {
+  storagePath: string;
+  fileName: string;
+  contentType: 'image/png' | 'image/jpeg' | 'image/webp' | 'image/gif' | 'application/pdf';
+  size: number;
+  url?: string;
+};
 export type TicketMessage = {
   id: string;
   authorUid: string;
   authorName: string;
   authorRole: 'user' | 'editor' | 'admin';
   body: string;
+  attachments?: TicketAttachment[];
   createdAt?: unknown;
 };
 export type TicketEvent = {
@@ -83,8 +91,20 @@ export async function watchTicketMessages(
 ): Promise<Unsubscribe> {
   const [{ collection, limit, onSnapshot, orderBy, query }, db] = await Promise.all([import('firebase/firestore'), getDatabase()]);
   const messagesQuery = query(collection(db, 'tickets', ticketId, 'messages'), orderBy('createdAt', 'asc'), limit(500));
+  let latestSnapshot = 0;
   return onSnapshot(messagesQuery, (snapshot) => {
-    onMessages(snapshot.docs.map((document) => ({ id: document.id, ...document.data() }) as TicketMessage));
+    const snapshotNumber = ++latestSnapshot;
+    void Promise.all(snapshot.docs.map(async (document) => {
+      const message = { id: document.id, ...document.data() } as TicketMessage;
+      if (!message.attachments?.length) return message;
+      const { getDownloadURL, getStorage, ref } = await import('firebase/storage');
+      const storage = getStorage(firebase.app!);
+      const attachments = await Promise.all(message.attachments.map(async (attachment) => {
+        try { return { ...attachment, url: await getDownloadURL(ref(storage, attachment.storagePath)) }; }
+        catch { return attachment; }
+      }));
+      return { ...message, attachments };
+    })).then((messages) => { if (snapshotNumber === latestSnapshot) onMessages(messages); }).catch(onError);
   }, onError);
 }
 
@@ -118,10 +138,44 @@ export async function migrateLegacyTicketPriorities() {
   return (await callable()).data;
 }
 
-export async function replyToTicket(input: { ticketId: string; message: string }) {
+export const allowedTicketAttachmentTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf'] as const;
+export const maxTicketAttachments = 5;
+export const maxTicketAttachmentBytes = 15 * 1024 * 1024;
+
+export async function replyToTicket(input: { ticketId: string; ownerUid: string; message: string; files: File[] }) {
+  const [{ collection, doc }, { deleteObject, getStorage, ref, uploadBytes }, { httpsCallable }, db, functions] = await Promise.all([
+    import('firebase/firestore'), import('firebase/storage'), import('firebase/functions'), getDatabase(), getFunctionsClient(),
+  ]);
+  if (!firebase.app) throw new Error('O Helpdesk requer uma sessão Firebase configurada.');
+  if (input.files.length > maxTicketAttachments) throw new Error(`É possível anexar até ${maxTicketAttachments} arquivos por mensagem.`);
+  if (input.files.some((file) => !allowedTicketAttachmentTypes.includes(file.type as typeof allowedTicketAttachmentTypes[number]) || file.size > maxTicketAttachmentBytes || file.size === 0)) {
+    throw new Error('Anexe imagens PNG, JPEG, WEBP ou GIF, ou arquivos PDF de até 15 MB cada.');
+  }
+  const storage = getStorage(firebase.app);
+  const messageId = doc(collection(db, 'tickets', input.ticketId, 'messages')).id;
+  const uploaded: { storagePath: string; fileName: string; contentType: typeof allowedTicketAttachmentTypes[number]; size: number }[] = [];
+  try {
+    for (const file of input.files) {
+      const fileId = crypto.randomUUID();
+      const storagePath = `tickets/${input.ownerUid}/${input.ticketId}/${messageId}/${fileId}`;
+      await uploadBytes(ref(storage, storagePath), file, { contentType: file.type, customMetadata: { originalName: file.name.slice(0, 180) } });
+      uploaded.push({ storagePath, fileName: file.name.slice(0, 180), contentType: file.type as typeof allowedTicketAttachmentTypes[number], size: file.size });
+    }
+    const request = { ticketId: input.ticketId, messageId, message: input.message, attachments: uploaded };
+    const callable = httpsCallable<typeof request, { ticketId: string }>(functions, 'replyToTicket');
+    return (await callable(request)).data;
+  } catch (error) {
+    await Promise.all(uploaded.map(async (attachment) => {
+      try { await deleteObject(ref(storage, attachment.storagePath)); } catch { /* best-effort cleanup of an upload whose message was not saved */ }
+    }));
+    throw error;
+  }
+}
+
+export async function cancelTicket(ticketId: string) {
   const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
-  const callable = httpsCallable<typeof input, { ticketId: string }>(functions, 'replyToTicket');
-  return (await callable(input)).data;
+  const callable = httpsCallable<{ ticketId: string }, { ticketId: string; status: 'cancelled' }>(functions, 'cancelTicket');
+  return (await callable({ ticketId })).data;
 }
 
 export async function updateTicketStatus(input: { ticketId: string; status: TicketStatus }) {

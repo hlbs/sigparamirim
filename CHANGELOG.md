@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.60] - 2026-10-13
+
+### Cancelamento de chamados e envio de anexos
+
+- o solicitante pode cancelar um chamado ainda em andamento; o registro e o histórico são preservados para consulta;
+- a equipe de atendimento recebe uma notificação quando um chamado é cancelado;
+- mensagens agora podem incluir até cinco imagens ou arquivos PDF, com limite de 15 MB por arquivo;
+- anexos ficam disponíveis apenas para o solicitante e para a equipe autorizada.
+
 ## [0.3.0-beta.59] - 2026-10-13
 
 ### Orientação para abertura de chamados

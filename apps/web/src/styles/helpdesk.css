@@ -46,6 +46,7 @@
 .status-waiting_for_user { background: color-mix(in srgb, #dc9a31 15%, var(--surface)); color: #9a681c; }
 .status-resolved { background: color-mix(in srgb, #37866a 15%, var(--surface)); color: #267354; }
 .status-closed { background: color-mix(in srgb, var(--text-muted) 12%, var(--surface)); color: var(--text-muted); }
+.status-cancelled { background: color-mix(in srgb, #aa5143 12%, var(--surface)); color: #984638; }
 .helpdesk-list-state, .helpdesk-list-empty { display: grid; justify-items: center; gap: 10px; padding: 38px 18px; color: var(--text-muted); text-align: center; font-size: .76rem; }
 .helpdesk-list-empty > span { display: grid; width: 46px; height: 46px; place-items: center; border-radius: 15px; background: var(--brand-soft); color: var(--brand-strong); font-size: 1.15rem; }
 .helpdesk-list-empty strong { color: var(--text); font-size: .82rem; }
@@ -54,6 +55,10 @@
 @keyframes helpdesk-spin { to { transform: rotate(360deg); } }
 .helpdesk-conversation-panel { position: relative; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
 .helpdesk-conversation-header { display: flex; align-items: flex-start; gap: 14px; padding: 21px 24px 17px; border-bottom: 1px solid var(--border); }
+.helpdesk-conversation-actions { display: grid; justify-items: end; gap: 7px; flex: 0 0 auto; }
+.helpdesk-cancel-ticket { display: inline-flex; align-items: center; gap: 6px; padding: 5px 2px; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .62rem; font-weight: 750; cursor: pointer; transition: color 150ms ease, transform 150ms ease; }
+.helpdesk-cancel-ticket:hover { color: #a34537; transform: translateY(-1px); }
+.helpdesk-cancel-ticket:disabled { opacity: .55; cursor: wait; }
 .helpdesk-conversation-title { min-width: 0; flex: 1; }
 .helpdesk-conversation-id { margin: 1px 0 5px; }
 .helpdesk-conversation-id span { margin-inline: 3px; }
@@ -82,6 +87,16 @@
 .helpdesk-message-meta span { padding: 3px 6px; border-radius: 99px; background: color-mix(in srgb, #3b8d70 16%, var(--surface)); color: #267354; font-size: .55rem; font-weight: 800; }
 .helpdesk-message-meta time { margin-left: auto; color: var(--text-muted); font-size: .58rem; }
 .helpdesk-message-content p { margin: 0; color: var(--text); font-size: .75rem; line-height: 1.58; white-space: pre-wrap; overflow-wrap: anywhere; }
+.helpdesk-attachments { display: grid; gap: 6px; margin-top: 10px; }
+.helpdesk-attachment { display: flex; align-items: center; gap: 9px; min-width: 0; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--surface) 72%, transparent); color: var(--text); text-decoration: none; transition: background 150ms ease, transform 150ms ease; }
+.helpdesk-attachment:hover { background: var(--surface); transform: translateX(2px); }
+.helpdesk-attachment > i:first-child { color: var(--brand-strong); font-size: .88rem; }
+.helpdesk-attachment > span { display: grid; flex: 1; min-width: 0; gap: 2px; }
+.helpdesk-attachment strong { overflow: hidden; font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
+.helpdesk-attachment small { color: var(--text-muted); font-size: .56rem; }
+.helpdesk-attachment > i:last-child { color: var(--text-muted); font-size: .58rem; }
+.helpdesk-attachment.unavailable { cursor: default; opacity: .65; }
+.helpdesk-attachment.unavailable:hover { transform: none; }
 .helpdesk-history { margin: 25px auto 8px; border-top: 1px solid var(--border); color: var(--text-muted); }
 .helpdesk-history summary { display: flex; align-items: center; gap: 8px; padding: 13px 2px; color: var(--text); font-size: .71rem; font-weight: 800; cursor: pointer; list-style: none; }
 .helpdesk-history summary::-webkit-details-marker { display: none; }
@@ -96,6 +111,17 @@
 .helpdesk-reply-box { overflow: hidden; border-radius: 14px; background: var(--surface-muted); }
 .helpdesk-reply-box textarea { display: block; width: 100%; min-height: 74px; resize: vertical; padding: 13px 14px; border: 0; outline: none; background: transparent; color: var(--text); font: inherit; font-size: .75rem; line-height: 1.45; }
 .helpdesk-reply-box > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 9px 9px 13px; }
+.helpdesk-reply-box > .helpdesk-reply-actions { flex-wrap: wrap; }
+.helpdesk-attach-button { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: 34px; padding: 0 8px; border-radius: 9px; color: var(--text-muted); font-size: .65rem; font-weight: 750; cursor: pointer; transition: color 150ms ease, background 150ms ease; }
+.helpdesk-attach-button:hover { color: var(--brand-strong); background: var(--brand-soft); }
+.helpdesk-attach-button input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); }
+.helpdesk-selected-files { display: flex; flex-wrap: wrap; gap: 6px; }
+.helpdesk-selected-files > span { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 6px 8px; border-radius: 9px; background: var(--surface-muted); color: var(--text); font-size: .61rem; }
+.helpdesk-selected-files > span > i { color: var(--brand-strong); }
+.helpdesk-selected-files > span small { color: var(--text-muted); }
+.helpdesk-selected-files button { display: grid; width: 21px; height: 21px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); cursor: pointer; }
+.helpdesk-selected-files button:hover { background: var(--surface); color: #a34537; }
+.helpdesk-attachment-hint { color: var(--text-muted); font-size: .58rem; }
 .helpdesk-reply-box small, .helpdesk-private-note { color: var(--text-muted); font-size: .61rem; }
 .helpdesk-reply-box .button { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px; font-size: .69rem; }
 .helpdesk-private-note { display: flex; align-items: center; gap: 6px; }
@@ -170,5 +196,5 @@
 .notification-popover-footer { display: flex; align-items: center; justify-content: space-between; padding: 11px 16px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: .6rem; }
 .notification-popover-footer i { color: #38846b; }
 @media (max-width: 1050px) { .helpdesk-stats { grid-template-columns: repeat(3, minmax(125px, 1fr)); } .helpdesk-sla-note { grid-column: 1 / -1; } .helpdesk-workspace { grid-template-columns: minmax(270px, 320px) minmax(0, 1fr); } }
-@media (max-width: 760px) { .helpdesk-heading { align-items: flex-start; flex-direction: column; } .helpdesk-new-button { align-self: stretch; justify-content: center; } .helpdesk-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; } .helpdesk-stats > div { min-height: 72px; gap: 8px; padding: 10px 8px; } .helpdesk-stat-icon, .helpdesk-sla-note > i { width: 33px; height: 33px; border-radius: 11px; font-size: .78rem; } .helpdesk-stats strong { font-size: 1rem; } .helpdesk-stats small { font-size: .59rem; } .helpdesk-sla-note { grid-column: 1 / -1; } .helpdesk-workspace { display: block; min-height: 620px; overflow: visible; border-radius: 17px; } .helpdesk-list-panel { min-height: 620px; border-right: 0; border-radius: 17px; } .helpdesk-conversation-panel { display: none; min-height: 620px; border-radius: 17px; } .helpdesk-workspace.has-selection .helpdesk-list-panel { display: none; } .helpdesk-workspace.has-selection .helpdesk-conversation-panel { display: flex; } .helpdesk-conversation-header { gap: 10px; padding: 15px; } .helpdesk-back-button { display: inline-grid; } .helpdesk-conversation-header > .helpdesk-status { margin-top: 2px; } .helpdesk-admin-toolbar { align-items: flex-start; flex-direction: column; padding: 9px 15px; } .helpdesk-admin-controls { flex-wrap: wrap; } .helpdesk-conversation-scroll { padding-inline: 15px; } .helpdesk-message { max-width: 95%; } .helpdesk-reply-form { padding-inline: 14px; } .helpdesk-resolved-callout { flex-wrap: wrap; padding-inline: 14px; } .helpdesk-resolved-callout > span { min-width: calc(100% - 35px); } .helpdesk-resolved-callout .button { margin-left: 43px; } }
+@media (max-width: 760px) { .helpdesk-heading { align-items: flex-start; flex-direction: column; } .helpdesk-new-button { align-self: stretch; justify-content: center; } .helpdesk-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; } .helpdesk-stats > div { min-height: 72px; gap: 8px; padding: 10px 8px; } .helpdesk-stat-icon, .helpdesk-sla-note > i { width: 33px; height: 33px; border-radius: 11px; font-size: .78rem; } .helpdesk-stats strong { font-size: 1rem; } .helpdesk-stats small { font-size: .59rem; } .helpdesk-sla-note { grid-column: 1 / -1; } .helpdesk-workspace { display: block; min-height: 620px; overflow: visible; border-radius: 17px; } .helpdesk-list-panel { min-height: 620px; border-right: 0; border-radius: 17px; } .helpdesk-conversation-panel { display: none; min-height: 620px; border-radius: 17px; } .helpdesk-workspace.has-selection .helpdesk-list-panel { display: none; } .helpdesk-workspace.has-selection .helpdesk-conversation-panel { display: flex; } .helpdesk-conversation-header { gap: 10px; padding: 15px; } .helpdesk-back-button { display: inline-grid; } .helpdesk-conversation-header > .helpdesk-status { margin-top: 2px; } .helpdesk-conversation-actions { gap: 4px; } .helpdesk-admin-toolbar { align-items: flex-start; flex-direction: column; padding: 9px 15px; } .helpdesk-admin-controls { flex-wrap: wrap; } .helpdesk-conversation-scroll { padding-inline: 15px; } .helpdesk-message { max-width: 95%; } .helpdesk-reply-form { padding-inline: 14px; } .helpdesk-resolved-callout { flex-wrap: wrap; padding-inline: 14px; } .helpdesk-resolved-callout > span { min-width: calc(100% - 35px); } .helpdesk-resolved-callout .button { margin-left: 43px; } }
 @media (max-width: 420px) { .helpdesk-stats > div { align-items: flex-start; flex-direction: column; } .helpdesk-sla-note { align-items: center !important; flex-direction: row !important; } .helpdesk-form-row { grid-template-columns: 1fr; } .helpdesk-modal-actions { flex-direction: column-reverse; } .helpdesk-modal-actions .button { justify-content: center; } .notification-popover { right: -48px; } }

@@ -4,7 +4,11 @@ import { useSearchParams } from 'react-router-dom';
 import { UserAvatar } from '../components/UserAvatar';
 import { useAuth } from '../features/auth';
 import {
+  allowedTicketAttachmentTypes,
+  cancelTicket,
   createTicket,
+  maxTicketAttachmentBytes,
+  maxTicketAttachments,
   migrateLegacyTicketPriorities,
   replyToTicket,
   updateTicketPriority,
@@ -27,6 +31,7 @@ const statuses: Record<TicketStatus, string> = {
   waiting_for_user: 'Aguardando você',
   resolved: 'Resolvido',
   closed: 'Encerrado',
+  cancelled: 'Cancelado',
 };
 const categories: Record<TicketCategory, string> = {
   access: 'Acesso e conta',
@@ -36,7 +41,8 @@ const categories: Record<TicketCategory, string> = {
   bug: 'Erro ou instabilidade',
   other: 'Outro assunto',
 };
-const statusOrder: TicketStatus[] = ['open', 'in_progress', 'waiting_for_user', 'resolved', 'closed'];
+const statusOrder: TicketStatus[] = ['open', 'in_progress', 'waiting_for_user', 'resolved', 'closed', 'cancelled'];
+const adminStatusOrder = statusOrder.filter((status) => status !== 'cancelled');
 
 function dateValue(value: unknown) {
   if (value instanceof Date) return value;
@@ -59,6 +65,7 @@ function formatDate(value: unknown, includeTime = true) {
 }
 
 function ticketLabel(id: string) { return `#${id.slice(0, 8).toUpperCase()}`; }
+function formatFileSize(bytes: number) { return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / (1024 * 1024)).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} MB`; }
 
 function errorMessage(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
@@ -83,6 +90,7 @@ export function HelpdeskPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'waiting' | 'done'>('all');
   const [search, setSearch] = useState('');
   const [draft, setDraft] = useState('');
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [ticketError, setTicketError] = useState('');
   const [busy, setBusy] = useState(false);
   const [streamError, setStreamError] = useState('');
@@ -139,6 +147,9 @@ export function HelpdeskPage() {
   }, [isAdmin, user]);
 
   useEffect(() => {
+    setDraft('');
+    setReplyFiles([]);
+    setTicketError('');
     if (!ticketParam) {
       setMessages([]);
       setEvents([]);
@@ -173,7 +184,7 @@ export function HelpdeskPage() {
       const matchesStatus = filter === 'all'
         || (filter === 'active' && ['open', 'in_progress'].includes(ticket.status))
         || (filter === 'waiting' && ticket.status === 'waiting_for_user')
-        || (filter === 'done' && ['resolved', 'closed'].includes(ticket.status));
+        || (filter === 'done' && ['resolved', 'closed', 'cancelled'].includes(ticket.status));
       const matchesSearch = !normalizedSearch || `${ticket.subject} ${ticket.ownerName} ${ticket.ownerEmail} ${ticket.id}`.toLocaleLowerCase('pt-BR').includes(normalizedSearch);
       return matchesStatus && matchesSearch;
     });
@@ -203,12 +214,31 @@ export function HelpdeskPage() {
 
   const submitReply = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!selectedTicket || !draft.trim() || busy) return;
+    if (!selectedTicket || draft.trim().length < 2 || busy) return;
     setBusy(true); setTicketError('');
     try {
-      await replyToTicket({ ticketId: selectedTicket.id, message: draft.trim() });
+      await replyToTicket({ ticketId: selectedTicket.id, ownerUid: selectedTicket.ownerUid, message: draft.trim(), files: replyFiles });
       setDraft('');
+      setReplyFiles([]);
     } catch (error) { setTicketError(errorMessage(error)); }
+    finally { setBusy(false); }
+  };
+
+  const selectReplyFiles = (files: File[]) => {
+    setTicketError('');
+    const next = [...replyFiles, ...files];
+    if (next.length > maxTicketAttachments) { setTicketError(`Anexe no máximo ${maxTicketAttachments} arquivos por mensagem.`); return; }
+    if (next.some((file) => !allowedTicketAttachmentTypes.includes(file.type as typeof allowedTicketAttachmentTypes[number]) || file.size === 0 || file.size > maxTicketAttachmentBytes)) {
+      setTicketError('São aceitos arquivos PNG, JPEG, WEBP ou GIF e PDF, com até 15 MB cada.'); return;
+    }
+    setReplyFiles(next);
+  };
+
+  const cancelSelectedTicket = async () => {
+    if (!selectedTicket || isAdmin || busy || !window.confirm('Cancelar este chamado? O histórico será mantido, mas não será possível enviar novas mensagens.')) return;
+    setBusy(true); setTicketError('');
+    try { await cancelTicket(selectedTicket.id); }
+    catch (error) { setTicketError(errorMessage(error)); }
     finally { setBusy(false); }
   };
 
@@ -250,7 +280,7 @@ export function HelpdeskPage() {
       <div className="helpdesk-stats" aria-label="Resumo dos chamados">
         <div><span className="helpdesk-stat-icon open"><i className="fa-regular fa-folder-open" /></span><span><strong>{statusCounts.open + statusCounts.in_progress}</strong><small>Em andamento</small></span></div>
         <div><span className="helpdesk-stat-icon waiting"><i className="fa-regular fa-clock" /></span><span><strong>{statusCounts.waiting_for_user}</strong><small>Aguardando retorno</small></span></div>
-        <div><span className="helpdesk-stat-icon resolved"><i className="fa-solid fa-check" /></span><span><strong>{statusCounts.resolved + statusCounts.closed}</strong><small>Resolvidos</small></span></div>
+        <div><span className="helpdesk-stat-icon resolved"><i className="fa-solid fa-check" /></span><span><strong>{statusCounts.resolved + statusCounts.closed + statusCounts.cancelled}</strong><small>Encerrados</small></span></div>
         <div className="helpdesk-sla-note"><i className="fa-solid fa-shield-halved" /><span><strong>Atendimento registrado</strong><small>Você receberá avisos sobre novas respostas.</small></span></div>
       </div>
 
@@ -287,9 +317,9 @@ export function HelpdeskPage() {
             <header className="helpdesk-conversation-header">
               <button type="button" className="helpdesk-back-button" onClick={() => selectTicket(null)} aria-label="Voltar para lista"><i className="fa-solid fa-arrow-left" /></button>
               <div className="helpdesk-conversation-title"><div className="helpdesk-conversation-id">{ticketLabel(selectedTicket.id)} <span>·</span> {categories[selectedTicket.category]}</div><h2>{selectedTicket.subject}</h2><p>{isAdmin ? `Solicitado por ${selectedTicket.ownerName}${selectedTicket.ownerEmail ? ` · ${selectedTicket.ownerEmail}` : ''}` : `Aberto em ${formatDate(selectedTicket.createdAt)}`}</p></div>
-              <span className={`helpdesk-status status-${selectedTicket.status}`}>{statuses[selectedTicket.status]}</span>
+              <div className="helpdesk-conversation-actions"><span className={`helpdesk-status status-${selectedTicket.status}`}>{statuses[selectedTicket.status]}</span>{!isAdmin && selectedTicket.ownerUid === user?.uid && !['closed', 'cancelled'].includes(selectedTicket.status) && <button type="button" className="helpdesk-cancel-ticket" disabled={busy} onClick={() => void cancelSelectedTicket()}><i className="fa-solid fa-ban" /> Cancelar chamado</button>}</div>
             </header>
-            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><div className="helpdesk-admin-controls"><label>Prioridade<select value={priorities[selectedTicket.id] ?? 'normal'} disabled={busy} onChange={(event) => void changePriority(event.target.value as TicketPriority)}><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Estado<select value={selectedTicket.status} disabled={busy} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{statusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div></div>}
+            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><div className="helpdesk-admin-controls"><label>Prioridade<select value={priorities[selectedTicket.id] ?? 'normal'} disabled={busy} onChange={(event) => void changePriority(event.target.value as TicketPriority)}><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Estado<select value={selectedTicket.status} disabled={busy} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{adminStatusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div></div>}
             <div className="helpdesk-conversation-scroll">
               <div className="helpdesk-opened-note"><span><i className="fa-solid fa-paper-plane" /></span><div><strong>Chamado recebido</strong><small>{formatDate(selectedTicket.createdAt)}</small></div></div>
               {detailLoading && <div className="helpdesk-list-state"><span className="loading-spinner" />Carregando histórico…</div>}
@@ -297,19 +327,21 @@ export function HelpdeskPage() {
                 const ownMessage = message.authorUid === user?.uid;
                 return <article key={message.id} className={`helpdesk-message ${ownMessage ? 'own' : 'other'} ${message.authorRole === 'admin' ? 'staff' : ''}`}>
                   <div className="helpdesk-message-avatar"><UserAvatar name={message.authorName} email={message.authorUid} size="small" /></div>
-                  <div className="helpdesk-message-content"><div className="helpdesk-message-meta"><strong>{ownMessage ? 'Você' : message.authorName}</strong>{message.authorRole === 'admin' && <span>Equipe de suporte</span>}<time>{formatDate(message.createdAt)}</time></div><p>{message.body}</p></div>
+                  <div className="helpdesk-message-content"><div className="helpdesk-message-meta"><strong>{ownMessage ? 'Você' : message.authorName}</strong>{message.authorRole === 'admin' && <span>Equipe de suporte</span>}<time>{formatDate(message.createdAt)}</time></div><p>{message.body}</p>{Boolean(message.attachments?.length) && <div className="helpdesk-attachments">{message.attachments?.map((attachment) => <a key={attachment.storagePath} href={attachment.url} target="_blank" rel="noreferrer" className={`helpdesk-attachment ${!attachment.url ? 'unavailable' : ''}`} aria-disabled={!attachment.url}><i className={`fa-solid ${attachment.contentType === 'application/pdf' ? 'fa-file-pdf' : 'fa-image'}`} /><span><strong>{attachment.fileName}</strong><small>{formatFileSize(attachment.size)}</small></span><i className="fa-solid fa-arrow-up-right-from-square" /></a>)}</div>}</div>
                 </article>;
               })}
-              {!detailLoading && events.length > 1 && <details className="helpdesk-history"><summary><i className="fa-solid fa-clock-rotate-left" /> Histórico de atendimento <span>{events.length}</span></summary><ol>{events.slice(1).map((event) => <li key={event.id}><span className="helpdesk-history-dot" /><div><strong>{event.action === 'reply' ? 'Mensagem adicionada' : event.action === 'reopened_by_requester' ? 'Chamado reaberto pelo solicitante' : event.action === 'status_changed' ? `Estado alterado: ${statuses[event.to]}` : event.action}</strong><small>{event.actorName} · {formatDate(event.createdAt)}</small></div></li>)}</ol></details>}
+              {!detailLoading && events.length > 1 && <details className="helpdesk-history"><summary><i className="fa-solid fa-clock-rotate-left" /> Histórico de atendimento <span>{events.length}</span></summary><ol>{events.slice(1).map((event) => <li key={event.id}><span className="helpdesk-history-dot" /><div><strong>{event.action === 'reply' ? 'Mensagem adicionada' : event.action === 'reopened_by_requester' ? 'Chamado reaberto pelo solicitante' : event.action === 'cancelled_by_requester' ? 'Chamado cancelado pelo solicitante' : event.action === 'status_changed' ? `Estado alterado: ${statuses[event.to]}` : event.action}</strong><small>{event.actorName} · {formatDate(event.createdAt)}</small></div></li>)}</ol></details>}
               <div ref={messageEndRef} />
             </div>
             {ticketError && <div className="helpdesk-inline-error" role="alert">{ticketError}</div>}
             {selectedTicket.status === 'resolved' && !isAdmin && <div className="helpdesk-resolved-callout"><i className="fa-solid fa-circle-check" /><span><strong>Este chamado foi marcado como resolvido.</strong><small>Se a resposta resolveu sua solicitação, você pode encerrá-lo. Caso contrário, responda para reabri-lo.</small></span><button className="button button-outline" type="button" disabled={busy} onClick={() => void changeStatus('closed')}>Encerrar chamado</button></div>}
-            {(selectedTicket.status !== 'closed' || !isAdmin) ? <form className="helpdesk-reply-form" onSubmit={(event) => void submitReply(event)}>
+            {(selectedTicket.status !== 'cancelled' && (selectedTicket.status !== 'closed' || !isAdmin)) ? <form className="helpdesk-reply-form" onSubmit={(event) => void submitReply(event)}>
               <label htmlFor="helpdesk-reply">{isAdmin ? 'Responder ao solicitante' : 'Adicionar uma resposta'}</label>
-              <div className="helpdesk-reply-box"><textarea id="helpdesk-reply" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={isAdmin ? 'Escreva uma resposta clara e objetiva…' : 'Descreva mais detalhes ou responda à equipe…'} maxLength={5000} rows={3} disabled={busy} /><div><small>{draft.length.toLocaleString('pt-BR')} / 5.000</small><button type="submit" className="button button-primary" disabled={busy || draft.trim().length < 2}><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} /> {busy ? 'Enviando…' : 'Enviar resposta'}</button></div></div>
+              <div className="helpdesk-reply-box"><textarea id="helpdesk-reply" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder={isAdmin ? 'Escreva uma resposta clara e objetiva…' : 'Descreva mais detalhes ou responda à equipe…'} maxLength={5000} rows={3} disabled={busy} /><div className="helpdesk-reply-actions"><label className="helpdesk-attach-button"><i className="fa-solid fa-paperclip" /> Anexar arquivos<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" disabled={busy} onChange={(event) => { selectReplyFiles(Array.from(event.target.files ?? [])); event.currentTarget.value = ''; }} /></label><small>{draft.length.toLocaleString('pt-BR')} / 5.000</small><button type="submit" className="button button-primary" disabled={busy || draft.trim().length < 2}><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} /> {busy ? (replyFiles.length ? 'Enviando arquivos…' : 'Enviando…') : 'Enviar resposta'}</button></div></div>
+              {replyFiles.length > 0 && <div className="helpdesk-selected-files">{replyFiles.map((file, index) => <span key={`${file.name}-${file.lastModified}`}><i className={`fa-solid ${file.type === 'application/pdf' ? 'fa-file-pdf' : 'fa-image'}`} />{file.name} <small>{formatFileSize(file.size)}</small><button type="button" disabled={busy} aria-label={`Remover ${file.name}`} onClick={() => setReplyFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}><i className="fa-solid fa-xmark" /></button></span>)}</div>}
+              <small className="helpdesk-attachment-hint">Até {maxTicketAttachments} arquivos por mensagem, PNG/JPEG/WEBP/GIF ou PDF, máximo de 15 MB cada.</small>
               <small className="helpdesk-private-note"><i className="fa-solid fa-lock" /> Esta conversa é privada e visível somente ao solicitante e à equipe de suporte.</small>
-            </form> : <div className="helpdesk-closed-note"><i className="fa-solid fa-lock" /> Chamado encerrado. Se precisar de ajuda novamente, abra um novo chamado.</div>}
+            </form> : <div className="helpdesk-closed-note"><i className="fa-solid fa-lock" /> {selectedTicket.status === 'cancelled' ? 'Chamado cancelado. O histórico e os anexos foram preservados.' : 'Chamado encerrado. Se precisar de ajuda novamente, abra um novo chamado.'}</div>}
           </> : (
             <div className="helpdesk-welcome">
               <span className="helpdesk-welcome-icon"><i className="fa-regular fa-comments" /></span>

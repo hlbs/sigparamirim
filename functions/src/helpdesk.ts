@@ -1,4 +1,5 @@
 import { FieldPath, FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { z } from 'zod';
@@ -6,7 +7,7 @@ import { z } from 'zod';
 const appCheckEnabled = process.env.ENFORCE_APP_CHECK === 'true';
 const roleSchema = z.enum(['user', 'editor', 'admin']);
 const accountStatusSchema = z.enum(['pending', 'active', 'suspended']);
-const ticketStatusSchema = z.enum(['open', 'in_progress', 'waiting_for_user', 'resolved', 'closed']);
+const ticketStatusSchema = z.enum(['open', 'in_progress', 'waiting_for_user', 'resolved', 'closed', 'cancelled']);
 const prioritySchema = z.enum(['normal', 'high']);
 const categorySchema = z.enum(['access', 'map', 'data', 'dashboard', 'bug', 'other']);
 const createTicketSchema = z.object({
@@ -15,9 +16,17 @@ const createTicketSchema = z.object({
   message: z.string().trim().min(20).max(5_000),
 });
 const ticketIdSchema = z.string().trim().min(1).max(160);
-const replySchema = z.object({ ticketId: ticketIdSchema, message: z.string().trim().min(2).max(5_000) });
+const messageIdSchema = z.string().regex(/^[A-Za-z0-9_-]{20}$/);
+const attachmentSchema = z.object({
+  storagePath: z.string().min(1).max(1024),
+  fileName: z.string().trim().min(1).max(180),
+  contentType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']),
+  size: z.number().int().positive().max(15 * 1024 * 1024),
+});
+const replySchema = z.object({ ticketId: ticketIdSchema, message: z.string().trim().min(2).max(5_000), messageId: messageIdSchema, attachments: z.array(attachmentSchema).max(5).default([]) });
 const statusSchema = z.object({ ticketId: ticketIdSchema, status: ticketStatusSchema });
 const priorityUpdateSchema = z.object({ ticketId: ticketIdSchema, priority: prioritySchema });
+const cancelSchema = z.object({ ticketId: ticketIdSchema });
 
 type Actor = { uid: string; role: z.infer<typeof roleSchema>; name: string; email: string };
 type TicketStatus = z.infer<typeof ticketStatusSchema>;
@@ -198,8 +207,26 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
   const ownerUid = initial.get('ownerUid');
   const isAdmin = actor.role === 'admin';
   if (!isAdmin && ownerUid !== actor.uid) throw new HttpsError('permission-denied', 'Você não tem acesso a este chamado.');
+  if (initial.get('status') === 'cancelled') throw new HttpsError('failed-precondition', 'Este chamado foi cancelado e não aceita novas mensagens.');
+  const expectedPrefix = `tickets/${String(ownerUid)}/${input.ticketId}/${input.messageId}/`;
+  const bucket = getStorage().bucket();
+  const attachmentData = await Promise.all(input.attachments.map(async (attachment) => {
+    const fileId = attachment.storagePath.startsWith(expectedPrefix) ? attachment.storagePath.slice(expectedPrefix.length) : '';
+    if (!/^[A-Za-z0-9_-]{36}$/.test(fileId)) throw new HttpsError('invalid-argument', 'Um dos anexos não pertence a este chamado.');
+    let metadata: { size?: string | number; contentType?: string };
+    try {
+      const [fileMetadata] = await bucket.file(attachment.storagePath).getMetadata();
+      metadata = fileMetadata;
+    } catch {
+      throw new HttpsError('failed-precondition', 'Um dos anexos ainda não foi carregado. Tente novamente.');
+    }
+    if (Number(metadata.size) !== attachment.size || metadata.contentType !== attachment.contentType || attachment.size > 15 * 1024 * 1024) {
+      throw new HttpsError('invalid-argument', 'Os dados de um dos anexos não correspondem ao arquivo enviado.');
+    }
+    return attachment;
+  }));
   const admins = isAdmin ? null : await getActiveAdmins(db);
-  const messageRef = ticketRef.collection('messages').doc();
+  const messageRef = ticketRef.collection('messages').doc(input.messageId);
   const eventRef = ticketRef.collection('events').doc();
   const notificationRefs = isAdmin
     ? [db.collection('users').doc(String(ownerUid)).collection('notifications').doc()]
@@ -210,6 +237,7 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
     if (!current.exists) throw new HttpsError('not-found', 'Chamado não encontrado.');
     if (!isAdmin && current.get('ownerUid') !== actor.uid) throw new HttpsError('permission-denied', 'Você não tem acesso a este chamado.');
     const previousStatus = ticketStatusSchema.catch('open').parse(current.get('status'));
+    if (previousStatus === 'cancelled') throw new HttpsError('failed-precondition', 'Este chamado foi cancelado e não aceita novas mensagens.');
     if (isAdmin && previousStatus === 'closed') throw new HttpsError('failed-precondition', 'Reabra o chamado antes de responder.');
     const nextStatus: TicketStatus = isAdmin ? 'waiting_for_user' : 'open';
     const ticketLabel = input.ticketId.slice(0, 8).toUpperCase();
@@ -218,6 +246,7 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
       authorName: actor.name,
       authorRole: actor.role,
       body: input.message,
+      attachments: attachmentData,
       createdAt: FieldValue.serverTimestamp(),
     });
     transaction.create(eventRef, {
@@ -251,12 +280,60 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
   return { ticketId: input.ticketId };
 });
 
+export const cancelTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
+  const actor = await requireActiveActor(request.auth);
+  const input = parse(cancelSchema, request.data);
+  const db = getDb();
+  const ticketRef = db.collection('tickets').doc(input.ticketId);
+  const initial = await ticketRef.get();
+  if (!initial.exists) throw new HttpsError('not-found', 'Chamado não encontrado.');
+  if (initial.get('ownerUid') !== actor.uid) throw new HttpsError('permission-denied', 'Somente quem abriu o chamado pode cancelá-lo.');
+  const admins = await getActiveAdmins(db);
+  const eventRef = ticketRef.collection('events').doc();
+  const ticketLabel = input.ticketId.slice(0, 8).toUpperCase();
+  await db.runTransaction(async (transaction) => {
+    const current = await transaction.get(ticketRef);
+    if (!current.exists) throw new HttpsError('not-found', 'Chamado não encontrado.');
+    if (current.get('ownerUid') !== actor.uid) throw new HttpsError('permission-denied', 'Somente quem abriu o chamado pode cancelá-lo.');
+    const previousStatus = ticketStatusSchema.catch('open').parse(current.get('status'));
+    if (previousStatus === 'closed' || previousStatus === 'cancelled') {
+      throw new HttpsError('failed-precondition', 'Este chamado já foi encerrado e não pode ser cancelado.');
+    }
+    transaction.update(ticketRef, { status: 'cancelled', updatedAt: FieldValue.serverTimestamp() });
+    transaction.create(eventRef, {
+      action: 'cancelled_by_requester',
+      from: previousStatus,
+      to: 'cancelled',
+      actorUid: actor.uid,
+      actorName: actor.name,
+      actorRole: actor.role,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    admins.docs.forEach((admin) => {
+      const notificationRef = admin.ref.collection('notifications').doc();
+      transaction.create(notificationRef, {
+        type: 'ticket_status',
+        title: `Chamado #${ticketLabel} cancelado`,
+        body: `${actor.name} cancelou: ${String(current.get('subject') ?? '').slice(0, 120)}`,
+        resourceType: 'ticket',
+        resourceId: input.ticketId,
+        ticketId: input.ticketId,
+        createdAt: FieldValue.serverTimestamp(),
+        readAt: null,
+      });
+    });
+  });
+  logger.info('Chamado cancelado pelo solicitante.', { ticketId: input.ticketId, actorUid: actor.uid });
+  return { ticketId: input.ticketId, status: 'cancelled' as const };
+});
+
 const adminTransitions: Record<TicketStatus, TicketStatus[]> = {
   open: ['in_progress', 'resolved', 'closed'],
   in_progress: ['open', 'waiting_for_user', 'resolved', 'closed'],
   waiting_for_user: ['open', 'in_progress', 'resolved', 'closed'],
   resolved: ['open', 'in_progress', 'closed'],
   closed: ['open'],
+  cancelled: [],
 };
 
 export const updateTicketStatus = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
