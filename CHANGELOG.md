@@ -2,6 +2,16 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.67] - 2026-10-13
+
+### Padronização visual dos heros
+
+- os indicadores da Central de Ajuda agora ficam dentro do card verde, junto ao título e à ação de abrir chamado;
+- os indicadores do Observatório ganharam ícones e o mesmo tratamento visual das demais páginas;
+- títulos, textos, espaçamentos e proporções dos heros foram harmonizados para dar unidade às páginas;
+- o detalhe gráfico claro do Observatório segue a intensidade usada na página inicial;
+- o perfil passou a usar o verde institucional e os mesmos padrões de tipografia, botões e ícones dos demais heros.
+
 ## [0.3.0-beta.66] - 2026-10-13
 
 ### Identidade visual e acervo do Observatório

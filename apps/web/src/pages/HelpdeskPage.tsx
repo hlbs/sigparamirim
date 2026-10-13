@@ -289,14 +289,13 @@ export function HelpdeskPage() {
         <button className="button button-primary helpdesk-new-button" type="button" onClick={openTicketForm}>
           <i className="fa-solid fa-plus" /> Novo chamado
         </button>
+        <div className="helpdesk-stats" aria-label="Resumo dos chamados">
+          <div><span className="helpdesk-stat-icon open"><i className="fa-regular fa-folder-open" /></span><span><strong>{statusCounts.open + statusCounts.in_progress}</strong><small>Em andamento</small></span></div>
+          <div><span className="helpdesk-stat-icon waiting"><i className="fa-regular fa-clock" /></span><span><strong>{statusCounts.waiting_for_user}</strong><small>Aguardando retorno</small></span></div>
+          <div><span className="helpdesk-stat-icon resolved"><i className="fa-solid fa-check" /></span><span><strong>{statusCounts.resolved + statusCounts.closed + statusCounts.cancelled}</strong><small>Encerrados</small></span></div>
+          <div className="helpdesk-sla-note"><i className="fa-solid fa-shield-halved" /><span><strong>Atendimento registrado</strong><small>Você receberá avisos sobre novas respostas.</small></span></div>
+        </div>
       </header>
-
-      <div className="helpdesk-stats" aria-label="Resumo dos chamados">
-        <div><span className="helpdesk-stat-icon open"><i className="fa-regular fa-folder-open" /></span><span><strong>{statusCounts.open + statusCounts.in_progress}</strong><small>Em andamento</small></span></div>
-        <div><span className="helpdesk-stat-icon waiting"><i className="fa-regular fa-clock" /></span><span><strong>{statusCounts.waiting_for_user}</strong><small>Aguardando retorno</small></span></div>
-        <div><span className="helpdesk-stat-icon resolved"><i className="fa-solid fa-check" /></span><span><strong>{statusCounts.resolved + statusCounts.closed + statusCounts.cancelled}</strong><small>Encerrados</small></span></div>
-        <div className="helpdesk-sla-note"><i className="fa-solid fa-shield-halved" /><span><strong>Atendimento registrado</strong><small>Você receberá avisos sobre novas respostas.</small></span></div>
-      </div>
 
       <div className={`helpdesk-workspace ${selectedTicket ? 'has-selection' : ''}`}>
         <aside className="helpdesk-list-panel" aria-label={isAdmin ? 'Fila de atendimento' : 'Meus chamados'}>
