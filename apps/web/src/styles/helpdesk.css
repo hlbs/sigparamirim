@@ -132,9 +132,15 @@
 .helpdesk-create-modal input:focus, .helpdesk-create-modal select:focus, .helpdesk-create-modal textarea:focus { outline: 2px solid var(--brand); }
 .helpdesk-create-modal textarea { min-height: 126px; resize: vertical; line-height: 1.5; }
 .helpdesk-create-modal form > label > small { color: var(--text-muted); font-size: .62rem; font-weight: 500; text-align: right; }
+.helpdesk-description-guidance { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.helpdesk-create-modal form > label > .helpdesk-description-guidance > small { color: var(--text-muted); font-size: .61rem; font-weight: 500; }
+.helpdesk-create-modal form > label > .helpdesk-description-guidance > .helpdesk-validation-hint { display: flex; align-items: flex-start; gap: 6px; max-width: 390px; text-align: left; line-height: 1.45; }
+.helpdesk-validation-hint i { flex: 0 0 auto; margin-top: 2px; color: var(--brand-strong); }
 .helpdesk-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .helpdesk-modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 5px; }
 .helpdesk-modal-actions .button { min-height: 42px; padding-inline: 15px; font-size: .72rem; }
+.helpdesk-modal-actions .button-primary:disabled { background: #e1e2dc; color: #77796f; cursor: not-allowed; opacity: 1; box-shadow: none; transform: none; }
+:root[data-theme="dark"] .helpdesk-modal-actions .button-primary:disabled { background: #404239; color: #b4b7aa; }
 .notification-anchor { position: relative; }
 .topbar .notification-anchor { display: block; }
 .notification-trigger { position: relative; }

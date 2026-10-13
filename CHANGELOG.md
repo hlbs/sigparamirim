@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.59] - 2026-10-13
+
+### Orientação para abertura de chamados
+
+- o formulário explica que assunto e descrição precisam atingir um tamanho mínimo para reduzir chamados vazios e spam;
+- o botão de envio fica visivelmente acinzentado enquanto os mínimos de 5 caracteres no assunto e 20 na descrição não forem atingidos;
+- o contador da descrição permanece visível para ajudar o solicitante a completar o relato.
+
 ## [0.3.0-beta.58] - 2026-10-13
 
 ### Ajustes na central de atendimento
