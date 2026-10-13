@@ -1,6 +1,6 @@
 {
   "name": "@sig-paramirim/web",
-  "version": "0.3.0-beta.70",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -33,6 +33,7 @@
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^6.1.2",
+    "sharp": "^0.35.5",
     "typescript": "^5.9.3",
     "vite": "^8.3.2",
     "vite-plugin-pwa": "^2.0.0",

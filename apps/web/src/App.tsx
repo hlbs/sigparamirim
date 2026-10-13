@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { usePreferences } from './stores/preferences';
 import { signOutUser, useAuth } from './features/auth';
@@ -6,14 +6,19 @@ import { AuthLoading } from './components/AuthLoading';
 import { UserAvatar } from './components/UserAvatar';
 import { BrandLogo } from './components/BrandLogo';
 import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuards';
-import { AuthPage } from './pages/AuthPage';
-import { AccessDeniedPage, AccountStatusPage, AdminPage, ProfilePage } from './pages/AccountPages';
-import { EditorialPage } from './pages/EditorialPage';
-import { HomePage } from './pages/HomePage';
-import { MapPage } from './pages/MapPage';
-import { HelpdeskPage } from './pages/HelpdeskPage';
-import { ObservatoryPage } from './pages/ObservatoryPage';
 import { NotificationMenu } from './features/notifications/NotificationMenu';
+import { LegalDocumentsPage } from './pages/LegalDocumentsPage';
+
+const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
+const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
+const MapPage = lazy(() => import('./pages/MapPage').then((module) => ({ default: module.MapPage })));
+const ObservatoryPage = lazy(() => import('./pages/ObservatoryPage').then((module) => ({ default: module.ObservatoryPage })));
+const HelpdeskPage = lazy(() => import('./pages/HelpdeskPage').then((module) => ({ default: module.HelpdeskPage })));
+const EditorialPage = lazy(() => import('./pages/EditorialPage').then((module) => ({ default: module.EditorialPage })));
+const AccessDeniedPage = lazy(() => import('./pages/AccountPages').then((module) => ({ default: module.AccessDeniedPage })));
+const AccountStatusPage = lazy(() => import('./pages/AccountPages').then((module) => ({ default: module.AccountStatusPage })));
+const AdminPage = lazy(() => import('./pages/AccountPages').then((module) => ({ default: module.AdminPage })));
+const ProfilePage = lazy(() => import('./pages/AccountPages').then((module) => ({ default: module.ProfilePage })));
 
 const navigation = [
   { path: '/', label: 'Início', icon: 'home' },
@@ -33,14 +38,14 @@ function readMobileNavigationOrder() {
   }
 }
 
-type IconName = 'home' | 'map' | 'chart' | 'observatory' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout';
+type IconName = 'home' | 'map' | 'chart' | 'observatory' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout' | 'file' | 'shield';
 function UiIcon({ name }: { name: IconName }) {
   const classes: Record<IconName, string> = {
     home: 'fa-solid fa-house', map: 'fa-solid fa-map', chart: 'fa-solid fa-chart-line', observatory: 'fa-solid fa-book-open-reader', help: 'fa-solid fa-circle-question',
     menu: 'fa-solid fa-bars', moon: 'fa-solid fa-moon', sun: 'fa-solid fa-sun', bell: 'fa-solid fa-bell',
     edit: 'fa-solid fa-pen-to-square', settings: 'fa-solid fa-gear', chevron: 'fa-solid fa-chevron-down',
     chevronLeft: 'fa-solid fa-chevron-left', chevronRight: 'fa-solid fa-chevron-right',
-    user: 'fa-solid fa-user', logout: 'fa-solid fa-arrow-right-from-bracket',
+    user: 'fa-solid fa-user', logout: 'fa-solid fa-arrow-right-from-bracket', file: 'fa-regular fa-file-lines', shield: 'fa-solid fa-shield-halved',
   };
   return <i className={classes[name]} aria-hidden="true" />;
 }
@@ -190,6 +195,8 @@ function PlatformShell() {
                     <small>{user.email}</small>
                   </div>
                   <NavLink className="profile-menu-item" to="/perfil" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="user" /><span>Meu perfil</span></NavLink>
+                  <NavLink className="profile-menu-item" to="/termos" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="file" /><span>Termos de uso</span></NavLink>
+                  <NavLink className="profile-menu-item" to="/privacidade" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="shield" /><span>Política de privacidade</span></NavLink>
                   <button className="profile-menu-item" type="button" role="menuitem" onClick={() => void signOutUser()}><UiIcon name="logout" /><span>Sair da conta</span></button>
                 </div>
               )}
@@ -273,13 +280,15 @@ export function App() {
   }, [resolvedTheme]);
 
   return (
-    <>
+    <Suspense fallback={<AuthLoading />}>
       <Routes>
+        <Route path="/termos" element={<LegalDocumentsPage document="terms" />} />
+        <Route path="/privacidade" element={<LegalDocumentsPage document="privacy" />} />
         <Route path="/entrar" element={<AuthPage />} />
         <Route path="/criar-conta" element={<Navigate to="/entrar" replace />} />
         <Route path="/status-conta" element={<AccountStatusPage />} />
         <Route path="*" element={<PlatformRoute><PlatformShell /></PlatformRoute>} />
       </Routes>
-    </>
+    </Suspense>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { AuthLoading } from '../components/AuthLoading';
 import { signOutUser, updateUserProfile, useAuth } from '../features/auth';
+import { cancelAccountDeletion, requestAccountDeletion } from '../features/auth/accountDeletion';
 import { UserAvatar } from '../components/UserAvatar';
 import { ThemeDetail } from '../components/ThemeDetail';
 import { migrateLegacyGeospatial, reviewEditorialChange, submitLayerChange, uploadLayerDraft, watchEditorialChanges, watchPublishedLayers, type EditorialChange } from '../features/editorial/service';
@@ -9,7 +10,9 @@ import { updateAdminUserAccess, watchAdminUsers, watchAuditRecords, type AdminUs
 import { watchTickets, type TicketRecord } from '../features/helpdesk/service';
 
 export function AccountStatusPage() {
-  const { user, loading, canAccessPlatform, accountStatus } = useAuth();
+  const { user, profile, loading, canAccessPlatform, accountStatus } = useAuth();
+  const [deletionBusy, setDeletionBusy] = useState(false);
+  const [deletionMessage, setDeletionMessage] = useState('');
 
   if (loading) return <AuthLoading label="Verificando sua autorização" />;
   if (!user) return <Navigate to="/entrar" replace />;
@@ -25,11 +28,13 @@ export function AccountStatusPage() {
           {suspended ? 'Acesso suspenso' : 'Cadastro em análise'}
         </span>
         <h1 id="account-status-title">
-          {suspended ? 'Seu acesso está temporariamente suspenso.' : 'Seu cadastro foi recebido.'}
+          {profile?.deletionStatus === 'scheduled' ? 'O encerramento da sua conta está agendado.' : suspended ? 'Seu acesso está temporariamente suspenso.' : 'Seu cadastro foi recebido.'}
         </h1>
         <p>
-          {suspended
-            ? 'A administração precisa regularizar sua conta antes que você volte a acessar a plataforma.'
+          {profile?.deletionStatus === 'scheduled'
+            ? 'Sua conta está bloqueada e os dados pessoais serão removidos em 30 dias. Se mudou de ideia, você pode cancelar o pedido e recuperar o acesso antes do prazo.'
+            : suspended
+              ? 'A administração precisa regularizar sua conta antes que você volte a acessar a plataforma.'
             : 'A administração analisará sua solicitação. Assim que o acesso for aprovado, a plataforma será liberada para esta conta.'}
         </p>
         <div className="account-status-identity">
@@ -38,8 +43,16 @@ export function AccountStatusPage() {
         </div>
         <div className="account-status-actions">
           <button type="button" className="button button-primary" onClick={() => window.location.reload()}>Verificar acesso</button>
+          {profile?.deletionStatus === 'scheduled' && <button type="button" className="button button-outline" disabled={deletionBusy} onClick={() => {
+            setDeletionBusy(true); setDeletionMessage('');
+            void cancelAccountDeletion().then(async () => {
+              setDeletionMessage('Pedido cancelado. Entre novamente para restaurar a sessão.');
+              await signOutUser();
+            }).catch((error: unknown) => setDeletionMessage(error instanceof Error ? error.message : 'Não foi possível cancelar o encerramento.')).finally(() => setDeletionBusy(false));
+          }}>{deletionBusy ? 'Cancelando…' : 'Cancelar encerramento'}</button>}
           <button type="button" className="button button-outline" onClick={() => void signOutUser()}>Sair da conta</button>
         </div>
+        {deletionMessage && <p className="account-deletion-status-message" role="status">{deletionMessage}</p>}
         <small>O acesso ao conteúdo permanece bloqueado enquanto a conta não estiver ativa.</small>
       </section>
     </main>
@@ -54,6 +67,9 @@ export function ProfilePage() {
   const [photoEditorOpen, setPhotoEditorOpen] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [deletionStage, setDeletionStage] = useState<0 | 1 | null>(null);
+  const [deletionConfirmation, setDeletionConfirmation] = useState('');
+  const [deletionBusy, setDeletionBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [states, setStates] = useState<Array<{ id: number; sigla: string; nome: string }>>([]);
   const [cities, setCities] = useState<Array<{ id: number; nome: string }>>([]);
@@ -128,6 +144,17 @@ export function ProfilePage() {
 
   const roleLabel = user.role === 'admin' ? 'Administrador' : user.role === 'editor' ? 'Editor' : 'Colaborador';
   const isBrazil = fields.country.trim().toLocaleLowerCase('pt-BR') === 'brasil';
+  const finishAccountDeletion = async () => {
+    if (deletionConfirmation !== 'EXCLUIR MINHA CONTA') return;
+    setDeletionBusy(true); setMessage('');
+    try {
+      await requestAccountDeletion();
+      await signOutUser();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Não foi possível agendar o encerramento da conta.');
+      setDeletionBusy(false);
+    }
+  };
 
   return (
     <section className="account-page profile-page">
@@ -161,6 +188,25 @@ export function ProfilePage() {
         </section>
       </div>}
 
+      {deletionStage !== null && <div className="account-delete-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget && !deletionBusy) { setDeletionStage(null); setDeletionConfirmation(''); } }}>
+        <section className="account-delete-modal" role="alertdialog" aria-modal="true" aria-labelledby="account-delete-title" aria-describedby="account-delete-description">
+          <span className="account-delete-icon"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" /></span>
+          {deletionStage === 0 ? <>
+            <span className="eyebrow">Encerramento de conta · etapa 1 de 2</span>
+            <h2 id="account-delete-title">Tem certeza de que deseja encerrar sua conta?</h2>
+            <p id="account-delete-description">O acesso será suspenso imediatamente. Após 30 dias, a plataforma removerá seu perfil, notificações, chamados e arquivos pessoais associados. Você poderá cancelar o pedido durante esse prazo entrando novamente na conta.</p>
+            <p className="account-delete-note"><i className="fa-solid fa-circle-info" aria-hidden="true" /> Camadas e documentos já publicados no catálogo coletivo não são apagados automaticamente por esta solicitação.</p>
+            <div className="account-delete-actions"><button type="button" className="button button-outline" onClick={() => setDeletionStage(null)}>Manter minha conta</button><button type="button" className="button button-primary account-delete-continue" onClick={() => setDeletionStage(1)}>Continuar</button></div>
+          </> : <>
+            <span className="eyebrow">Confirmação final · etapa 2 de 2</span>
+            <h2 id="account-delete-title">Confirme o encerramento</h2>
+            <p id="account-delete-description">Para evitar um clique acidental, digite exatamente <strong>EXCLUIR MINHA CONTA</strong>. O prazo de 30 dias começa após a confirmação.</p>
+            <label className="account-delete-confirm-field" htmlFor="account-delete-confirmation">Frase de confirmação<input id="account-delete-confirmation" autoComplete="off" value={deletionConfirmation} onChange={(event) => setDeletionConfirmation(event.target.value)} /></label>
+            <div className="account-delete-actions"><button type="button" className="button button-outline" disabled={deletionBusy} onClick={() => { setDeletionStage(null); setDeletionConfirmation(''); }}>Cancelar</button><button type="button" className="button button-danger" disabled={deletionBusy || deletionConfirmation !== 'EXCLUIR MINHA CONTA'} onClick={() => void finishAccountDeletion()}>{deletionBusy ? 'Agendando…' : 'Confirmar encerramento'}</button></div>
+          </>}
+        </section>
+      </div>}
+
       <form className="profile-editor-shell" onSubmit={(event) => { event.preventDefault(); void save(); }}>
         <div className="profile-editor-header"><div><span className="eyebrow">Edição segura</span><h2>Informações do perfil</h2><p>Você controla quais informações deseja compartilhar com a comunidade.</p></div><span className="profile-edit-badge"><i className="fa-solid fa-lock" /> Dados protegidos</span></div>
         <div className="profile-section-label"><i className="fa-solid fa-id-card" /><span>Identidade e contato</span></div>
@@ -179,6 +225,10 @@ export function ProfilePage() {
           <div className="profile-field full"><label htmlFor="profile-bio">Apresentação</label><textarea id="profile-bio" value={fields.bio} onChange={(event) => setField('bio', event.target.value)} placeholder="Conte brevemente sobre sua atuação, interesses ou referências." /></div>
         </div>
         <div className="profile-save-row"><button className="button button-primary" type="submit" disabled={saving}><i className="fa-solid fa-floppy-disk" /> {saving ? 'Salvando…' : 'Salvar alterações'}</button>{message && <span className="profile-save-message" role="status"><i className="fa-solid fa-circle-check" /> {message}</span>}</div>
+        <section className="profile-danger-zone" aria-labelledby="profile-delete-title">
+          <div><span className="eyebrow">Zona de atenção</span><h3 id="profile-delete-title">Encerrar minha conta</h3><p>O acesso é suspenso na hora. Os dados pessoais associados serão excluídos após 30 dias; durante esse período, você ainda pode cancelar o pedido.</p></div>
+          <button type="button" className="button button-danger" onClick={() => { setDeletionStage(0); setDeletionConfirmation(''); }}><i className="fa-regular fa-trash-can" aria-hidden="true" /> Solicitar encerramento</button>
+        </section>
       </form>
     </section>
   );

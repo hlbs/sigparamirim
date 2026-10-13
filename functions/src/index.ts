@@ -1,11 +1,13 @@
 import { getAuth } from 'firebase-admin/auth';
-import { FieldValue, getFirestore } from 'firebase-admin/firestore';
+import { FieldPath, FieldValue, getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { initializeApp } from 'firebase-admin/app';
 import { logger } from 'firebase-functions';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { onDocumentCreated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { z } from 'zod';
 
 initializeApp();
@@ -114,7 +116,175 @@ function parseInput<T>(schema: z.ZodType<T>, data: unknown): T {
 export const healthcheck = onCall({ enforceAppCheck: appCheckEnabled }, (request) => {
   const auth = requireAuthentication(request.auth);
   logger.info('Verificação de integridade concluída.', { uid: auth.uid });
-  return { status: 'ok', version: '0.3.0-beta.70' };
+  return { status: 'ok', version: '1.0.0' };
+});
+
+export const clearOwnNotifications = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 3 }, async (request) => {
+  const session = requireAuthentication(request.auth);
+  const profile = await db.collection('users').doc(session.uid).get();
+  const accountStatus = accountStatusSchema.catch('pending').parse(profile.get('accountStatus'));
+  if (!profile.exists || accountStatus !== 'active') {
+    throw new HttpsError('permission-denied', 'Seu perfil não possui autorização para esta operação.');
+  }
+
+  const notifications = db.collection('users').doc(session.uid).collection('notifications');
+  let archived = 0;
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  while (true) {
+    let page = notifications.orderBy('createdAt', 'desc').limit(400);
+    if (cursor) page = page.startAfter(cursor) as typeof page;
+    const snapshot = await page.get();
+    if (snapshot.empty) break;
+
+    const activeItems = snapshot.docs.filter((item) => item.get('archivedAt') == null);
+    for (let offset = 0; offset < activeItems.length; offset += 400) {
+      const batch = db.batch();
+      activeItems.slice(offset, offset + 400).forEach((item) => {
+        batch.update(item.ref, { archivedAt: FieldValue.serverTimestamp() });
+      });
+      await batch.commit();
+      archived += Math.min(400, activeItems.length - offset);
+    }
+    cursor = snapshot.docs.at(-1);
+    if (snapshot.size < 400) break;
+  }
+  return { archived };
+});
+
+export const requestOwnAccountDeletion = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
+  const session = requireAuthentication(request.auth);
+  const userRef = db.collection('users').doc(session.uid);
+  const profile = await userRef.get();
+  if (!profile.exists || accountStatusSchema.catch('pending').parse(profile.get('accountStatus')) !== 'active') {
+    throw new HttpsError('permission-denied', 'Somente uma conta ativa pode solicitar o encerramento.');
+  }
+  if (profile.get('deletionStatus') === 'scheduled') {
+    throw new HttpsError('failed-precondition', 'O encerramento desta conta já foi solicitado.');
+  }
+
+  const role = roleSchema.catch('user').parse(profile.get('role'));
+  if (role === 'admin') {
+    const activeAdmins = await db.collection('users').where('role', '==', 'admin').where('accountStatus', '==', 'active').limit(2).get();
+    if (activeAdmins.size <= 1) {
+      throw new HttpsError('failed-precondition', 'Antes de encerrar esta conta, transfira a administração para outra pessoa.');
+    }
+  }
+
+  const purgeAt = Timestamp.fromMillis(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await db.runTransaction(async (transaction) => {
+    const current = await transaction.get(userRef);
+    if (!current.exists || current.get('deletionStatus') === 'scheduled' || current.get('accountStatus') !== 'active') {
+      throw new HttpsError('failed-precondition', 'O estado da conta foi alterado. Atualize a página e tente novamente.');
+    }
+    transaction.update(userRef, {
+      accountStatus: 'suspended',
+      deletionStatus: 'scheduled',
+      deletionRequestedAt: FieldValue.serverTimestamp(),
+      deletionPurgeAt: purgeAt,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    transaction.create(db.collection('auditLogs').doc(), {
+      type: 'account.deletion.scheduled', actorUid: session.uid, targetUid: session.uid,
+      deletionPurgeAt: purgeAt, createdAt: FieldValue.serverTimestamp(),
+    });
+  });
+
+  const identity = await getAuth().getUser(session.uid);
+  await getAuth().setCustomUserClaims(session.uid, {
+    ...(identity.customClaims ?? {}), role, accountStatus: 'suspended',
+  });
+  await getAuth().revokeRefreshTokens(session.uid);
+  return { deletionPurgeAt: purgeAt.toDate().toISOString() };
+});
+
+export const cancelOwnAccountDeletion = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
+  const session = requireAuthentication(request.auth);
+  const userRef = db.collection('users').doc(session.uid);
+  const result = await db.runTransaction(async (transaction) => {
+    const current = await transaction.get(userRef);
+    const purgeAt = current.get('deletionPurgeAt') as Timestamp | undefined;
+    if (!current.exists || current.get('deletionStatus') !== 'scheduled' || !purgeAt || purgeAt.toMillis() <= Date.now()) {
+      throw new HttpsError('failed-precondition', 'O prazo para cancelar o encerramento expirou ou não há solicitação ativa.');
+    }
+    transaction.update(userRef, {
+      accountStatus: 'active',
+      deletionStatus: FieldValue.delete(),
+      deletionRequestedAt: FieldValue.delete(),
+      deletionPurgeAt: FieldValue.delete(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+    transaction.create(db.collection('auditLogs').doc(), {
+      type: 'account.deletion.cancelled', actorUid: session.uid, targetUid: session.uid,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    return roleSchema.catch('user').parse(current.get('role'));
+  });
+  const identity = await getAuth().getUser(session.uid);
+  await getAuth().setCustomUserClaims(session.uid, {
+    ...(identity.customClaims ?? {}), role: result, accountStatus: 'active',
+  });
+  return { ok: true };
+});
+
+export const purgeDeletedAccounts = onSchedule({
+  schedule: 'every 1 hours',
+  timeZone: 'America/Sao_Paulo',
+  maxInstances: 1,
+  retryCount: 3,
+}, async () => {
+  let last: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  while (true) {
+    let dueAccounts = db.collection('users').where('deletionStatus', '==', 'scheduled').limit(100);
+    if (last) dueAccounts = dueAccounts.startAfter(last) as typeof dueAccounts;
+    const snapshot = await dueAccounts.get();
+    if (snapshot.empty) break;
+    for (const account of snapshot.docs) {
+      last = account;
+      const purgeAt = account.get('deletionPurgeAt') as Timestamp | undefined;
+      if (!purgeAt || purgeAt.toMillis() > Date.now()) continue;
+      const uid = account.id;
+      const bucket = getStorage().bucket();
+
+      const claimedForPurge = await db.runTransaction(async (transaction) => {
+        const current = await transaction.get(account.ref);
+        const currentPurgeAt = current.get('deletionPurgeAt') as Timestamp | undefined;
+        if (!current.exists || current.get('deletionStatus') !== 'scheduled' || !currentPurgeAt || currentPurgeAt.toMillis() > Date.now()) return false;
+        transaction.update(account.ref, { deletionStatus: 'purging', deletionStartedAt: FieldValue.serverTimestamp() });
+        return true;
+      });
+      if (!claimedForPurge) continue;
+
+      try {
+        await bucket.deleteFiles({ prefix: `avatars/${uid}/`, force: true });
+        await bucket.deleteFiles({ prefix: `tickets/${uid}/`, force: true });
+        await bucket.deleteFiles({ prefix: `staging/${uid}/`, force: true });
+        await bucket.deleteFiles({ prefix: `exports/${uid}/`, force: true });
+
+        const tickets = await db.collection('tickets').where('ownerUid', '==', uid).get();
+        for (const ticket of tickets.docs) {
+          await db.recursiveDelete(db.collection('ticketManagement').doc(ticket.id));
+          await db.recursiveDelete(ticket.ref);
+        }
+        const requests = await db.collection('changeRequests').where('requestedBy', '==', uid).get();
+        for (const changeRequest of requests.docs) await db.recursiveDelete(changeRequest.ref);
+
+        for (const field of ['actorUid', 'targetUid'] as const) {
+          const auditEntries = await db.collection('auditLogs').where(field, '==', uid).get();
+          for (const entry of auditEntries.docs) await entry.ref.delete();
+        }
+
+        await getAuth().deleteUser(uid).catch((error: { code?: string }) => {
+          if (error.code !== 'auth/user-not-found') throw error;
+        });
+        await db.recursiveDelete(account.ref);
+        logger.info('Conta encerrada após prazo de 30 dias; registros pessoais removidos.', { uid });
+      } catch (error) {
+        await account.ref.update({ deletionStatus: 'scheduled', deletionStartedAt: FieldValue.delete() }).catch(() => undefined);
+        throw error;
+      }
+    }
+    if (snapshot.size < 100) break;
+  }
 });
 
 export const bootstrapProfile = onCall({ enforceAppCheck: appCheckEnabled }, async (request) => {
@@ -232,7 +402,7 @@ export const submitChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
       batch.create(admin.ref.collection('notifications').doc(), {
         type: 'change_request.pending', title: 'Nova alteração aguardando aprovação',
         body: input.summary, resourceId: requestRef.id,
-        createdAt: FieldValue.serverTimestamp(), readAt: null,
+        createdAt: FieldValue.serverTimestamp(), readAt: null, archivedAt: null,
       });
     });
   }
@@ -301,7 +471,7 @@ export const reviewChangeRequest = onCall({ enforceAppCheck: appCheckEnabled }, 
         type: `change_request.${input.decision}`,
         title: input.decision === 'approved' ? 'Alteração aprovada' : 'Alteração recusada',
         body: input.justification, resourceId: requestRef.id,
-        createdAt: FieldValue.serverTimestamp(), readAt: null,
+        createdAt: FieldValue.serverTimestamp(), readAt: null, archivedAt: null,
       });
     });
   } catch (error) {
@@ -568,5 +738,58 @@ async function publishApprovedPublication(changeRequest: Record<string, unknown>
   }, { merge: true });
   if (stagedSource) await stagedSource.delete({ ignoreNotFound: true });
 }
+
+async function notifyActiveUsersOfPublication(resourceType: 'layer' | 'publication', resourceId: string, data: FirebaseFirestore.DocumentData) {
+  const title = typeof data.title === 'string' && data.title.trim() ? data.title.trim() : resourceId;
+  const isLayer = resourceType === 'layer';
+  const type = isLayer ? 'content.layer.published' : 'content.publication.published';
+  const notificationTitle = isLayer ? `Nova camada: ${title}` : `Nova publicação: ${title}`;
+  const body = isLayer
+    ? 'Uma nova camada foi publicada no WebGIS.'
+    : 'Um novo documento foi publicado no Observatório.';
+  const notificationId = `content-${resourceType}-${resourceId}`;
+  const writer = db.bulkWriter();
+  writer.onWriteError((error) => error.code !== 6 && error.failedAttempts < 5);
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  let recipients = 0;
+  while (true) {
+    let users = db.collection('users').where('accountStatus', '==', 'active').orderBy(FieldPath.documentId()).limit(400);
+    if (cursor) users = users.startAfter(cursor) as typeof users;
+    const page = await users.get();
+    if (page.empty) break;
+    const writes = page.docs.map((user) => writer.create(user.ref.collection('notifications').doc(notificationId), {
+        type,
+        category: 'content',
+        title: notificationTitle,
+        body,
+        resourceType,
+        resourceId,
+        createdAt: FieldValue.serverTimestamp(),
+        readAt: null,
+        archivedAt: null,
+      }).catch((error: { code?: number }) => {
+        if (error.code !== 6) throw error;
+      }));
+    recipients += page.size;
+    await Promise.all(writes);
+    await writer.flush();
+    cursor = page.docs.at(-1);
+    if (page.size < 400) break;
+  }
+  await writer.close();
+  logger.info('Aviso de novo conteúdo distribuído.', { resourceType, resourceId, recipients });
+}
+
+export const notifyNewPublishedLayer = onDocumentCreated({ document: 'layers/{layerId}', database: 'sigparamirimdb', retry: true }, async (event) => {
+  const layer = event.data?.data();
+  if (!layer || layer.status !== 'published') return;
+  await notifyActiveUsersOfPublication('layer', event.params.layerId, layer);
+});
+
+export const notifyNewPublishedObservatoryDocument = onDocumentCreated({ document: 'publications/{publicationId}', database: 'sigparamirimdb', retry: true }, async (event) => {
+  const publication = event.data?.data();
+  if (!publication || publication.status !== 'published') return;
+  await notifyActiveUsersOfPublication('publication', event.params.publicationId, publication);
+});
 
 export { cancelTicket, createTicket, migrateLegacyTicketPriorities, replyToTicket, updateTicketPriority, updateTicketStatus } from './helpdesk.js';

@@ -86,9 +86,9 @@ export function AuthPage() {
       {legalDocument && <div className="legal-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setLegalDocument(null); }}>
         <section className="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
           <button className="legal-modal-close" type="button" aria-label="Fechar documento" onClick={() => setLegalDocument(null)}><i className="fa-solid fa-xmark" /></button>
-          <span className="eyebrow">Documento de teste</span>
+          <span className="eyebrow">Documento vigente · v1.0.0</span>
           <h2 id="legal-modal-title">{legalDocument === 'terms' ? 'Termos de uso' : 'Política de privacidade'}</h2>
-          <div className="legal-modal-content">{(legalDocument === 'terms' ? termsText : privacyText).split('\n').map((line) => line.startsWith('# ') ? <h3 key={line}>{line.slice(2)}</h3> : line ? <p key={line}>{line}</p> : <span key={line} />)}</div>
+          <div className="legal-modal-content">{(legalDocument === 'terms' ? termsText : privacyText).split('\n').map((line, index) => line.startsWith('# ') ? <h3 key={`${index}-${line}`}>{line.slice(2)}</h3> : line.startsWith('## ') ? <h4 key={`${index}-${line}`}>{line.slice(3)}</h4> : line ? <p key={`${index}-${line}`}>{line}</p> : <span key={`${index}-empty`} />)}</div>
         </section>
       </div>}
     </div>

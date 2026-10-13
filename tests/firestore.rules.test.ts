@@ -35,6 +35,7 @@ beforeEach(async () => {
       db.doc('users/alice').set({ role: 'user', accountStatus: 'pending', displayName: 'Alice' }),
       db.doc('users/active-user').set({ role: 'user', accountStatus: 'active', displayName: 'Usuário ativo' }),
       db.doc('users/other-user').set({ role: 'user', accountStatus: 'active', displayName: 'Outro usuário' }),
+      db.doc('users/deletion-pending').set({ role: 'user', accountStatus: 'suspended', deletionStatus: 'scheduled' }),
       db.doc('users/admin-a').set({ role: 'admin', accountStatus: 'active', displayName: 'Administradora' }),
       db.doc('users/editor-a').set({ role: 'editor', accountStatus: 'active' }),
       db.doc('layers/public-layer').set({ status: 'published' }),
@@ -45,6 +46,7 @@ beforeEach(async () => {
       db.doc('changeRequests/other-request').set({ requestedBy: 'editor-b', status: 'pending' }),
       db.doc('auditLogs/event-1').set({ type: 'test' }),
       db.doc('tickets/ticket-own').set({ ownerUid: 'active-user', status: 'open' }),
+      db.doc('tickets/ticket-deletion-pending').set({ ownerUid: 'deletion-pending', status: 'open' }),
       db.doc('tickets/ticket-other').set({ ownerUid: 'other-user', status: 'open' }),
       db.doc('ticketManagement/ticket-own').set({ priority: 'high' }),
       db.doc('tickets/ticket-own/messages/message-1').set({ body: 'Solicitação inicial' }),
@@ -224,5 +226,14 @@ describe('regras Firestore do SIG Paramirim', () => {
     await assertSucceeds(ownerDb.doc('users/active-user/notifications/notice-own').update({ readAt: new Date() }));
     await assertFails(ownerDb.doc('users/active-user/notifications/notice-own').update({ title: 'Conteúdo alterado' }));
     await assertFails(otherDb.doc('users/active-user/notifications/fake').set({ title: 'Falso aviso' }));
+  });
+
+  test('pedido de encerramento bloqueia imediatamente um token antigo ainda marcado como ativo', async () => {
+    const staleSession = environment.authenticatedContext('deletion-pending', {
+      role: 'user', accountStatus: 'active',
+    }).firestore();
+    await assertFails(staleSession.doc('users/deletion-pending/notifications/private').get());
+    await assertFails(staleSession.doc('tickets/ticket-deletion-pending').get());
+    await assertFails(staleSession.doc('users/deletion-pending').update({ displayName: 'After deletion request' }));
   });
 });

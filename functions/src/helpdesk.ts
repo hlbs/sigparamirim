@@ -63,6 +63,7 @@ function notify(batch: FirebaseFirestore.WriteBatch, db: FirebaseFirestore.Fires
     resourceId: notification.ticketId,
     createdAt: FieldValue.serverTimestamp(),
     readAt: null,
+    archivedAt: null,
   });
 }
 
@@ -288,6 +289,7 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
       ticketId: input.ticketId,
       createdAt: FieldValue.serverTimestamp(),
       readAt: null,
+      archivedAt: null,
     }));
   });
   logger.info('Resposta adicionada ao chamado.', { ticketId: input.ticketId, actorUid: actor.uid });

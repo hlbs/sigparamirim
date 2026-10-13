@@ -13,7 +13,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['sig-logo.png'],
+      includeAssets: ['sig-logo.png', 'favicon.ico', 'logo_w.svg'],
       manifest: {
         name: 'SIG Paramirim',
         short_name: 'SIG Paramirim',
@@ -24,8 +24,10 @@ export default defineConfig({
         start_url: '/',
         lang: 'pt-BR',
         icons: [
-          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png' },
-          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

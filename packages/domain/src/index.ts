@@ -27,6 +27,9 @@ export interface UserProfile {
   contactEmail?: string;
   role: UserRole;
   accountStatus: AccountStatus;
+  deletionStatus?: 'scheduled';
+  deletionRequestedAt?: unknown;
+  deletionPurgeAt?: unknown;
   providerIds: string[];
   language: UserPreferences['language'];
   theme: UserPreferences['theme'];

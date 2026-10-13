@@ -7,7 +7,9 @@ service cloud.firestore {
     }
 
     function active() {
-      return signedIn() && request.auth.token.accountStatus == 'active';
+      return signedIn()
+        && request.auth.token.accountStatus == 'active'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountStatus == 'active';
     }
 
     function self(uid) {
@@ -41,6 +43,7 @@ service cloud.firestore {
       allow create: if false;
       allow delete: if false;
       allow update: if self(uid)
+        && resource.data.accountStatus != 'suspended'
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['displayName', 'photoURL', 'bio', 'lattesUrl', 'institution', 'educationLevel', 'country', 'state', 'city', 'contactEmail', 'language', 'theme', 'notificationPreferences', 'updatedAt', 'lastLoginAt']);
 

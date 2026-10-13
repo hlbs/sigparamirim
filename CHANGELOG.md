@@ -2,6 +2,19 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.0] - 2026-10-13
+
+### Uma nova etapa do SIG Paramirim
+
+- o SIG Paramirim deixa a fase beta e passa a oferecer uma experiência consolidada para consulta, pesquisa e gestão do território;
+- o menu de notificações agora permite consultar o histórico completo, filtrar avisos lidos e não lidos e arquivar notificações; novas camadas e publicações do Observatório geram avisos para as contas ativas;
+- a identidade instalável da plataforma foi atualizada com ícones derivados da marca `logo_w`, incluindo favicon e ícones PWA;
+- foram reforçadas as verificações de acesso às contas suspensas e acrescentadas rotinas protegidas para encerramento de conta, prazo de recuperação de 30 dias e remoção automática posterior dos dados privados da conta;
+- o componente de armazenamento do Firebase Admin foi atualizado e a varredura de dependências não reporta vulnerabilidades conhecidas;
+- os materiais já aprovados e publicados no catálogo permanecem disponíveis após o encerramento da conta, sem manter o perfil, os chamados e os arquivos privados do usuário;
+- os Termos de Uso e a Política de Privacidade estão disponíveis no menu da conta e explicam os dados tratados, as responsabilidades de publicação e os direitos dos titulares;
+- a exclusão da conta exige duas confirmações para reduzir o risco de uma ação acidental e pode ser cancelada durante o prazo de recuperação.
+
 ## [0.3.0-beta.70] - 2026-10-13
 
 ### Padronização das margens da Administração
