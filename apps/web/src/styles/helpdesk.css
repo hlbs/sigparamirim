@@ -56,8 +56,8 @@
 .helpdesk-conversation-panel { position: relative; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
 .helpdesk-conversation-header { display: flex; align-items: flex-start; gap: 14px; padding: 21px 24px 17px; border-bottom: 1px solid var(--border); }
 .helpdesk-conversation-actions { display: grid; justify-items: end; gap: 7px; flex: 0 0 auto; }
-.helpdesk-cancel-ticket { display: inline-flex; align-items: center; gap: 6px; padding: 5px 2px; border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: .62rem; font-weight: 750; cursor: pointer; transition: color 150ms ease, transform 150ms ease; }
-.helpdesk-cancel-ticket:hover { color: #a34537; transform: translateY(-1px); }
+.helpdesk-cancel-ticket { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 0; border-radius: 9px; background: color-mix(in srgb, #a34537 9%, var(--surface)); color: #984638; font: inherit; font-size: .63rem; font-weight: 800; cursor: pointer; transition: color 150ms ease, transform 150ms ease, background 150ms ease; }
+.helpdesk-cancel-ticket:hover { background: color-mix(in srgb, #a34537 16%, var(--surface)); color: #873a2e; transform: translateY(-1px); }
 .helpdesk-cancel-ticket:disabled { opacity: .55; cursor: wait; }
 .helpdesk-conversation-title { min-width: 0; flex: 1; }
 .helpdesk-conversation-id { margin: 1px 0 5px; }
@@ -122,6 +122,8 @@
 .helpdesk-selected-files button { display: grid; width: 21px; height: 21px; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--text-muted); cursor: pointer; }
 .helpdesk-selected-files button:hover { background: var(--surface); color: #a34537; }
 .helpdesk-attachment-hint { color: var(--text-muted); font-size: .58rem; }
+.helpdesk-create-attachments { display: grid; justify-items: start; gap: 6px; }
+.helpdesk-create-attachments > small { color: var(--text-muted); font-size: .6rem; }
 .helpdesk-reply-box small, .helpdesk-private-note { color: var(--text-muted); font-size: .61rem; }
 .helpdesk-reply-box .button { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 14px; font-size: .69rem; }
 .helpdesk-private-note { display: flex; align-items: center; gap: 6px; }

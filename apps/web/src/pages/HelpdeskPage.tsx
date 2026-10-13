@@ -95,6 +95,7 @@ export function HelpdeskPage() {
   const [busy, setBusy] = useState(false);
   const [streamError, setStreamError] = useState('');
   const [draftTicket, setDraftTicket] = useState({ subject: '', category: 'other' as TicketCategory, message: '' });
+  const [createFiles, setCreateFiles] = useState<File[]>([]);
   const messageEndRef = useRef<HTMLDivElement>(null);
   const selectedTicket = tickets.find((ticket) => ticket.id === ticketParam) ?? null;
 
@@ -197,15 +198,16 @@ export function HelpdeskPage() {
     setSearchParams(next, { replace: true });
   };
 
-  const openTicketForm = () => { setTicketError(''); setShowCreate(true); };
+  const openTicketForm = () => { setTicketError(''); setCreateFiles([]); setShowCreate(true); };
 
   const submitTicket = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (busy) return;
+    if (!user || busy) return;
     setBusy(true); setTicketError('');
     try {
-      const result = await createTicket({ ...draftTicket, subject: draftTicket.subject.trim(), message: draftTicket.message.trim() });
+      const result = await createTicket({ ...draftTicket, subject: draftTicket.subject.trim(), message: draftTicket.message.trim(), ownerUid: user!.uid, files: createFiles });
       setShowCreate(false);
+      setCreateFiles([]);
       setDraftTicket({ subject: '', category: 'other', message: '' });
       selectTicket(result.ticketId);
     } catch (error) { setTicketError(errorMessage(error)); }
@@ -234,8 +236,18 @@ export function HelpdeskPage() {
     setReplyFiles(next);
   };
 
+  const selectCreateFiles = (files: File[]) => {
+    setTicketError('');
+    const next = [...createFiles, ...files];
+    if (next.length > maxTicketAttachments) { setTicketError(`Anexe no máximo ${maxTicketAttachments} arquivos ao chamado.`); return; }
+    if (next.some((file) => !allowedTicketAttachmentTypes.includes(file.type as typeof allowedTicketAttachmentTypes[number]) || file.size === 0 || file.size > maxTicketAttachmentBytes)) {
+      setTicketError('São aceitos arquivos PNG, JPEG, WEBP ou GIF e PDF, com até 15 MB cada.'); return;
+    }
+    setCreateFiles(next);
+  };
+
   const cancelSelectedTicket = async () => {
-    if (!selectedTicket || isAdmin || busy || !window.confirm('Cancelar este chamado? O histórico será mantido, mas não será possível enviar novas mensagens.')) return;
+    if (!selectedTicket || selectedTicket.ownerUid !== user?.uid || busy || !window.confirm('Cancelar este chamado? O histórico será mantido, mas não será possível enviar novas mensagens.')) return;
     setBusy(true); setTicketError('');
     try { await cancelTicket(selectedTicket.id); }
     catch (error) { setTicketError(errorMessage(error)); }
@@ -317,16 +329,16 @@ export function HelpdeskPage() {
             <header className="helpdesk-conversation-header">
               <button type="button" className="helpdesk-back-button" onClick={() => selectTicket(null)} aria-label="Voltar para lista"><i className="fa-solid fa-arrow-left" /></button>
               <div className="helpdesk-conversation-title"><div className="helpdesk-conversation-id">{ticketLabel(selectedTicket.id)} <span>·</span> {categories[selectedTicket.category]}</div><h2>{selectedTicket.subject}</h2><p>{isAdmin ? `Solicitado por ${selectedTicket.ownerName}${selectedTicket.ownerEmail ? ` · ${selectedTicket.ownerEmail}` : ''}` : `Aberto em ${formatDate(selectedTicket.createdAt)}`}</p></div>
-              <div className="helpdesk-conversation-actions"><span className={`helpdesk-status status-${selectedTicket.status}`}>{statuses[selectedTicket.status]}</span>{!isAdmin && selectedTicket.ownerUid === user?.uid && !['closed', 'cancelled'].includes(selectedTicket.status) && <button type="button" className="helpdesk-cancel-ticket" disabled={busy} onClick={() => void cancelSelectedTicket()}><i className="fa-solid fa-ban" /> Cancelar chamado</button>}</div>
+              <div className="helpdesk-conversation-actions"><span className={`helpdesk-status status-${selectedTicket.status}`}>{statuses[selectedTicket.status]}</span>{selectedTicket.ownerUid === user?.uid && !['closed', 'cancelled'].includes(selectedTicket.status) && <button type="button" className="helpdesk-cancel-ticket" disabled={busy} onClick={() => void cancelSelectedTicket()}><i className="fa-solid fa-ban" /> Cancelar chamado</button>}</div>
             </header>
-            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><div className="helpdesk-admin-controls"><label>Prioridade<select value={priorities[selectedTicket.id] ?? 'normal'} disabled={busy} onChange={(event) => void changePriority(event.target.value as TicketPriority)}><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Estado<select value={selectedTicket.status} disabled={busy} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{adminStatusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div></div>}
+            {isAdmin && <div className="helpdesk-admin-toolbar"><span><i className="fa-solid fa-user-shield" /> Gestão do atendimento</span><div className="helpdesk-admin-controls"><label>Prioridade<select value={priorities[selectedTicket.id] ?? 'normal'} disabled={busy} onChange={(event) => void changePriority(event.target.value as TicketPriority)}><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Estado<select value={selectedTicket.status} disabled={busy || selectedTicket.status === 'cancelled'} onChange={(event) => void changeStatus(event.target.value as TicketStatus)}>{selectedTicket.status === 'cancelled' && <option value="cancelled" disabled>Cancelado</option>}{adminStatusOrder.map((status) => <option value={status} key={status}>{statuses[status]}</option>)}</select></label></div></div>}
             <div className="helpdesk-conversation-scroll">
               <div className="helpdesk-opened-note"><span><i className="fa-solid fa-paper-plane" /></span><div><strong>Chamado recebido</strong><small>{formatDate(selectedTicket.createdAt)}</small></div></div>
               {detailLoading && <div className="helpdesk-list-state"><span className="loading-spinner" />Carregando histórico…</div>}
               {!detailLoading && messages.map((message) => {
                 const ownMessage = message.authorUid === user?.uid;
                 return <article key={message.id} className={`helpdesk-message ${ownMessage ? 'own' : 'other'} ${message.authorRole === 'admin' ? 'staff' : ''}`}>
-                  <div className="helpdesk-message-avatar"><UserAvatar name={message.authorName} email={message.authorUid} size="small" /></div>
+                  <div className="helpdesk-message-avatar"><UserAvatar name={message.authorName} email={message.authorUid} photoURL={ownMessage ? user?.photoURL : message.authorPhotoURL} size="small" /></div>
                   <div className="helpdesk-message-content"><div className="helpdesk-message-meta"><strong>{ownMessage ? 'Você' : message.authorName}</strong>{message.authorRole === 'admin' && <span>Equipe de suporte</span>}<time>{formatDate(message.createdAt)}</time></div><p>{message.body}</p>{Boolean(message.attachments?.length) && <div className="helpdesk-attachments">{message.attachments?.map((attachment) => <a key={attachment.storagePath} href={attachment.url} target="_blank" rel="noreferrer" className={`helpdesk-attachment ${!attachment.url ? 'unavailable' : ''}`} aria-disabled={!attachment.url}><i className={`fa-solid ${attachment.contentType === 'application/pdf' ? 'fa-file-pdf' : 'fa-image'}`} /><span><strong>{attachment.fileName}</strong><small>{formatFileSize(attachment.size)}</small></span><i className="fa-solid fa-arrow-up-right-from-square" /></a>)}</div>}</div>
                 </article>;
               })}
@@ -365,6 +377,7 @@ export function HelpdeskPage() {
             <label>Assunto<input required minLength={5} maxLength={140} aria-describedby="helpdesk-create-guidance" value={draftTicket.subject} onChange={(event) => setDraftTicket((current) => ({ ...current, subject: event.target.value }))} placeholder="Ex.: Não consigo visualizar uma camada" /></label>
             <label>Categoria<select value={draftTicket.category} onChange={(event) => setDraftTicket((current) => ({ ...current, category: event.target.value as TicketCategory }))}>{Object.entries(categories).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
             <label>Descrição<textarea required minLength={20} maxLength={5000} aria-describedby="helpdesk-create-guidance" rows={6} value={draftTicket.message} onChange={(event) => setDraftTicket((current) => ({ ...current, message: event.target.value }))} placeholder="Descreva o que aconteceu, o que você esperava e, se possível, os passos para reproduzir." /><span className="helpdesk-description-guidance"><small id="helpdesk-create-guidance" className="helpdesk-validation-hint"><i className="fa-solid fa-circle-info" /> Para reduzir spam e chamados sem contexto, o assunto deve ter ao menos 5 caracteres e a descrição, 20.</small><small>{draftTicket.message.length.toLocaleString('pt-BR')} / 5.000</small></span></label>
+            <div className="helpdesk-create-attachments"><label className="helpdesk-attach-button"><i className="fa-solid fa-paperclip" /> Anexar imagens ou PDF<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" disabled={busy} onChange={(event) => { selectCreateFiles(Array.from(event.target.files ?? [])); event.currentTarget.value = ''; }} /></label><small>Opcional · até {maxTicketAttachments} arquivos, 15 MB cada.</small>{createFiles.length > 0 && <div className="helpdesk-selected-files">{createFiles.map((file, index) => <span key={`${file.name}-${file.lastModified}`}><i className={`fa-solid ${file.type === 'application/pdf' ? 'fa-file-pdf' : 'fa-image'}`} />{file.name} <small>{formatFileSize(file.size)}</small><button type="button" disabled={busy} aria-label={`Remover ${file.name}`} onClick={() => setCreateFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}><i className="fa-solid fa-xmark" /></button></span>)}</div>}</div>
             {ticketError && <div className="helpdesk-inline-error" role="alert">{ticketError}</div>}
             <div className="helpdesk-modal-actions"><button type="button" className="button button-outline" disabled={busy} onClick={() => setShowCreate(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={busy || draftTicket.subject.trim().length < 5 || draftTicket.message.trim().length < 20}><i className={`fa-solid ${busy ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} /> {busy ? 'Enviando chamado…' : 'Enviar chamado'}</button></div>
           </form>

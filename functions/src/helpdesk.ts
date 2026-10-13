@@ -10,12 +10,7 @@ const accountStatusSchema = z.enum(['pending', 'active', 'suspended']);
 const ticketStatusSchema = z.enum(['open', 'in_progress', 'waiting_for_user', 'resolved', 'closed', 'cancelled']);
 const prioritySchema = z.enum(['normal', 'high']);
 const categorySchema = z.enum(['access', 'map', 'data', 'dashboard', 'bug', 'other']);
-const createTicketSchema = z.object({
-  subject: z.string().trim().min(5).max(140),
-  category: categorySchema,
-  message: z.string().trim().min(20).max(5_000),
-});
-const ticketIdSchema = z.string().trim().min(1).max(160);
+const ticketIdSchema = z.string().regex(/^[A-Za-z0-9_-]{20}$/);
 const messageIdSchema = z.string().regex(/^[A-Za-z0-9_-]{20}$/);
 const attachmentSchema = z.object({
   storagePath: z.string().min(1).max(1024),
@@ -23,12 +18,20 @@ const attachmentSchema = z.object({
   contentType: z.enum(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']),
   size: z.number().int().positive().max(15 * 1024 * 1024),
 });
+const createTicketSchema = z.object({
+  ticketId: ticketIdSchema.optional(),
+  messageId: messageIdSchema.optional(),
+  attachments: z.array(attachmentSchema).max(5).default([]),
+  subject: z.string().trim().min(5).max(140),
+  category: categorySchema,
+  message: z.string().trim().min(20).max(5_000),
+});
 const replySchema = z.object({ ticketId: ticketIdSchema, message: z.string().trim().min(2).max(5_000), messageId: messageIdSchema, attachments: z.array(attachmentSchema).max(5).default([]) });
 const statusSchema = z.object({ ticketId: ticketIdSchema, status: ticketStatusSchema });
 const priorityUpdateSchema = z.object({ ticketId: ticketIdSchema, priority: prioritySchema });
 const cancelSchema = z.object({ ticketId: ticketIdSchema });
 
-type Actor = { uid: string; role: z.infer<typeof roleSchema>; name: string; email: string };
+type Actor = { uid: string; role: z.infer<typeof roleSchema>; name: string; email: string; photoURL: string | null };
 type TicketStatus = z.infer<typeof ticketStatusSchema>;
 type NotificationInput = { type: string; title: string; body: string; ticketId: string };
 
@@ -48,6 +51,7 @@ async function requireActiveActor(auth: { uid: string; token: Record<string, unk
     role,
     name: String(profile.get('displayName') || tokenName || tokenEmail || 'Usuário SIG Paramirim').slice(0, 120),
     email: String(profile.get('email') || tokenEmail).slice(0, 254),
+    photoURL: String(profile.get('photoURL') || auth.token.picture || '').slice(0, 2048) || null,
   };
 }
 
@@ -72,14 +76,37 @@ function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   return result.data;
 }
 
+async function validateTicketAttachments(ownerUid: string, ticketId: string, messageId: string | undefined, attachments: z.infer<typeof attachmentSchema>[]) {
+  if (attachments.length && !messageId) throw new HttpsError('invalid-argument', 'Não foi possível vincular os anexos à mensagem. Tente novamente.');
+  const expectedPrefix = `tickets/${ownerUid}/${ticketId}/${messageId ?? ''}/`;
+  const bucket = getStorage().bucket();
+  return Promise.all(attachments.map(async (attachment) => {
+    const fileId = attachment.storagePath.startsWith(expectedPrefix) ? attachment.storagePath.slice(expectedPrefix.length) : '';
+    if (!/^[A-Za-z0-9_-]{36}$/.test(fileId)) throw new HttpsError('invalid-argument', 'Um dos anexos não pertence a este chamado.');
+    let metadata: { size?: string | number; contentType?: string };
+    try {
+      const [fileMetadata] = await bucket.file(attachment.storagePath).getMetadata();
+      metadata = fileMetadata;
+    } catch {
+      throw new HttpsError('failed-precondition', 'Um dos anexos ainda não foi carregado. Tente novamente.');
+    }
+    if (Number(metadata.size) !== attachment.size || metadata.contentType !== attachment.contentType || attachment.size > 15 * 1024 * 1024) {
+      throw new HttpsError('invalid-argument', 'Os dados de um dos anexos não correspondem ao arquivo enviado.');
+    }
+    return attachment;
+  }));
+}
+
 export const createTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstances: 6 }, async (request) => {
   const actor = await requireActiveActor(request.auth);
   const input = parse(createTicketSchema, request.data);
   const db = getDb();
-  const ticketRef = db.collection('tickets').doc();
+  const ticketRef = input.ticketId ? db.collection('tickets').doc(input.ticketId) : db.collection('tickets').doc();
+  const messageId = input.messageId ?? ticketRef.collection('messages').doc().id;
   const managementRef = db.collection('ticketManagement').doc(ticketRef.id);
-  const messageRef = ticketRef.collection('messages').doc();
+  const messageRef = ticketRef.collection('messages').doc(messageId);
   const eventRef = ticketRef.collection('events').doc();
+  const attachmentData = await validateTicketAttachments(actor.uid, ticketRef.id, messageId, input.attachments);
   const admins = await getActiveAdmins(db);
   const now = FieldValue.serverTimestamp();
   const ticketLabel = ticketRef.id.slice(0, 8).toUpperCase();
@@ -107,6 +134,8 @@ export const createTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInstan
     authorName: actor.name,
     authorRole: actor.role,
     body: input.message,
+    authorPhotoURL: actor.photoURL,
+    attachments: attachmentData,
     createdAt: now,
   });
   batch.create(eventRef, {
@@ -208,23 +237,7 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
   const isAdmin = actor.role === 'admin';
   if (!isAdmin && ownerUid !== actor.uid) throw new HttpsError('permission-denied', 'Você não tem acesso a este chamado.');
   if (initial.get('status') === 'cancelled') throw new HttpsError('failed-precondition', 'Este chamado foi cancelado e não aceita novas mensagens.');
-  const expectedPrefix = `tickets/${String(ownerUid)}/${input.ticketId}/${input.messageId}/`;
-  const bucket = getStorage().bucket();
-  const attachmentData = await Promise.all(input.attachments.map(async (attachment) => {
-    const fileId = attachment.storagePath.startsWith(expectedPrefix) ? attachment.storagePath.slice(expectedPrefix.length) : '';
-    if (!/^[A-Za-z0-9_-]{36}$/.test(fileId)) throw new HttpsError('invalid-argument', 'Um dos anexos não pertence a este chamado.');
-    let metadata: { size?: string | number; contentType?: string };
-    try {
-      const [fileMetadata] = await bucket.file(attachment.storagePath).getMetadata();
-      metadata = fileMetadata;
-    } catch {
-      throw new HttpsError('failed-precondition', 'Um dos anexos ainda não foi carregado. Tente novamente.');
-    }
-    if (Number(metadata.size) !== attachment.size || metadata.contentType !== attachment.contentType || attachment.size > 15 * 1024 * 1024) {
-      throw new HttpsError('invalid-argument', 'Os dados de um dos anexos não correspondem ao arquivo enviado.');
-    }
-    return attachment;
-  }));
+  const attachmentData = await validateTicketAttachments(String(ownerUid), input.ticketId, input.messageId, input.attachments);
   const admins = isAdmin ? null : await getActiveAdmins(db);
   const messageRef = ticketRef.collection('messages').doc(input.messageId);
   const eventRef = ticketRef.collection('events').doc();
@@ -246,6 +259,7 @@ export const replyToTicket = onCall({ enforceAppCheck: appCheckEnabled, maxInsta
       authorName: actor.name,
       authorRole: actor.role,
       body: input.message,
+      authorPhotoURL: actor.photoURL,
       attachments: attachmentData,
       createdAt: FieldValue.serverTimestamp(),
     });

@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [0.3.0-beta.61] - 2026-10-13
+
+### Ajustes na abertura e no acompanhamento de chamados
+
+- o solicitante pode anexar imagens ou PDFs já na abertura do chamado;
+- a ação “Cancelar chamado” agora aparece para quem abriu o ticket, inclusive quando essa pessoa também é administradora;
+- a conversa passa a usar a foto de perfil escolhida pela pessoa nas mensagens.
+
 ## [0.3.0-beta.60] - 2026-10-13
 
 ### Cancelamento de chamados e envio de anexos

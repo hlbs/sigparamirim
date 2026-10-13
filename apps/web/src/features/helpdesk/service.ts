@@ -32,6 +32,7 @@ export type TicketMessage = {
   authorName: string;
   authorRole: 'user' | 'editor' | 'admin';
   body: string;
+  authorPhotoURL?: string | null;
   attachments?: TicketAttachment[];
   createdAt?: unknown;
 };
@@ -120,10 +121,50 @@ export async function watchTicketEvents(
   }, onError);
 }
 
-export async function createTicket(input: { subject: string; category: TicketCategory; message: string }) {
-  const [{ httpsCallable }, functions] = await Promise.all([import('firebase/functions'), getFunctionsClient()]);
-  const callable = httpsCallable<typeof input, { ticketId: string; status: TicketStatus }>(functions, 'createTicket');
-  return (await callable(input)).data;
+export const allowedTicketAttachmentTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf'] as const;
+export const maxTicketAttachments = 5;
+export const maxTicketAttachmentBytes = 15 * 1024 * 1024;
+
+type UploadedTicketAttachment = Omit<TicketAttachment, 'url'>;
+
+async function uploadTicketAttachments(ownerUid: string, ticketId: string, messageId: string, files: File[]) {
+  if (files.length > maxTicketAttachments) throw new Error(`É possível anexar até ${maxTicketAttachments} arquivos por mensagem.`);
+  if (files.some((file) => !allowedTicketAttachmentTypes.includes(file.type as typeof allowedTicketAttachmentTypes[number]) || file.size > maxTicketAttachmentBytes || file.size === 0)) {
+    throw new Error('Anexe imagens PNG, JPEG, WEBP ou GIF, ou arquivos PDF de até 15 MB cada.');
+  }
+  if (!files.length) return { attachments: [] as UploadedTicketAttachment[], cleanup: async () => undefined };
+  if (!firebase.app) throw new Error('O Helpdesk requer uma sessão Firebase configurada.');
+  const { deleteObject, getStorage, ref, uploadBytes } = await import('firebase/storage');
+  const storage = getStorage(firebase.app);
+  const uploaded: UploadedTicketAttachment[] = [];
+  const cleanup = async () => Promise.all(uploaded.map(async (attachment) => {
+    try { await deleteObject(ref(storage, attachment.storagePath)); } catch { /* best-effort cleanup when the message was not saved */ }
+  }));
+  try {
+    for (const file of files) {
+      const fileId = crypto.randomUUID();
+      const storagePath = `tickets/${ownerUid}/${ticketId}/${messageId}/${fileId}`;
+      await uploadBytes(ref(storage, storagePath), file, { contentType: file.type, customMetadata: { originalName: file.name.slice(0, 180) } });
+      uploaded.push({ storagePath, fileName: file.name.slice(0, 180), contentType: file.type as typeof allowedTicketAttachmentTypes[number], size: file.size });
+    }
+    return { attachments: uploaded, cleanup };
+  } catch (error) {
+    await cleanup();
+    throw error;
+  }
+}
+
+export async function createTicket(input: { subject: string; category: TicketCategory; message: string; ownerUid: string; files: File[] }) {
+  const [{ collection, doc }, { httpsCallable }, db, functions] = await Promise.all([
+    import('firebase/firestore'), import('firebase/functions'), getDatabase(), getFunctionsClient(),
+  ]);
+  const ticketId = doc(collection(db, 'tickets')).id;
+  const messageId = doc(collection(db, 'tickets', ticketId, 'messages')).id;
+  const upload = await uploadTicketAttachments(input.ownerUid, ticketId, messageId, input.files);
+  const request = { ticketId, messageId, attachments: upload.attachments, subject: input.subject, category: input.category, message: input.message };
+  const callable = httpsCallable<typeof request, { ticketId: string; status: TicketStatus }>(functions, 'createTicket');
+  try { return (await callable(request)).data; }
+  catch (error) { await upload.cleanup(); throw error; }
 }
 
 export async function updateTicketPriority(input: { ticketId: string; priority: TicketPriority }) {
@@ -138,38 +179,16 @@ export async function migrateLegacyTicketPriorities() {
   return (await callable()).data;
 }
 
-export const allowedTicketAttachmentTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf'] as const;
-export const maxTicketAttachments = 5;
-export const maxTicketAttachmentBytes = 15 * 1024 * 1024;
-
 export async function replyToTicket(input: { ticketId: string; ownerUid: string; message: string; files: File[] }) {
-  const [{ collection, doc }, { deleteObject, getStorage, ref, uploadBytes }, { httpsCallable }, db, functions] = await Promise.all([
-    import('firebase/firestore'), import('firebase/storage'), import('firebase/functions'), getDatabase(), getFunctionsClient(),
+  const [{ collection, doc }, { httpsCallable }, db, functions] = await Promise.all([
+    import('firebase/firestore'), import('firebase/functions'), getDatabase(), getFunctionsClient(),
   ]);
-  if (!firebase.app) throw new Error('O Helpdesk requer uma sessão Firebase configurada.');
-  if (input.files.length > maxTicketAttachments) throw new Error(`É possível anexar até ${maxTicketAttachments} arquivos por mensagem.`);
-  if (input.files.some((file) => !allowedTicketAttachmentTypes.includes(file.type as typeof allowedTicketAttachmentTypes[number]) || file.size > maxTicketAttachmentBytes || file.size === 0)) {
-    throw new Error('Anexe imagens PNG, JPEG, WEBP ou GIF, ou arquivos PDF de até 15 MB cada.');
-  }
-  const storage = getStorage(firebase.app);
   const messageId = doc(collection(db, 'tickets', input.ticketId, 'messages')).id;
-  const uploaded: { storagePath: string; fileName: string; contentType: typeof allowedTicketAttachmentTypes[number]; size: number }[] = [];
-  try {
-    for (const file of input.files) {
-      const fileId = crypto.randomUUID();
-      const storagePath = `tickets/${input.ownerUid}/${input.ticketId}/${messageId}/${fileId}`;
-      await uploadBytes(ref(storage, storagePath), file, { contentType: file.type, customMetadata: { originalName: file.name.slice(0, 180) } });
-      uploaded.push({ storagePath, fileName: file.name.slice(0, 180), contentType: file.type as typeof allowedTicketAttachmentTypes[number], size: file.size });
-    }
-    const request = { ticketId: input.ticketId, messageId, message: input.message, attachments: uploaded };
-    const callable = httpsCallable<typeof request, { ticketId: string }>(functions, 'replyToTicket');
-    return (await callable(request)).data;
-  } catch (error) {
-    await Promise.all(uploaded.map(async (attachment) => {
-      try { await deleteObject(ref(storage, attachment.storagePath)); } catch { /* best-effort cleanup of an upload whose message was not saved */ }
-    }));
-    throw error;
-  }
+  const upload = await uploadTicketAttachments(input.ownerUid, input.ticketId, messageId, input.files);
+  const request = { ticketId: input.ticketId, messageId, message: input.message, attachments: upload.attachments };
+  const callable = httpsCallable<typeof request, { ticketId: string }>(functions, 'replyToTicket');
+  try { return (await callable(request)).data; }
+  catch (error) { await upload.cleanup(); throw error; }
 }
 
 export async function cancelTicket(ticketId: string) {
