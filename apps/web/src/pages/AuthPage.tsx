@@ -1,12 +1,11 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Navigate, NavLink, useLocation } from 'react-router-dom';
 import { signInWithGoogle, useAuth } from '../features/auth';
 import { AuthLoading } from '../components/AuthLoading';
 import { BrandLogo } from '../components/BrandLogo';
 import { NetworkParticles } from '../components/NetworkParticles';
 import { ThemeDetail } from '../components/ThemeDetail';
-import termsText from '../content/terms.md?raw';
-import privacyText from '../content/privacy.md?raw';
+import { LegalDocumentModal } from '../components/LegalDocumentModal';
 
 function authErrorMessage(reason: unknown): string {
   const code = typeof reason === 'object' && reason !== null && 'code' in reason
@@ -28,6 +27,7 @@ export function AuthPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
+  const closeLegalDocument = useCallback(() => setLegalDocument(null), []);
   const destination = (location.state as { from?: string } | null)?.from || '/';
 
   if (loading) return <AuthLoading label="Verificando sua sessão" />;
@@ -83,14 +83,7 @@ export function AuthPage() {
           <small className="auth-legal">Ao continuar, você concorda com os <button type="button" onClick={() => setLegalDocument('terms')}>termos de uso</button> e com a <button type="button" onClick={() => setLegalDocument('privacy')}>política de privacidade</button> da plataforma.</small>
         </div>
       </main>
-      {legalDocument && <div className="legal-modal-backdrop" role="presentation" onMouseDown={(event) => { if (event.currentTarget === event.target) setLegalDocument(null); }}>
-        <section className="legal-modal" role="dialog" aria-modal="true" aria-labelledby="legal-modal-title">
-          <button className="legal-modal-close" type="button" aria-label="Fechar documento" onClick={() => setLegalDocument(null)}><i className="fa-solid fa-xmark" /></button>
-          <span className="eyebrow">Documento vigente · v1.0.0</span>
-          <h2 id="legal-modal-title">{legalDocument === 'terms' ? 'Termos de uso' : 'Política de privacidade'}</h2>
-          <div className="legal-modal-content">{(legalDocument === 'terms' ? termsText : privacyText).split('\n').map((line, index) => line.startsWith('# ') ? <h3 key={`${index}-${line}`}>{line.slice(2)}</h3> : line.startsWith('## ') ? <h4 key={`${index}-${line}`}>{line.slice(3)}</h4> : line ? <p key={`${index}-${line}`}>{line}</p> : <span key={`${index}-empty`} />)}</div>
-        </section>
-      </div>}
+      {legalDocument && <LegalDocumentModal documentType={legalDocument} onClose={closeLegalDocument} />}
     </div>
   );
 }

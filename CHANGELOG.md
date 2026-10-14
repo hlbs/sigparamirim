@@ -2,6 +2,14 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.1] - 2026-10-14
+
+### Acesso aos documentos legais
+
+- Termos de Uso e Política de Privacidade agora abrem em um modal sobre a tela atual, sem navegação para páginas separadas;
+- o modal tem fundo desfocado, leitura independente com rolagem, layout adaptável a celulares e suporte a teclado, incluindo a tecla Esc;
+- os caminhos antigos dos documentos direcionam para a plataforma, mantendo os documentos acessíveis pelo menu do usuário e pela tela de entrada.
+
 ## [1.0.0] - 2026-10-13
 
 ### Uma nova etapa do SIG Paramirim

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { usePreferences } from './stores/preferences';
 import { signOutUser, useAuth } from './features/auth';
@@ -7,7 +7,7 @@ import { UserAvatar } from './components/UserAvatar';
 import { BrandLogo } from './components/BrandLogo';
 import { PlatformRoute, ProtectedRoute, RoleRoute } from './components/RouteGuards';
 import { NotificationMenu } from './features/notifications/NotificationMenu';
-import { LegalDocumentsPage } from './pages/LegalDocumentsPage';
+import { LegalDocumentModal } from './components/LegalDocumentModal';
 
 const AuthPage = lazy(() => import('./pages/AuthPage').then((module) => ({ default: module.AuthPage })));
 const HomePage = lazy(() => import('./pages/HomePage').then((module) => ({ default: module.HomePage })));
@@ -77,6 +77,7 @@ function PlatformShell() {
   const { theme, setTheme, sidebarOpen, setSidebarOpen } = usePreferences();
   const { user, loading } = useAuth();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const mobileNavDragRef = useRef<{ path: string; pointerId: number; startX: number; dragging: boolean } | null>(null);
   const suppressMobileNavClickRef = useRef(false);
@@ -116,6 +117,8 @@ function PlatformShell() {
     const order = new Map(mobileNavigationOrder.map((path, index) => [path, index]));
     return [...visibleNavigation].sort((a, b) => (order.get(a.path) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.path) ?? Number.MAX_SAFE_INTEGER));
   }, [mobileNavigationOrder, visibleNavigation]);
+
+  const closeLegalDocument = useCallback(() => setLegalDocument(null), []);
 
   useEffect(() => {
     const paths = visibleNavigation.map((item) => item.path);
@@ -195,8 +198,8 @@ function PlatformShell() {
                     <small>{user.email}</small>
                   </div>
                   <NavLink className="profile-menu-item" to="/perfil" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="user" /><span>Meu perfil</span></NavLink>
-                  <NavLink className="profile-menu-item" to="/termos" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="file" /><span>Termos de uso</span></NavLink>
-                  <NavLink className="profile-menu-item" to="/privacidade" role="menuitem" onClick={() => setProfileMenuOpen(false)}><UiIcon name="shield" /><span>Política de privacidade</span></NavLink>
+                  <button className="profile-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); setLegalDocument('terms'); }}><UiIcon name="file" /><span>Termos de uso</span></button>
+                  <button className="profile-menu-item" type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); setLegalDocument('privacy'); }}><UiIcon name="shield" /><span>Política de privacidade</span></button>
                   <button className="profile-menu-item" type="button" role="menuitem" onClick={() => void signOutUser()}><UiIcon name="logout" /><span>Sair da conta</span></button>
                 </div>
               )}
@@ -262,6 +265,7 @@ function PlatformShell() {
           </NavLink>
         ))}
       </nav>
+      {legalDocument && <LegalDocumentModal documentType={legalDocument} onClose={closeLegalDocument} />}
     </div>
   );
 }
@@ -282,8 +286,8 @@ export function App() {
   return (
     <Suspense fallback={<AuthLoading />}>
       <Routes>
-        <Route path="/termos" element={<LegalDocumentsPage document="terms" />} />
-        <Route path="/privacidade" element={<LegalDocumentsPage document="privacy" />} />
+        <Route path="/termos" element={<Navigate to="/" replace />} />
+        <Route path="/privacidade" element={<Navigate to="/" replace />} />
         <Route path="/entrar" element={<AuthPage />} />
         <Route path="/criar-conta" element={<Navigate to="/entrar" replace />} />
         <Route path="/status-conta" element={<AccountStatusPage />} />
