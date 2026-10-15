@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.3] - 2026-10-15
+
+### Estimativa do tempo de concentração
+
+- a seção “Resposta à chuva” foi reorganizada para apresentar os métodos em uma grade ampla, com leitura mais clara em telas grandes e pequenas;
+- as equações passaram a usar notação matemática tipográfica, com frações, raízes, índices e expoentes;
+- foram removidos os avisos de “pendente de revisão” e a redação foi ajustada para distinguir compatibilidade de faixa de área de uma calibração regional;
+- os cards e textos da seção ganharam contraste adequado no tema claro e superfícies sólidas sobre o fundo verde.
+
 ## [1.0.2] - 2026-10-15
 
 ### Página inicial: leitura hidrológica e territorial

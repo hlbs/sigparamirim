@@ -219,6 +219,48 @@ a { color: inherit; }
 .concentration-method-card p b { color: rgba(255,255,255,.95); }
 .concentration-method-card .method-context { padding-top: 7px; border-top: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.72); }
 .concentration-recommendation figcaption { color: rgba(255,255,255,.68); font-size: .78rem; line-height: 1.55; }
+/* Seção 07: comparação técnica em largura integral, sem texto sobreposto ao detalhe do hero. */
+.story-section#tempos { min-height: 0; grid-template-columns: minmax(0, 1fr); align-items: start; gap: 24px; }
+.story-section#tempos .story-copy { max-width: 100%; }
+.story-section#tempos .story-copy h2 { max-width: 20ch; }
+.story-section#tempos .story-description { max-width: 1050px; }
+.story-section#tempos .story-description p { max-width: 1000px; }
+.story-section#tempos .story-visual { min-width: 0; width: 100%; }
+.concentration-recommendation { display: grid; gap: 18px; margin: 0; padding: clamp(18px, 2.7vw, 32px); border: 1px solid color-mix(in srgb, var(--brand) 24%, var(--border)); border-radius: 24px; background: var(--surface); color: var(--text); box-shadow: 0 16px 40px rgba(20,24,0,.12); }
+.concentration-method-intro { max-width: 820px; }
+.concentration-recommendation-kicker { display: inline-block; color: var(--brand-strong); font-size: .72rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
+.concentration-method-intro h3 { margin: 8px 0; color: var(--text); font-size: clamp(1.2rem, 1.8vw, 1.55rem); line-height: 1.2; }
+.concentration-method-intro p { margin: 0; color: var(--text-muted); font-size: .9rem; line-height: 1.6; }
+.concentration-method-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; align-items: stretch; }
+.concentration-method-card { min-width: 0; padding: clamp(15px, 1.6vw, 20px); border: 1px solid var(--border); border-radius: 18px; background: var(--surface-muted); color: var(--text); font-size: .85rem; line-height: 1.55; }
+.concentration-method-card.is-selected { border-color: color-mix(in srgb, var(--brand) 60%, var(--border)); background: color-mix(in srgb, var(--brand-soft) 55%, var(--surface)); box-shadow: inset 3px 0 var(--brand); }
+.concentration-method-card header { display: grid; justify-items: start; gap: 9px; }
+.concentration-method-card header > strong { color: var(--text); font-size: 1rem; }
+.method-fit { max-width: 100%; white-space: normal; padding: 5px 9px; border-radius: 999px; background: color-mix(in srgb, var(--text) 8%, var(--surface)); color: var(--text-muted); font-size: .68rem; line-height: 1.35; font-weight: 750; }
+.method-fit-scale_compatible { background: var(--brand-soft); color: var(--brand-strong); }
+.method-fit-extrapolated { background: #f6ead5; color: #704309; }
+.concentration-method-card .method-time { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 15px 0 10px; color: var(--text-muted); font-size: .78rem; }
+.concentration-method-card .method-time strong { color: var(--text); font-size: .96rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.method-equation { display: grid; place-items: center; min-height: 70px; margin: 0 0 13px; padding: 12px 8px; overflow-x: auto; border-radius: 12px; background: color-mix(in srgb, var(--brand-soft) 48%, var(--surface)); color: var(--text); }
+.method-equation math { max-width: 100%; color: inherit; font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", serif; font-size: clamp(1rem, 1.3vw, 1.25rem); }
+.concentration-method-card p { margin: 8px 0 0; }
+.concentration-method-card p b { color: var(--text); }
+.concentration-method-card .method-context { padding-top: 10px; border-top: 1px solid var(--border); color: var(--text-muted); }
+.concentration-recommendation figcaption { padding-top: 3px; color: var(--text-muted); font-size: .8rem; line-height: 1.6; }
+:root[data-theme="dark"] .method-fit-extrapolated { background: #42351e; color: #f1cf8e; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-recommendation { color: var(--text); }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-intro h3 { color: #20260a; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-intro p { color: #51543d; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card { border-color: #dcdece; background: #fffef9; color: #303126; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card header > strong,
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-time strong,
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card p b { color: #202118; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-time,
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-context { color: #5a5c4e; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-equation { background: #f2f3e8; color: #202118; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-recommendation figcaption { color: #51543d; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-fit-extrapolated { background: #f8ecd9; color: #704309; }
+
 @keyframes flow-dash { to { stroke-dashoffset: -30; } }
 .synthesis-visual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
 .synthesis-note { grid-column: 1 / -1; display: grid; gap: 7px; padding: 21px; border-left: 3px solid var(--brand); border-radius: 0 16px 16px 0; background: var(--brand-soft); }
@@ -267,6 +309,14 @@ a { color: inherit; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card code { background: rgba(63,67,5,.09); color: #20260a; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-fit { background: rgba(63,67,5,.09); color: #303404; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-fit-extrapolated { background: rgba(158,88,8,.12); color: #744300; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-recommendation { border-color: #dcdece; background: #fffef9; color: #202118; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-method-card { border-color: #dcdece; background: #fffef9; color: #303126; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-method-card.is-selected { border-color: #8a922b; background: #f2f3e3; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-method-card .method-context { border-color: #dcdece; color: #5a5c4e; }
+:root:not([data-theme="dark"]) .story-section#tempos .method-equation { background: #f2f3e8; color: #202118; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-method-intro h3 { color: #202118; }
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-method-intro p,
+:root:not([data-theme="dark"]) .story-section#tempos .concentration-recommendation figcaption { color: #51543d; }
 :root[data-theme="dark"] .story-hero { background: radial-gradient(circle at 82% 16%, rgba(215,231,122,.16), transparent 31%), linear-gradient(145deg, #171b08, #343a0b 62%, #4c5314); }
 :root[data-theme="dark"] .story-section[data-tone="brand"] { background: radial-gradient(circle at 90% 12%, rgba(215,231,122,.14), transparent 34%), linear-gradient(145deg, #1b2109, #343a0b 70%, #4b5315); }
 :root[data-theme="dark"] .references-section { background: color-mix(in srgb, var(--brand-soft) 82%, #0c0f08); }
@@ -357,6 +407,7 @@ a { color: inherit; }
   .auth-story h1 { font-size: clamp(2.6rem, 5.5vw, 4rem); }
   .workspace-grid { grid-template-columns: 1fr; }
   .story-hero, .story-section { grid-template-columns: 1fr; min-height: auto; }
+  .concentration-method-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .story-hero-mark { min-height: 230px; }
   .method-section { grid-template-columns: 1fr; }
   .references-section ol { grid-template-columns: 1fr; }
@@ -398,6 +449,8 @@ a { color: inherit; }
   .settings-grid { grid-template-columns: 1fr; }
   .home-story { gap: 14px; }
   .story-hero, .story-section, .method-section, .references-section, .story-next { padding: 30px 21px; border-radius: 22px; }
+  .story-section#tempos { gap: 18px; padding: 22px; }
+  .concentration-method-grid { grid-template-columns: 1fr; }
   .story-hero { gap: 30px; }
   .story-hero h1 { font-size: clamp(2.65rem, 14vw, 4.25rem); }
   .story-hero-logo { width: min(100%, 360px); max-height: 112px; margin-bottom: 26px; }

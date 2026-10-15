@@ -47,32 +47,42 @@ function Citation({ references }: { references: readonly number[] }) {
 }
 
 function ConcentrationTimeMethods() {
-  const [method] = compatibleConcentrationTime;
-  if (!method) return null;
+  const renderEquation = (id: string) => {
+    const tc = '<msub><mi>T</mi><mi>c</mi></msub><mo>=</mo>';
+    const math = (body: string) => `<math display="block">${body}</math>`;
+    switch (id) {
+      case 'concentration_time_kirpich': return math(`${tc}<mn>0,0663</mn><mo>·</mo><msup><mi>L</mi><mn>0,77</mn></msup><mo>·</mo><msup><mi>S</mi><mrow><mo>−</mo><mn>0,385</mn></mrow></msup><mtext> h</mtext>`);
+      case 'concentration_time_kerby': return math(`${tc}<mn>1,44</mn><msup><mrow><mo>(</mo><mfrac><mrow><mi>N</mi><mo>·</mo><mi>L</mi></mrow><msqrt><mi>S</mi></msqrt></mfrac><mo>)</mo></mrow><mn>0,467</mn></msup><mtext> min</mtext>`);
+      case 'concentration_time_giandotti': return math(`${tc}<mfrac><mrow><mn>4</mn><msqrt><mi>A</mi></msqrt><mo>+</mo><mn>1,5</mn><mi>L</mi></mrow><mrow><mn>0,8</mn><msqrt><mrow><msub><mi>H</mi><mi>m</mi></msub><mo>−</mo><msub><mi>H</mi><mn>0</mn></msub></mrow></msqrt></mrow></mfrac><mtext> h</mtext>`);
+      case 'concentration_time_temez': return math(`${tc}<mn>0,3</mn><mo>·</mo><msup><mrow><mo>(</mo><mfrac><mi>L</mi><msup><mi>S</mi><mn>0,25</mn></msup></mfrac><mo>)</mo></mrow><mn>0,76</mn></msup><mtext> h</mtext>`);
+      case 'concentration_time_usda': return math('<msub><mi>T</mi><mi>c</mi></msub><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>n</mi></munderover><msub><mi>t</mi><mi>i</mi></msub>');
+      case 'concentration_time_passini': return math(`${tc}<mn>0,108</mn><mo>·</mo><msup><mrow><mi>A</mi><mo>·</mo><mi>L</mi></mrow><mfrac><mn>1</mn><mn>3</mn></mfrac></msup><mo>·</mo><msup><mi>S</mi><mrow><mo>−</mo><mn>0,5</mn></mrow></msup><mtext> h</mtext>`);
+      case 'concentration_time_ventura_heras': return math(`${tc}<mn>0,1272</mn><mo>·</mo><msqrt><mfrac><mi>A</mi><mi>S</mi></mfrac></msqrt><mtext> h</mtext>`);
+      case 'concentration_time_bransby_williams': return math(`<msub><mi>T</mi><mi>c</mi></msub><mo>≈</mo><mn>0,243</mn><mo>·</mo><mi>L</mi><mo>·</mo><msup><mi>A</mi><mrow><mo>−</mo><mn>0,1</mn></mrow></msup><mo>·</mo><msup><mi>S</mi><mrow><mo>−</mo><mn>0,2</mn></mrow></msup><mtext> h</mtext>`);
+      case 'concentration_time_johnstone_cross': return math(`${tc}<mn>0,0543</mn><mo>·</mo><msqrt><mfrac><mi>L</mi><mi>S</mi></mfrac></msqrt><mtext> h</mtext>`);
+      case 'concentration_time_clark': return math('<mtext>Modelo de hidrograma unitário; </mtext><msub><mi>T</mi><mi>c</mi></msub><mtext> é um parâmetro de entrada</mtext>');
+      case 'concentration_time_california_culverts': return math(`${tc}<mn>0,87</mn><mo>·</mo><msup><mfrac><msup><mi>L</mi><mn>3</mn></msup><mi>H</mi></mfrac><mn>0,385</mn></msup><mtext> h</mtext>`);
+      default: return math('<msub><mi>T</mi><mi>c</mi></msub>');
+    }
+  };
   return (
     <figure className="concentration-recommendation" aria-labelledby="concentration-recommendation-caption">
-      <div className="concentration-recommendation-kicker">Estimativa de referência · exige revisão</div>
-      <div className="concentration-recommendation-value">
-        <strong>{method.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
-        <span>h</span>
+      <div className="concentration-method-intro">
+        <span className="concentration-recommendation-kicker">Comparação de métodos</span>
+        <h3>Equações, parâmetros e domínio de aplicação</h3>
+        <p>Os métodos representam etapas e condições diferentes do escoamento. A faixa indicada ajuda a contextualizar cada estimativa; não substitui a avaliação dos percursos e dados hidrológicos locais.</p>
       </div>
-      <div className="concentration-recommendation-method">{method.method} · compatível apenas quanto à faixa de área consultada</div>
-      <div className="concentration-rationale">
-        <span className="rationale-icon" aria-hidden="true"><i className="fa-solid fa-triangle-exclamation" /></span>
-        <p>Esse tempo consta no relatório de morfometria, mas está marcado como pendente de revisão. Não é uma calibração para o Paramirim e não deve ser usado para dimensionamento de obras.</p>
-      </div>
-      <div className="concentration-audit-heading">Equações, parâmetros e domínio de aplicação</div>
       <div className="concentration-method-grid" aria-label="Comparação de métodos de tempo de concentração">
         {concentrationTimeMethods.map((candidate) => (
           <article className={`concentration-method-card ${candidate.assessment === 'scale_compatible' ? 'is-selected' : ''}`} key={candidate.id}>
             <header>
               <strong>{candidate.method}</strong>
               <span className={`method-fit method-fit-${candidate.assessment}`}>
-                {candidate.assessment === 'scale_compatible' ? 'Faixa de área compatível' : candidate.assessment === 'extrapolated' ? 'Extrapolação' : 'Dados insuficientes'}
+                {candidate.assessment === 'scale_compatible' ? 'Compatível quanto à faixa de área consultada' : candidate.assessment === 'extrapolated' ? 'Fora da faixa consultada' : 'Dados de aplicação limitados'}
               </span>
             </header>
-            <p className="method-time">Tempo no relatório: <strong>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {candidate.unit}</strong><span> · pendente de revisão</span></p>
-            <code>{candidate.formula}</code>
+            <p className="method-time">Resultado informado <strong>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {candidate.unit}</strong></p>
+            <div className="method-equation" role="math" aria-label={candidate.formula} dangerouslySetInnerHTML={{ __html: renderEquation(candidate.id) }} />
             <p><b>Parâmetros:</b> {candidate.parameters}</p>
             <p><b>Faixa/condição:</b> {candidate.limit}</p>
             <p className="method-context">{candidate.context}</p>
@@ -80,7 +90,7 @@ function ConcentrationTimeMethods() {
         ))}
       </div>
       <figcaption id="concentration-recommendation-caption">
-        A área da bacia é 17.070,32 km². Nesta comparação, Giandotti é a única fórmula com faixa de área publicada que contém essa escala; isso não equivale a validação para a região. Todos os tempos apresentados foram extraídos do relatório e permanecem sob revisão metodológica. Fórmulas com unidades ou insumos diferentes não são comparáveis diretamente. Antes de qualquer aplicação, é necessário reconstruir os percursos e parâmetros por sub-bacia e validar com registros de chuva e vazão.<Citation references={[7, 10, 19, 20]} />
+        A área da bacia é 17.070,32 km². Entre as fórmulas comparadas, Giandotti é a única cuja faixa de área publicada abrange essa escala. Essa compatibilidade diz respeito à área consultada e não representa calibração regional. Fórmulas com unidades ou insumos diferentes não são comparáveis diretamente; a avaliação hidrológica deve considerar percursos por sub-bacia e registros locais de chuva e vazão.<Citation references={[7, 10, 19, 20]} />
       </figcaption>
     </figure>
   );
@@ -490,7 +500,7 @@ export function HomePage() {
       <NarrativeSection
         id="tempos"
         eyebrow="07 · Resposta à chuva"
-        title="Um tempo de referência compatível com a escala da bacia"
+        title="Como estimar o tempo de concentração"
         tone="brand"
         description={<>
           <p>
@@ -500,9 +510,9 @@ export function HomePage() {
             parâmetros escolhidos.<Citation references={[7, 10]} />
           </p>
           <p>
-            Na síntese de condições de aplicação usada nesta revisão, a área da bacia está dentro da faixa citada para Giandotti.
-            A estimativa registrada no relatório é {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h,
-            mas continua pendente de revisão: estar dentro de uma faixa de área não valida a equação para o clima e a geologia locais.
+            Na síntese de condições de aplicação consultada, a área da bacia está dentro da faixa publicada para Giandotti.
+            O resultado informado para esse método é {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h;
+            compatibilidade de área não equivale, por si só, à calibração para as condições locais.
           </p>
           <p>
             Kirpich, Kerby, Témez, Bransby–Williams e California Culverts foram desenvolvidos ou compilados para domínios bem menores
