@@ -2,6 +2,18 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.2] - 2026-10-15
+
+### Página inicial: leitura hidrológica e territorial
+
+- o texto de abertura foi atualizado e as seções de dimensão territorial, relevo, geometria, drenagem e canal principal foram revistas;
+- a seção de geometria agora explica quais coeficientes têm limite de 1 e deixa claro que o coeficiente de compacidade não tem máximo teórico fixo; a caixa “Leitura hidrológica” foi removida;
+- a seção de drenagem foi simplificada, removendo os indicadores solicitados e mantendo no destaque apenas a extensão total da rede;
+- a discussão de águas subterrâneas agora diferencia os domínios geológicos descritos em Boquira da classificação nacional de aquíferos ANA/CPRM, sem interpretar densidade de drenagem como recarga;
+- a resposta à chuva apresenta equações, parâmetros, unidades e limitações de 11 métodos; os resultados da planilha foram identificados como pendentes de revisão, sem recomendação para dimensionamento;
+- o perfil do canal não exibe mais a observação sobre escalas não proporcionais, e as referências de Leopold–Wolman e Schumm foram incluídas;
+- a síntese hidrológica foi reescrita em linguagem direta e os pequenos cards redundantes do contexto territorial foram retirados.
+
 ## [1.0.1] - 2026-10-14
 
 ### Acesso aos documentos legais

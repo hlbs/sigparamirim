@@ -19,23 +19,23 @@ O conceito de tempo de concentração não possui uma definição operacional ú
 
 ## Síntese aplicada ao Paramirim
 
-| Método | Resultado no relatório | Decisão pública | Motivo |
+| Método | Resultado no relatório | Leitura pública | Motivo |
 | --- | ---: | --- | --- |
-| Kirpich | 80,13 h | Excluído | Método para pequenas bacias rurais e canais bem definidos; a escala do Paramirim está fora do domínio original. |
-| Kerby | 8,89 h | Excluído | Método de escoamento superficial inicial; não representa sozinho uma bacia regional e exige parâmetros de retardo/trecho de fluxo. |
-| Giandotti | **34,22 h** | **Referência de escala** | Faixa publicada de 170–70.000 km² contempla os 17.070,32 km² do Paramirim. Ainda depende de validação regional. |
-| Témez | 95,76 h | Excluído | Variante regional e domínio não documentados no relatório; não é possível confirmar equivalência de entradas e unidades. |
-| USDA/SCS | 267,41 h | Excluído | Requer percurso segmentado, cobertura, solo, declividade, rugosidade, CN e hipóteses de chuva uniforme; o relatório morfométrico não contém esse conjunto. |
-| Passini | 1.443,88 h | Excluído | Fórmula, variante e convenção de unidades não identificadas na fonte do valor. |
-| Ventura-Heras | 2.617,15 h | Excluído | Resultado extremo e não reproduzível com os metadados atuais; a variante aplicada não está documentada. |
-| Bransby-Williams | 32,79 h | Excluído | Domínio, variante e unidades não confirmados para a aplicação realizada. |
-| Johnstone-Cross | 46,37 h | Excluído | Faixa publicada de aproximadamente 64,8–4.206,1 km²; a bacia é cerca de quatro vezes maior. |
-| Clark | 96,50 h | Excluído | Clark não é apenas uma equação de Tc: exige Tc, coeficiente de armazenamento e relação tempo-área, normalmente calibrados com dados de chuva-vazão. |
-| California Culverts | 53,61 h | Excluído | Desenvolvido para pequenas bacias montanhosas; referências técnicas indicam área inferior a 0,50 km² e talvegue inferior a 10 km. |
+| Kirpich | 80,13 h | Extrapolação; pendente de revisão | Método para pequenas bacias rurais e canais bem definidos; a escala do Paramirim está fora do domínio original. |
+| Kerby | 8,89 h | Apenas componente superficial; pendente de revisão | Método de escoamento superficial inicial; não representa sozinho uma bacia regional e exige parâmetros de retardo/trecho de fluxo. |
+| Giandotti | **34,22 h** | **Compatível só quanto à faixa de área; pendente de revisão** | Faixa publicada em sínteses de 170–70.000 km² contém os 17.070,32 km² do Paramirim, mas não constitui validação regional. |
+| Témez | 95,76 h | Fora da faixa de área citada; pendente de revisão | Aplicação do método racional modificado é citada até 3.000 km²; a bacia é maior. A variante e os dados de entrada também precisam ser conferidos. |
+| USDA/SCS | 267,41 h | Não reproduzível com os dados disponíveis | Requer percurso segmentado, cobertura, solo, declividade, rugosidade, CN e hipóteses de chuva uniforme; o relatório morfométrico não contém esse conjunto. |
+| Passini | 1.443,88 h | Não reproduzível; pendente de revisão | Referência original, variante e convenção de unidades não identificadas para o valor calculado. |
+| Ventura-Heras | 2.617,15 h | Não reproduzível; pendente de revisão | Resultado extremo; a variante e as unidades não estão documentadas. A origem rastreável é Ventura (1905), e “Heras” aparece em compilações posteriores. |
+| Bransby-Williams | 32,79 h | Extrapolação; pendente de revisão | A área excede o domínio de aproximadamente 130 km² citado para bacias rurais indianas; a variante e as unidades também precisam ser conferidas. |
+| Johnstone-Cross | 46,37 h | Extrapolação; pendente de revisão | Faixa publicada de aproximadamente 65–4.206 km² não alcança os 17.070,32 km² da bacia. |
+| Clark | 96,50 h | Não é um resultado calculado pelo método Clark | Clark não é uma equação autônoma de Tc: exige Tc de entrada, coeficiente de armazenamento e relação tempo-área, normalmente calibrados com dados de chuva-vazão. |
+| California Culverts | 53,61 h | Extrapolação; pendente de revisão | Desenvolvido para pequenas bacias montanhosas. A faixa numérica de área disponível é secundária e não foi confirmada na fonte original. |
 
 ## Regra de uso
 
-Giandotti é mostrado na página inicial apenas como referência de compatibilidade de escala. Isso não equivale a uma calibração hidrológica do Paramirim. Para projetos, o valor precisa ser reavaliado por sub-bacias, chuva espacialmente distribuída, solos, cobertura, trajetórias hidráulicas, dados de vazão e validação do hidrograma.
+Os tempos acima foram incluídos no relatório morfométrico e ainda estão pendentes de revisão. Giandotti é mostrado na página inicial apenas porque a faixa de área reproduzida em sínteses abrange a escala do Paramirim; isso não equivale a calibração hidrológica regional. Para projetos, nenhum desses valores deve ser utilizado sem conferir a fórmula e as unidades e reavaliar os percursos por sub-bacia, chuva espacial, solos, cobertura, dados de vazão e validação do hidrograma.
 
 Os PDFs são mantidos como material de auditoria do projeto. As conclusões públicas devem ser atualizadas quando forem obtidos dados observados ou quando a equipe confirmar a fórmula exata usada em cada linha do relatório original.
 

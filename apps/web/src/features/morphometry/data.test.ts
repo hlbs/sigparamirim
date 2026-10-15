@@ -33,12 +33,16 @@ describe('dados narrativos morfométricos', () => {
     expect(formatMetric(narrativeMetric('relief'))).toBe('1.622 m');
   });
 
-  it('mantém DOI explícito em todas as referências publicadas', () => {
-    expect(scientificReferences).toHaveLength(18);
+  it('mantém DOI e fontes institucionais rastreáveis nas referências', () => {
+    expect(scientificReferences).toHaveLength(22);
     for (const reference of scientificReferences) {
-      expect(reference.doi).toMatch(/^10\./);
-      expect(reference.url).toContain('doi.org/10.');
+      expect(reference.author).toBeTruthy();
+      expect(reference.year).toBeGreaterThan(1900);
+      expect(reference.title).toBeTruthy();
+      if (reference.doi.startsWith('10.')) expect(reference.url).toMatch(/^https:\/\/doi\.org\//);
     }
+    expect(scientificReferences.find((reference) => reference.author.startsWith('Daltro'))?.url).toBe('');
+    expect(scientificReferences.find((reference) => reference.author.startsWith('Agência Nacional'))?.url).toContain('snirh.gov.br');
   });
 
   it('expõe os tempos de concentração apenas como comparação metodológica', () => {

@@ -148,6 +148,7 @@ a { color: inherit; }
 .shape-row strong { font-size: 1.55rem; }
 .shape-track { display: block; height: 8px; margin-top: 15px; overflow: hidden; border-radius: 999px; background: var(--surface-muted); }
 .shape-track > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), #9ca438); }
+.shape-scale-note { margin: -2px 1px 0; color: var(--text-muted); font-size: .74rem; line-height: 1.45; }
 .shape-insight { display: grid; gap: 7px; padding: 19px 21px; border-left: 3px solid var(--brand); border-radius: 0 16px 16px 0; background: var(--brand-soft); color: var(--text); line-height: 1.5; }
 .shape-insight strong { font-size: .85rem; }
 .shape-insight span { color: var(--text-muted); font-size: .88rem; }
@@ -156,6 +157,7 @@ a { color: inherit; }
 .drainage-number strong { display: flex; flex-wrap: wrap; align-items: baseline; font-size: clamp(2.2rem, 4vw, 4rem); line-height: .98; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
 .drainage-number span { color: rgba(255,255,255,.72); line-height: 1.5; }
 .drainage-divider { width: 1px; background: rgba(255,255,255,.25); }
+.drainage-visual-single { grid-template-columns: minmax(0, 1fr); }
 .drainage-support-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .drainage-support-grid .story-metric-card { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); color: #fff; }
 .drainage-support-grid .metric-label { color: rgba(255,255,255,.72); }
@@ -201,6 +203,21 @@ a { color: inherit; }
 .concentration-audit-row strong, .concentration-audit-row span:nth-child(2) { color: rgba(255,255,255,.92); }
 .concentration-audit-row.is-selected { border-color: rgba(226,233,154,.7); background: rgba(219,230,120,.14); box-shadow: inset 3px 0 #dbe678; }
 .concentration-audit-row.is-selected strong, .concentration-audit-row.is-selected span:nth-child(2) { color: #eff5b0; }
+.concentration-method-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.concentration-method-card { min-width: 0; padding: 13px; border: 1px solid rgba(255,255,255,.16); border-radius: 15px; background: rgba(0,0,0,.11); color: rgba(255,255,255,.82); font-size: .73rem; line-height: 1.48; }
+.concentration-method-card.is-selected { border-color: rgba(226,233,154,.68); background: rgba(219,230,120,.12); }
+.concentration-method-card header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.concentration-method-card header > strong { color: #fff; font-size: .86rem; }
+.method-fit { flex: 0 0 auto; padding: 4px 7px; border-radius: 999px; background: rgba(255,255,255,.11); color: rgba(255,255,255,.8); font-size: .59rem; font-weight: 800; }
+.method-fit-scale_compatible { background: #e6edaa; color: #343704; }
+.method-fit-extrapolated { background: rgba(255,198,120,.17); color: #ffdfa8; }
+.concentration-method-card .method-time { margin: 10px 0 7px; color: rgba(255,255,255,.7); font-size: .68rem; }
+.concentration-method-card .method-time strong { color: #fff; font-size: .8rem; }
+.concentration-method-card .method-time span { color: #ffdfa8; }
+.concentration-method-card code { display: block; overflow-wrap: anywhere; margin: 8px 0; padding: 8px; border-radius: 8px; background: rgba(0,0,0,.19); color: #f3f5d3; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .7rem; }
+.concentration-method-card p { margin: 7px 0 0; }
+.concentration-method-card p b { color: rgba(255,255,255,.95); }
+.concentration-method-card .method-context { padding-top: 7px; border-top: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.72); }
 .concentration-recommendation figcaption { color: rgba(255,255,255,.68); font-size: .78rem; line-height: 1.55; }
 @keyframes flow-dash { to { stroke-dashoffset: -30; } }
 .synthesis-visual { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
@@ -241,6 +258,15 @@ a { color: inherit; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-audit-row strong, :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-audit-row span:nth-child(2) { color: #20260a; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-audit-header { color: rgba(32,38,10,.66); background: transparent; }
 :root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-audit-row.is-selected { border-color: #5a5e0b; background: rgba(255,255,255,.35); }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card { border-color: rgba(63,67,5,.2); background: rgba(255,255,255,.25); color: rgba(32,38,10,.84); }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card header > strong,
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-time strong,
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card p b { color: #20260a; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-time { color: rgba(32,38,10,.72); }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card .method-context { border-color: rgba(63,67,5,.16); color: rgba(32,38,10,.76); }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .concentration-method-card code { background: rgba(63,67,5,.09); color: #20260a; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-fit { background: rgba(63,67,5,.09); color: #303404; }
+:root:not([data-theme="dark"]) .story-section[data-tone="brand"] .method-fit-extrapolated { background: rgba(158,88,8,.12); color: #744300; }
 :root[data-theme="dark"] .story-hero { background: radial-gradient(circle at 82% 16%, rgba(215,231,122,.16), transparent 31%), linear-gradient(145deg, #171b08, #343a0b 62%, #4c5314); }
 :root[data-theme="dark"] .story-section[data-tone="brand"] { background: radial-gradient(circle at 90% 12%, rgba(215,231,122,.14), transparent 34%), linear-gradient(145deg, #1b2109, #343a0b 70%, #4b5315); }
 :root[data-theme="dark"] .references-section { background: color-mix(in srgb, var(--brand-soft) 82%, #0c0f08); }
@@ -389,6 +415,7 @@ a { color: inherit; }
   .concentration-audit-row { grid-template-columns: 1fr 1fr; gap: 5px 9px; }
   .concentration-audit-row span:last-child { grid-column: 1 / -1; color: rgba(255,255,255,.62); }
   .concentration-audit-header { display: none; }
+  .concentration-method-grid { grid-template-columns: 1fr; }
   .synthesis-note { grid-column: auto; }
   .story-next { align-items: stretch; flex-direction: column; }
   .story-next-actions { display: grid; }

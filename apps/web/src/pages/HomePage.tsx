@@ -46,36 +46,41 @@ function Citation({ references }: { references: readonly number[] }) {
   );
 }
 
-function ConcentrationTimeRecommendation() {
+function ConcentrationTimeMethods() {
   const [method] = compatibleConcentrationTime;
   if (!method) return null;
   return (
     <figure className="concentration-recommendation" aria-labelledby="concentration-recommendation-caption">
-      <div className="concentration-recommendation-kicker">Método compatível com a escala territorial</div>
+      <div className="concentration-recommendation-kicker">Estimativa de referência · exige revisão</div>
       <div className="concentration-recommendation-value">
         <strong>{method.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
         <span>h</span>
       </div>
-      <div className="concentration-recommendation-method">Equação de {method.method}</div>
+      <div className="concentration-recommendation-method">{method.method} · compatível apenas quanto à faixa de área consultada</div>
       <div className="concentration-rationale">
-        <span className="rationale-icon" aria-hidden="true">✓</span>
-        <p>{method.context}</p>
+        <span className="rationale-icon" aria-hidden="true"><i className="fa-solid fa-triangle-exclamation" /></span>
+        <p>Esse tempo consta no relatório de morfometria, mas está marcado como pendente de revisão. Não é uma calibração para o Paramirim e não deve ser usado para dimensionamento de obras.</p>
       </div>
-      <div className="concentration-audit-heading">Auditoria das demais metodologias</div>
-      <div className="concentration-audit" role="table" aria-label="Resultados e limites das metodologias de tempo de concentração">
-        <div className="concentration-audit-row concentration-audit-header" role="row">
-          <span>Método</span><span>Resultado</span><span>Limite / condição verificada</span>
-        </div>
+      <div className="concentration-audit-heading">Equações, parâmetros e domínio de aplicação</div>
+      <div className="concentration-method-grid" aria-label="Comparação de métodos de tempo de concentração">
         {concentrationTimeMethods.map((candidate) => (
-          <div className={`concentration-audit-row ${candidate.assessment === 'scale_compatible' ? 'is-selected' : ''}`} role="row" key={candidate.id}>
-            <strong>{candidate.method}</strong>
-            <span>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h</span>
-            <span>{candidate.limit}</span>
-          </div>
+          <article className={`concentration-method-card ${candidate.assessment === 'scale_compatible' ? 'is-selected' : ''}`} key={candidate.id}>
+            <header>
+              <strong>{candidate.method}</strong>
+              <span className={`method-fit method-fit-${candidate.assessment}`}>
+                {candidate.assessment === 'scale_compatible' ? 'Faixa de área compatível' : candidate.assessment === 'extrapolated' ? 'Extrapolação' : 'Dados insuficientes'}
+              </span>
+            </header>
+            <p className="method-time">Tempo no relatório: <strong>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {candidate.unit}</strong><span> · pendente de revisão</span></p>
+            <code>{candidate.formula}</code>
+            <p><b>Parâmetros:</b> {candidate.parameters}</p>
+            <p><b>Faixa/condição:</b> {candidate.limit}</p>
+            <p className="method-context">{candidate.context}</p>
+          </article>
         ))}
       </div>
       <figcaption id="concentration-recommendation-caption">
-        A área de estudo é 17.070,32 km². Entre as onze metodologias presentes no relatório, Giandotti é a única cuja faixa de calibração publicada contempla essa escala. Os demais resultados permanecem visíveis para auditoria, mas não são considerados referências para esta bacia. A estimativa selecionada ainda precisa ser validada com chuva, sub-bacias e hidrogramas observados antes de qualquer dimensionamento.
+        A área da bacia é 17.070,32 km². Nesta comparação, Giandotti é a única fórmula com faixa de área publicada que contém essa escala; isso não equivale a validação para a região. Todos os tempos apresentados foram extraídos do relatório e permanecem sob revisão metodológica. Fórmulas com unidades ou insumos diferentes não são comparáveis diretamente. Antes de qualquer aplicação, é necessário reconstruir os percursos e parâmetros por sub-bacia e validar com registros de chuva e vazão.<Citation references={[7, 10, 19, 20]} />
       </figcaption>
     </figure>
   );
@@ -202,7 +207,6 @@ function TerritoryContextTabs() {
     </div>
     <article className="territory-tab-panel" role="tabpanel">
       <span className="eyebrow">{current.label}</span><h3>{current.title}</h3><p>{current.body}{current.refs.length > 0 && <Citation references={current.refs} />}</p>
-      <div className="territory-tab-items">{current.items.map(([label, text]) => <div key={label}><strong>{label}</strong><span>{text}</span></div>)}</div>
     </article>
   </div>;
 }
@@ -268,14 +272,7 @@ export function HomePage() {
   const channelSlope = narrativeMetric('main_channel_slope_endpoints');
   const channelSinuosity = narrativeMetric('main_channel_sinuosity');
   const totalChannels = narrativeMetric('total_channel_length');
-  const streamCount = narrativeMetric('number_of_streams');
   const drainageDensity = narrativeMetric('drainage_density');
-  const streamFrequency = narrativeMetric('stream_frequency');
-  const drainageTexture = narrativeMetric('drainage_texture');
-  const drainageIntensity = narrativeMetric('drainage_intensity');
-  const strahlerOrder = narrativeMetric('strahler_order');
-  const meanStreamLength = narrativeMetric('mean_stream_length');
-  const overlandFlow = narrativeMetric('overland_flow_length');
   const channelMaintenance = narrativeMetric('channel_maintenance_constant');
   const formFactor = narrativeMetric('form_factor');
   const elongation = narrativeMetric('elongation_ratio');
@@ -296,10 +293,10 @@ export function HomePage() {
         <div className="story-hero-copy">
           <BrandLogo kind="logo" variant="dark" alt="SIG Paramirim" className="story-hero-logo" />
           <span className="eyebrow">Bacia Hidrográfica do Rio Paramirim</span>
-          <h1 id="home-title">Uma leitura territorial construída com dados rastreáveis.</h1>
+          <h1 id="home-title">Uma leitura territorial construída com dados e informações.</h1>
           <p>
             Descubra como o relevo, a forma e a rede de drenagem ajudam a contar a história da Bacia do
-            Rio Paramirim. Aqui, números ganham contexto sem perder o vínculo com a ciência que os sustenta.
+            Rio Paramirim.
           </p>
           <div className="hero-actions">
             <a className="button button-primary" href="#dimensao">Conhecer a bacia</a>
@@ -319,13 +316,14 @@ export function HomePage() {
         title="Um território de escala regional"
         description={<>
           <p>
-            Com {formatMetric(area)}, a Bacia do Rio Paramirim é um sistema hidrográfico de grande extensão. Seu eixo mede
-            {` ${formatMetric(length)}`}, a largura média calculada é {formatMetric(width)} e o divisor de águas forma um
+            Com {formatMetric(area)}, a Bacia do Rio Paramirim é um sistema hidrográfico de grande extensão. Seu eixo é
+            estimado em {formatMetric(length)}, possui largura média calculada da ordem de {formatMetric(width)} e
             perímetro de {formatMetric(perimeter)}.
           </p>
           <p>
-            Essa escala importa porque uma chuva raramente cobre toda a bacia com a mesma intensidade e duração. Diferentes
-            setores recebem, armazenam e liberam água em momentos distintos. Por isso, estudos de projeto devem subdividir o
+            A partir dessa escala podemos compreender melhor como um evento pluviométrico se dispersa em sua área de
+            drenagem, embora uma chuva raramente cubra toda a bacia com a mesma intensidade e duração. Diferentes setores
+            recebem, armazenam e liberam água em momentos distintos. Por isso, estudos de projeto devem subdividir o
             território e considerar a distribuição espacial da chuva, do relevo, dos solos e do uso da terra.<Citation references={[6, 7, 10]} />
           </p>
         </>}
@@ -345,13 +343,14 @@ export function HomePage() {
         tone="soft"
         description={<>
           <p>
-            O território se eleva de {formatMetric(minimumElevation)} a {formatMetric(maximumElevation)}. Entre esses
-            extremos há uma diferença de {formatMetric(relief)}, ou seja, uma variação vertical de mais de 1,6 quilômetro.
+            O território vai de {formatMetric(minimumElevation)} a {formatMetric(maximumElevation)}. Entre esses extremos
+            há uma amplitude de {formatMetric(relief)}.
           </p>
           <p>
             A elevação média, de {formatMetric(meanElevation)}, e a declividade média, de {formatMetric(slope)}, resumem
-            como as alturas e inclinações se distribuem pela bacia. São informações essenciais para entender o caminho
-            da água, mas não devem ser interpretadas isoladamente.
+            como as altitudes e inclinações se distribuem pela bacia. O conhecimento da topografia e da distribuição das
+            declividades é essencial para compreender a formação dos trechos de drenagem, mas esses dados não devem ser
+            interpretados isoladamente.
           </p>
         </>}
       >
@@ -378,14 +377,15 @@ export function HomePage() {
         title="Quatro razões descrevem a forma"
         description={<>
           <p>
-            Além do tamanho, uma bacia também pode ser compreendida pelo seu desenho. Fator de forma, razão de
-            elongação, circularidade e compacidade comparam área, perímetro e comprimento por diferentes pontos de vista.
+            Além do tamanho, a geometria da bacia pode ser descrita por relações entre área, perímetro e comprimento. Fator
+            de forma, razão de elongação e circularidade variam entre 0 e 1; para esses índices, 1 é o limite geométrico
+            superior. Já o coeficiente de compacidade tem mínimo teórico 1 e não possui máximo fixo.
           </p>
           <p>
             Os valores encontrados — Ff {formatMetric(formFactor)}, Re {formatMetric(elongation)}, Rc {formatMetric(circularity)}
-            e Kc {formatMetric(compactness)} — apontam para uma bacia alongada e pouco circular. Isso tende a distribuir
-            a chegada das contribuições ao canal ao longo do tempo, em vez de concentrá-las simultaneamente como ocorreria
-            em uma forma compacta. É uma interpretação de forma, não uma previsão de cheia.<Citation references={[1, 2, 3, 4, 6, 11]} />
+            e Kc {formatMetric(compactness)} — apontam para uma bacia alongada e pouco circular. Em conjunto, podem sugerir
+            que as contribuições chegam ao canal em tempos diferentes, mas não calculam uma cheia nem substituem a análise
+            de chuva, relevo, solos e armazenamento.<Citation references={[1, 2, 3, 4, 6, 11]} />
           </p>
         </>}
       >
@@ -393,11 +393,11 @@ export function HomePage() {
           {[formFactor, elongation, circularity].map((metric) => (
             <article key={metric.id} className="shape-row">
               <div><span>{metric.labelPtBr}</span><strong>{formatMetric(metric)}</strong></div>
-              <span className="shape-track" aria-hidden="true"><span style={{ width: `${Math.min(metric.value * 100, 100)}%` }} /></span>
+              <span className="shape-track" role="img" aria-label={`${formatMetric(metric)} em uma escala de zero a um`}><span style={{ width: `${Math.max(0, Math.min(metric.value * 100, 100))}%` }} /></span>
             </article>
           ))}
+          <p className="shape-scale-note">Escala dos três índices: 0–1. A compacidade (Kc) é mostrada separadamente porque cresce a partir de 1 e não é limitada a esse intervalo.</p>
           <MetricCard metric={compactness} />
-          <div className="shape-insight"><strong>Leitura hidrológica</strong><span>Geometria alongada tende a espalhar os tempos de chegada, mas chuva, solos, armazenamento e rede de canais também controlam o hidrograma.</span></div>
         </div>
       </NarrativeSection>
 
@@ -409,29 +409,18 @@ export function HomePage() {
         description={<>
           <p>
             Se todos os trechos de canais identificados fossem colocados em linha, eles somariam {formatMetric(totalChannels)}.
-            Essa rede está organizada em {formatMetric(streamCount, 0)} segmentos que conduzem a água através da paisagem.
+            Na bacia, predominam cursos d’água intermitentes: eles fluem nos períodos chuvosos e podem secar durante a estiagem.
           </p>
           <p>
-            A densidade de drenagem relaciona essa extensão com a área da bacia. O resultado, {formatMetric(drainageDensity)},
-            funciona como uma medida de comparação: ele descreve quanto canal foi mapeado por unidade de área, sem determinar,
-            por si só, infiltração, permeabilidade ou risco hidrológico.<Citation references={[1, 2, 4, 5]} />
-          </p>
-          <p>
-            A ordem máxima registrada é {formatMetric(strahlerOrder, 0)}; a frequência de canais é {formatMetric(streamFrequency)}
-            e o comprimento médio dos segmentos é {formatMetric(meanStreamLength)}. Esses números descrevem a arquitetura
-            da rede, cuja leitura depende também da escala e da resolução do mapeamento.<Citation references={[4, 5, 11]} />
+            A densidade de drenagem relaciona essa extensão com a área da bacia. O resultado é {formatMetric(drainageDensity)}.
+            Sob a classificação morfométrica adotada, esse valor indica baixa
+            densidade — por vezes descrita como uma rede “mal drenada”. É um descritor da rede mapeada, não um diagnóstico
+            isolado de permeabilidade: geologia, solos, vegetação, clima e escala cartográfica também influenciam a leitura.<Citation references={[1, 2, 4, 5]} />
           </p>
         </>}
       >
-        <div className="drainage-visual">
-          <div className="drainage-number"><MetricValue metric={drainageDensity} /><span>Densidade de drenagem</span></div>
-          <div className="drainage-divider" />
-          <div className="drainage-number"><MetricValue metric={overlandFlow} /><span>Comprimento médio estimado do escoamento superficial</span></div>
-        </div>
-        <div className="drainage-support-grid">
-          <MetricCard metric={strahlerOrder} digits={0} />
-          <MetricCard metric={streamFrequency} />
-          <MetricCard metric={meanStreamLength} />
+        <div className="drainage-visual drainage-visual-single">
+          <div className="drainage-number"><MetricValue metric={totalChannels} /><span>Extensão total da rede de canais identificada</span></div>
         </div>
       </NarrativeSection>
 
@@ -442,17 +431,15 @@ export function HomePage() {
         tone="soft"
         description={<>
           <p>
-            O canal principal funciona como um eixo da drenagem: ao longo de {formatMetric(channelLength)}, ele conecta um
-            ponto a {formatMetric(channelStart)} de altitude a outro situado a {formatMetric(channelEnd)}.
-          </p>
-          <p>
-            A diferença de altitude distribuída por esse percurso produz um gradiente médio de {formatMetric(channelGradient)}.
-            A declividade entre os extremos é {formatMetric(channelSlope)} e a sinuosidade informada é {formatMetric(channelSinuosity)}.
-            O desenho ao lado é uma representação didática desse trajeto — uma síntese, e não o perfil topográfico completo.<Citation references={[4, 6, 11]} />
+            O canal principal (Rio Paramirim) recebe a contribuição de seus tributários ao longo de {formatMetric(channelLength)}.
+            A diferença de altitude distribuída por esse percurso produz um gradiente médio de {formatMetric(channelGradient)},
+            com declividade entre os extremos de {formatMetric(channelSlope)}. A sinuosidade estimada é {formatMetric(channelSinuosity)},
+            valor que sugere um traçado sinuoso, associado à formação de meandros. O desenho ao lado é didático e não substitui
+            o perfil levantado em campo.<Citation references={[4, 6, 11, 19, 20]} />
           </p>
         </>}
       >
-        <figure className="channel-profile" aria-labelledby="channel-caption">
+        <figure className="channel-profile" aria-label="Representação didática do perfil do canal principal">
           <svg viewBox="0 0 680 320" role="img" aria-labelledby="channel-svg-title channel-svg-description">
             <title id="channel-svg-title">Perfil simplificado do canal principal</title>
             <desc id="channel-svg-description">Linha descendente entre 979,89 e 409 metros ao longo de 386,54 quilômetros.</desc>
@@ -470,26 +457,30 @@ export function HomePage() {
             <span><strong>{formatMetric(channelSlope)}</strong> declividade entre extremos</span>
             <span><strong>{formatMetric(channelSinuosity)}</strong> sinuosidade informada</span>
           </div>
-          <figcaption id="channel-caption">Representação esquemática do gradiente do canal principal; as escalas vertical e horizontal não são proporcionais.</figcaption>
         </figure>
       </NarrativeSection>
 
       <NarrativeSection
         id="subsolo"
         eyebrow="06 · Superfície e subsolo"
-        title="A água que vemos e a água que circula abaixo dela"
+        title="A interação entre as águas superficiais e subterrâneas"
         tone="soft"
         description={<>
           <p>
-            Com {formatMetric(drainageDensity)} de densidade de drenagem, {formatMetric(overlandFlow)} de comprimento médio
-            estimado do escoamento superficial e {formatMetric(channelMaintenance)} de área associada a cada quilômetro de canal,
-            a bacia oferece pistas sobre como a água pode se repartir entre o caminho superficial e o armazenamento no terreno.
+            A água que escoa nos rios e a que circula no subsolo fazem parte de um mesmo sistema, mas sua conexão depende
+            das rochas, fraturas, coberturas superficiais e condições de recarga. A densidade de drenagem da bacia
+            ({formatMetric(drainageDensity)}) não mede recarga nem disponibilidade subterrânea; é apenas uma característica
+            da rede de canais mapeada.
           </p>
           <p>
-            Uma rede menos densa pode estar associada a maior infiltração ou a materiais mais permeáveis, mas também pode
-            refletir relevo, vegetação, clima, geologia e a resolução do mapeamento. Portanto, esses indicadores não medem
-            recarga de aquífero. Para falar de água subterrânea com segurança, precisamos cruzá-los com litologia, solos,
-            lineamentos, poços, nascentes, níveis d'água e séries de vazão.<Citation references={[5, 12, 13, 14]} />
+            Em Boquira, estudos geológicos e hidrogeológicos descrevem diferentes domínios: rochas cristalinas do Complexo
+            Paramirim e granitos; metassedimentos e metavulcânicas, incluindo as formações Boquira e Botuporã; rochas
+            vulcânicas da Formação Pajeú; e coberturas cenozoicas. Em terrenos cristalinos, a água tende a ser armazenada
+            sobretudo em fraturas; coberturas superficiais podem oferecer condições distintas. O cadastro nacional
+            da ANA/CPRM organiza os sistemas aquíferos em domínios porosos, cársticos e fraturados, uma classificação
+            regional que não substitui o mapeamento hidrogeológico local. Em Boquira, pesquisas analisaram poços, nascentes
+            e águas associadas à antiga área de mineração; seus resultados reforçam a necessidade de avaliar cada ponto e
+            sua unidade geológica, sem generalizar qualidade ou produtividade para toda a bacia.<Citation references={[13, 15, 21, 22]} />
           </p>
         </>}
       >
@@ -503,27 +494,32 @@ export function HomePage() {
         tone="brand"
         description={<>
           <p>
-            Tempo de concentração não é uma propriedade fixa como a área ou o relevo. Dependendo do estudo, ele pode representar
-            tempo de viagem, tempo de equilíbrio ou uma escala de resposta do hidrograma. Essa diferença conceitual é uma das razões
-            pelas quais equações empíricas não devem ser comparadas como se medissem exatamente a mesma coisa.<Citation references={[7, 10]} />
+            O tempo de concentração aproxima o percurso da água até a saída da bacia, mas sua definição varia entre métodos.
+            Algumas equações estimam o tempo de viagem em canais; outras cobrem o escoamento superficial ou combinam trechos.
+            Por isso, os resultados não são diretamente equivalentes e dependem das unidades, do caminho hidráulico e dos
+            parâmetros escolhidos.<Citation references={[7, 10]} />
           </p>
           <p>
-            Para a escala territorial do Paramirim, a revisão das onze metodologias listadas no relatório encontrou apenas a equação
-            de Giandotti com faixa de calibração publicada compatível. O valor de referência é, portanto, {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h.
+            Na síntese de condições de aplicação usada nesta revisão, a área da bacia está dentro da faixa citada para Giandotti.
+            A estimativa registrada no relatório é {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h,
+            mas continua pendente de revisão: estar dentro de uma faixa de área não valida a equação para o clima e a geologia locais.
           </p>
           <p>
-            As demais foram descartadas para esta leitura pública: algumas foram calibradas em bacias muito menores; outras exigem
-            parâmetros, variantes ou unidades que o relatório não documenta. Isso não significa que sejam “erradas” em qualquer contexto,
-            mas que não são defensáveis como referência para esta bacia sem reconstrução e validação específicas.<Citation references={[7, 8, 9, 10, 11]} />
+            Kirpich, Kerby, Témez, Bransby–Williams e California Culverts foram desenvolvidos ou compilados para domínios bem menores
+            ou condições específicas. Johnstone–Cross alcança bacias maiores que esses métodos, mas sua faixa publicada ainda não
+            cobre o Paramirim. O procedimento USDA/NRCS depende de dados de percurso e cobertura; Clark é um método de hidrograma
+            que precisa receber um Tc e outros parâmetros, não uma fórmula independente para calculá-lo. Fórmulas sem variante,
+            unidade ou fonte primária confirmadas ficam apenas para comparação.<Citation references={[7, 8, 9, 10, 11]} />
           </p>
           <p>
-            Giandotti é uma referência de escala, não uma calibração automática. Em projetos, o valor deve ser refinado por sub-bacias,
-            distribuição espacial da chuva, cobertura, solos, trajetória hidráulica e confronto com hidrogramas observados ou regionalizados.
-            Assim, a plataforma mostra um único número compatível, mas preserva a responsabilidade técnica sobre seu uso.<Citation references={[7, 8, 9, 10]} />
+            Para avançar, é preciso dividir a bacia em unidades de resposta mais homogêneas, delinear os percursos hidráulicos,
+            documentar comprimento e declividade de cada trecho, representar uso do solo e infiltração e comparar estimativas
+            com séries observadas de chuva e vazão. A tabela explicita equações, parâmetros e limites para que o número não seja
+            confundido com uma previsão de projeto.<Citation references={[7, 8, 9, 10]} />
           </p>
         </>}
       >
-        <ConcentrationTimeRecommendation />
+        <ConcentrationTimeMethods />
       </NarrativeSection>
 
       <NarrativeSection
@@ -532,15 +528,16 @@ export function HomePage() {
         title="O que a morfometria permite compreender"
         description={<>
           <p>
-            O Paramirim combina grande extensão territorial, amplitude altimétrica de {formatMetric(relief)}, declividade média
-            de {formatMetric(slope)} e uma forma alongada. A rede possui baixa extensão de canais por área mapeada, enquanto o
-            canal principal percorre {formatMetric(channelLength)} e desce, em média, {formatMetric(channelGradient)} por quilômetro.
+            O Paramirim é uma bacia extensa, com amplitude altimétrica de {formatMetric(relief)} e declividade média de
+            {` ${formatMetric(slope)}`}. Seu formato alongado e a rede de canais com densidade de {formatMetric(drainageDensity)}
+            ajudam a descrever o território; o canal principal percorre {formatMetric(channelLength)} e apresenta gradiente médio
+            de {formatMetric(channelGradient)} por quilômetro.
           </p>
           <p>
-            Em conjunto, esses dados sugerem uma resposta espacialmente complexa: setores íngremes podem transferir água com
-            rapidez, enquanto a distância, a geometria alongada, a rugosidade agregada de {formatMetric(ruggedness)} e o
-            armazenamento local podem distribuir essa resposta no tempo. A morfometria organiza hipóteses; quem confirma os
-            processos são séries de chuva e vazão, mapas de solo e geologia, observações de campo e modelos calibrados.<Citation references={[5, 6, 11, 12, 13, 14]} />
+            Esses números não contam a história toda. Chuva irregular, encostas, solos, fraturas, cobertura vegetal, canais
+            intermitentes e usos da água mudam de um setor para outro. A morfometria ajuda a formular perguntas — onde a água
+            se concentra, quanto demora para chegar ao rio, que áreas podem armazená-la —, mas só observações de campo, dados
+            de chuva e vazão e análises geológicas e hidrogeológicas permitem testar essas hipóteses.<Citation references={[5, 6, 11, 12, 13, 14]} />
           </p>
         </>}
       >
@@ -571,7 +568,7 @@ export function HomePage() {
           {scientificReferences.map((reference, index) => (
             <li key={reference.doi} id={`ref-${index + 1}`}>
               <span>{reference.author} ({reference.year}). {reference.title}.</span>
-              <a href={reference.url} target="_blank" rel="noreferrer">DOI: {reference.doi}</a>
+              {reference.url && <a href={reference.url} target="_blank" rel="noreferrer">{reference.url.startsWith('https://doi.org/') ? `DOI: ${reference.doi}` : reference.doi}</a>}
             </li>
           ))}
         </ol>
