@@ -5,7 +5,6 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { BrandLogo } from '../components/BrandLogo';
 import { ThemeDetail } from '../components/ThemeDetail';
 import {
-  compatibleConcentrationTime,
   concentrationTimeMethods,
   formatMetric,
   narrativeMetric,
@@ -60,38 +59,40 @@ function ConcentrationTimeMethods() {
       case 'concentration_time_ventura_heras': return math(`${tc}<mn>0,1272</mn><mo>·</mo><msqrt><mfrac><mi>A</mi><mi>S</mi></mfrac></msqrt><mtext> h</mtext>`);
       case 'concentration_time_bransby_williams': return math(`<msub><mi>T</mi><mi>c</mi></msub><mo>≈</mo><mn>0,243</mn><mo>·</mo><mi>L</mi><mo>·</mo><msup><mi>A</mi><mrow><mo>−</mo><mn>0,1</mn></mrow></msup><mo>·</mo><msup><mi>S</mi><mrow><mo>−</mo><mn>0,2</mn></mrow></msup><mtext> h</mtext>`);
       case 'concentration_time_johnstone_cross': return math(`${tc}<mn>0,0543</mn><mo>·</mo><msqrt><mfrac><mi>L</mi><mi>S</mi></mfrac></msqrt><mtext> h</mtext>`);
-      case 'concentration_time_clark': return math('<mtext>Modelo de hidrograma unitário; </mtext><msub><mi>T</mi><mi>c</mi></msub><mtext> é um parâmetro de entrada</mtext>');
       case 'concentration_time_california_culverts': return math(`${tc}<mn>0,87</mn><mo>·</mo><msup><mfrac><msup><mi>L</mi><mn>3</mn></msup><mi>H</mi></mfrac><mn>0,385</mn></msup><mtext> h</mtext>`);
       default: return math('<msub><mi>T</mi><mi>c</mi></msub>');
     }
   };
+  const orderedMethods = [...concentrationTimeMethods].sort((left, right) =>
+    Number(right.assessment === 'scale_compatible') - Number(left.assessment === 'scale_compatible'),
+  );
   return (
-    <figure className="concentration-recommendation" aria-labelledby="concentration-recommendation-caption">
+    <figure className="concentration-recommendation" aria-label="Comparação de resultados de tempo de concentração">
       <div className="concentration-method-intro">
         <span className="concentration-recommendation-kicker">Comparação de métodos</span>
         <h3>Equações, parâmetros e domínio de aplicação</h3>
-        <p>Os métodos representam etapas e condições diferentes do escoamento. A faixa indicada ajuda a contextualizar cada estimativa; não substitui a avaliação dos percursos e dados hidrológicos locais.</p>
       </div>
       <div className="concentration-method-grid" aria-label="Comparação de métodos de tempo de concentração">
-        {concentrationTimeMethods.map((candidate) => (
+        {orderedMethods.map((candidate) => (
           <article className={`concentration-method-card ${candidate.assessment === 'scale_compatible' ? 'is-selected' : ''}`} key={candidate.id}>
             <header>
               <strong>{candidate.method}</strong>
               <span className={`method-fit method-fit-${candidate.assessment}`}>
-                {candidate.assessment === 'scale_compatible' ? 'Compatível quanto à faixa de área consultada' : candidate.assessment === 'extrapolated' ? 'Fora da faixa consultada' : 'Dados de aplicação limitados'}
+                {candidate.assessment === 'scale_compatible' ? 'Mais compatível quanto à faixa de área' : candidate.assessment === 'extrapolated' ? 'Fora da faixa consultada' : 'Dados de aplicação limitados'}
               </span>
             </header>
-            <p className="method-time">Resultado informado <strong>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {candidate.unit}</strong></p>
-            <div className="method-equation" role="math" aria-label={candidate.formula} dangerouslySetInnerHTML={{ __html: renderEquation(candidate.id) }} />
+            <p className="method-time">{candidate.id === 'concentration_time_clark' ? 'Tc usado como entrada' : 'Resultado informado'} <strong>{candidate.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} {candidate.unit}</strong></p>
+            {candidate.id === 'concentration_time_clark' ? (
+              <div className="method-equation method-equation-note" role="note">Tc é um parâmetro de entrada do método Clark.</div>
+            ) : (
+              <div className="method-equation" role="math" aria-label={candidate.formula} dangerouslySetInnerHTML={{ __html: renderEquation(candidate.id) }} />
+            )}
             <p><b>Parâmetros:</b> {candidate.parameters}</p>
             <p><b>Faixa/condição:</b> {candidate.limit}</p>
             <p className="method-context">{candidate.context}</p>
           </article>
         ))}
       </div>
-      <figcaption id="concentration-recommendation-caption">
-        A área da bacia é 17.070,32 km². Entre as fórmulas comparadas, Giandotti é a única cuja faixa de área publicada abrange essa escala. Essa compatibilidade diz respeito à área consultada e não representa calibração regional. Fórmulas com unidades ou insumos diferentes não são comparáveis diretamente; a avaliação hidrológica deve considerar percursos por sub-bacia e registros locais de chuva e vazão.<Citation references={[7, 10, 19, 20]} />
-      </figcaption>
     </figure>
   );
 }
@@ -242,7 +243,7 @@ function NarrativeSection({
       <div className="story-copy">
         <span className="eyebrow">{eyebrow}</span>
         <h2 id={`${id}-title`}>{title}</h2>
-        <div className="story-description">{description}</div>
+        {description && <div className="story-description">{description}</div>}
       </div>
       <div className="story-visual">{children}</div>
     </section>
@@ -290,7 +291,6 @@ export function HomePage() {
   const compactness = narrativeMetric('compactness_coefficient');
   const ruggedness = narrativeMetric('ruggedness_number');
   const massivity = narrativeMetric('massivity_index');
-  const compatibleTime = compatibleConcentrationTime[0]!;
 
   const elevationPosition = (value: number) => (
     ((value - minimumElevation.value) / (maximumElevation.value - minimumElevation.value)) * 100
@@ -500,34 +500,9 @@ export function HomePage() {
       <NarrativeSection
         id="tempos"
         eyebrow="07 · Resposta à chuva"
-        title="Como estimar o tempo de concentração"
+        title="Um tempo de referência compatível com a escala da bacia"
         tone="brand"
-        description={<>
-          <p>
-            O tempo de concentração aproxima o percurso da água até a saída da bacia, mas sua definição varia entre métodos.
-            Algumas equações estimam o tempo de viagem em canais; outras cobrem o escoamento superficial ou combinam trechos.
-            Por isso, os resultados não são diretamente equivalentes e dependem das unidades, do caminho hidráulico e dos
-            parâmetros escolhidos.<Citation references={[7, 10]} />
-          </p>
-          <p>
-            Na síntese de condições de aplicação consultada, a área da bacia está dentro da faixa publicada para Giandotti.
-            O resultado informado para esse método é {compatibleTime.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} h;
-            compatibilidade de área não equivale, por si só, à calibração para as condições locais.
-          </p>
-          <p>
-            Kirpich, Kerby, Témez, Bransby–Williams e California Culverts foram desenvolvidos ou compilados para domínios bem menores
-            ou condições específicas. Johnstone–Cross alcança bacias maiores que esses métodos, mas sua faixa publicada ainda não
-            cobre o Paramirim. O procedimento USDA/NRCS depende de dados de percurso e cobertura; Clark é um método de hidrograma
-            que precisa receber um Tc e outros parâmetros, não uma fórmula independente para calculá-lo. Fórmulas sem variante,
-            unidade ou fonte primária confirmadas ficam apenas para comparação.<Citation references={[7, 8, 9, 10, 11]} />
-          </p>
-          <p>
-            Para avançar, é preciso dividir a bacia em unidades de resposta mais homogêneas, delinear os percursos hidráulicos,
-            documentar comprimento e declividade de cada trecho, representar uso do solo e infiltração e comparar estimativas
-            com séries observadas de chuva e vazão. A tabela explicita equações, parâmetros e limites para que o número não seja
-            confundido com uma previsão de projeto.<Citation references={[7, 8, 9, 10]} />
-          </p>
-        </>}
+        description={null}
       >
         <ConcentrationTimeMethods />
       </NarrativeSection>

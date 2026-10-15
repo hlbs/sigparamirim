@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.4] - 2026-10-15
+
+### Comparação dos tempos de concentração
+
+- a seção “Resposta à chuva” manteve seu título original e deixou de exibir o texto introdutório extenso;
+- o método Giandotti, mais compatível quanto à faixa de área consultada, agora aparece primeiro e recebe destaque visual;
+- o cartão Clark informa de forma direta que o tempo de concentração é um parâmetro de entrada, sem barra de rolagem horizontal;
+- a grade de métodos e os resultados foram reorganizados para leitura mais clara e adaptável a telas menores.
+
 ## [1.0.3] - 2026-10-15
 
 ### Estimativa do tempo de concentração
