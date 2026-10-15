@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Navigate, NavLink, Route, Routes } from 'react-router-dom';
 import { usePreferences } from './stores/preferences';
 import { signOutUser, useAuth } from './features/auth';
@@ -26,17 +26,6 @@ const navigation = [
   { path: '/observatorio', label: 'Observatório', icon: 'observatory' },
   { path: '/ajuda', label: 'Ajuda', icon: 'help' },
 ];
-
-const mobileNavigationStorageKey = 'sigparamirim:mobile-navigation-order:v1';
-
-function readMobileNavigationOrder() {
-  try {
-    const stored: unknown = JSON.parse(localStorage.getItem(mobileNavigationStorageKey) || '[]');
-    return Array.isArray(stored) ? stored.filter((path): path is string => typeof path === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 type IconName = 'home' | 'map' | 'chart' | 'observatory' | 'help' | 'menu' | 'moon' | 'sun' | 'bell' | 'edit' | 'settings' | 'chevron' | 'chevronLeft' | 'chevronRight' | 'user' | 'logout' | 'file' | 'shield';
 function UiIcon({ name }: { name: IconName }) {
@@ -79,9 +68,6 @@ function PlatformShell() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [legalDocument, setLegalDocument] = useState<'terms' | 'privacy' | null>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null);
-  const mobileNavDragRef = useRef<{ path: string; pointerId: number; startX: number; dragging: boolean } | null>(null);
-  const suppressMobileNavClickRef = useRef(false);
-  const [mobileNavigationOrder, setMobileNavigationOrder] = useState<string[]>(readMobileNavigationOrder);
   const firebaseConfigured = Boolean(
     import.meta.env.VITE_FIREBASE_API_KEY
       && import.meta.env.VITE_FIREBASE_AUTH_DOMAIN
@@ -113,22 +99,7 @@ function PlatformShell() {
         : [];
     return [...navigation, ...roleNavigation];
   }, [user?.role]);
-  const mobileNavigation = useMemo(() => {
-    const order = new Map(mobileNavigationOrder.map((path, index) => [path, index]));
-    return [...visibleNavigation].sort((a, b) => (order.get(a.path) ?? Number.MAX_SAFE_INTEGER) - (order.get(b.path) ?? Number.MAX_SAFE_INTEGER));
-  }, [mobileNavigationOrder, visibleNavigation]);
-
   const closeLegalDocument = useCallback(() => setLegalDocument(null), []);
-
-  useEffect(() => {
-    const paths = visibleNavigation.map((item) => item.path);
-    setMobileNavigationOrder((current) => {
-      const next = [...current.filter((path) => paths.includes(path)), ...paths.filter((path) => !current.includes(path))];
-      if (next.length === current.length && next.every((path, index) => path === current[index])) return current;
-      try { localStorage.setItem(mobileNavigationStorageKey, JSON.stringify(next)); } catch { /* browser storage may be unavailable */ }
-      return next;
-    });
-  }, [visibleNavigation]);
 
   useEffect(() => {
     const mobile = window.matchMedia('(max-width: 680px)');
@@ -137,36 +108,6 @@ function PlatformShell() {
     mobile.addEventListener('change', closeDrawer);
     return () => mobile.removeEventListener('change', closeDrawer);
   }, [setSidebarOpen]);
-
-  const reorderMobileNavigation = (event: PointerEvent<HTMLAnchorElement>) => {
-    const drag = mobileNavDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (!drag.dragging && Math.abs(event.clientX - drag.startX) < 12) return;
-    drag.dragging = true;
-    event.preventDefault();
-    const targetPath = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-mobile-nav-path]')?.dataset.mobileNavPath;
-    if (!targetPath || targetPath === drag.path) return;
-    setMobileNavigationOrder((current) => {
-      const from = current.indexOf(drag.path);
-      const to = current.indexOf(targetPath);
-      if (from < 0 || to < 0 || from === to) return current;
-      const next = [...current];
-      next.splice(from, 1);
-      next.splice(to, 0, drag.path);
-      try { localStorage.setItem(mobileNavigationStorageKey, JSON.stringify(next)); } catch { /* browser storage may be unavailable */ }
-      return next;
-    });
-  };
-
-  const finishMobileNavigationDrag = (event: PointerEvent<HTMLAnchorElement>) => {
-    const drag = mobileNavDragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-    if (drag.dragging) {
-      suppressMobileNavClickRef.current = true;
-      window.setTimeout(() => { suppressMobileNavClickRef.current = false; }, 0);
-    }
-    mobileNavDragRef.current = null;
-  };
 
   return (
     <div className="app-shell">
@@ -257,9 +198,9 @@ function PlatformShell() {
         </Routes>
       </main>
 
-      <nav className="mobile-nav" aria-label="Navegação móvel. Pressione e arraste um item para reorganizar">
-        {mobileNavigation.map((item) => (
-          <NavLink key={item.path} to={item.path} data-mobile-nav-path={item.path} onPointerDown={(event) => { mobileNavDragRef.current = { path: item.path, pointerId: event.pointerId, startX: event.clientX, dragging: false }; }} onPointerMove={reorderMobileNavigation} onPointerUp={finishMobileNavigationDrag} onPointerCancel={finishMobileNavigationDrag} onClick={(event) => { if (suppressMobileNavClickRef.current) { event.preventDefault(); suppressMobileNavClickRef.current = false; } }} className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''} ${mobileNavDragRef.current?.path === item.path && mobileNavDragRef.current.dragging ? 'is-dragging' : ''}`}>
+      <nav className="mobile-nav" aria-label="Navegação principal; deslize horizontalmente para ver mais opções">
+        {visibleNavigation.map((item) => (
+          <NavLink key={item.path} to={item.path} className={({ isActive }) => `mobile-nav-item ${isActive ? 'active' : ''}`}>
             <span aria-hidden="true"><UiIcon name={item.icon as IconName} /></span>
             <small>{item.label}</small>
           </NavLink>

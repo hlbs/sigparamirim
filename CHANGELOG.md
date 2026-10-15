@@ -2,6 +2,15 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.5] - 2026-10-15
+
+### Navegação móvel e leitura da página inicial
+
+- as seções da página inicial agora permanecem visíveis depois de aparecerem durante a rolagem, evitando que títulos sumam ou pareçam cortados;
+- a seção “Resposta à chuva” e seu conteúdo ficam visíveis em telas pequenas, com o título protegido contra recortes durante a navegação;
+- o menu inferior passou a usar itens de largura estável e rolagem horizontal por gesto, sem arrastar ou reordenar ícones;
+- os rótulos do menu foram ajustados para caber em cada opção sem se chocarem entre si.
+
 ## [1.0.4] - 2026-10-15
 
 ### Comparação dos tempos de concentração

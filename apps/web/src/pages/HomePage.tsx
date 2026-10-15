@@ -260,9 +260,12 @@ export function HomePage() {
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
-        entry.target.classList.toggle('is-visible', entry.isIntersecting);
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
       });
-    }, { threshold: 0.2, rootMargin: '-7% 0px -7% 0px' });
+    }, { threshold: 0.01, rootMargin: '0px 0px -4% 0px' });
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
   }, []);
