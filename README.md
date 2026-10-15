@@ -4,7 +4,7 @@ Plataforma científica, PWA e WebGIS para organização, visualização e divulg
 
 ## Estado do projeto
 
-O SIG Paramirim está na versão estável `1.0.5`: uma plataforma científica com PWA, WebGIS, dashboards, acervo do Observatório, gestão editorial e conteúdo morfométrico sobre a Bacia Hidrográfica do Rio Paramirim. A versão atual corrige a visibilidade das seções da página inicial em telas pequenas e reorganiza o menu inferior para rolagem horizontal, sem reordenar os atalhos. O histórico de cada versão registra em linguagem simples as mudanças entregues.
+O SIG Paramirim está na versão estável `1.0.6`: uma plataforma científica com PWA, WebGIS, dashboards, acervo do Observatório, gestão editorial e conteúdo morfométrico sobre a Bacia Hidrográfica do Rio Paramirim. A versão atual corrige o alinhamento horizontal do menu inferior ao acessar o WebGIS pelo celular. O histórico de cada versão registra em linguagem simples as mudanças entregues.
 
 ## Desenvolvimento local
 

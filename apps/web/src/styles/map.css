@@ -559,7 +559,7 @@
   .webgis-print-form label:first-child, .webgis-print-form .webgis-print-checks, .webgis-print-note { grid-column: 1; }
   .webgis-print-dialog > header, .webgis-print-dialog > footer { padding-inline: 15px; }
   .main-content:has(.webgis-workspace) ~ .mobile-nav,
-  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: grid !important; }
+  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: flex !important; flex-flow: row nowrap; }
 }
 
 /* A portrait phone can display the 16:9 report at landscape size without relying on unsupported orientation locks. */
@@ -589,7 +589,7 @@
   .mobile-nav, .main-content:has(.webgis-workspace) ~ .mobile-nav,
   .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav {
     position: fixed; z-index: 25; right: 50%; bottom: max(4px, env(safe-area-inset-bottom)); left: auto;
-    display: grid !important; width: min(560px, calc(100vw - 20px)); height: 54px; transform: translateX(50%);
+    display: flex !important; flex-flow: row nowrap; width: min(560px, calc(100vw - 20px)); height: 54px; transform: translateX(50%);
   }
   .webgis-workspace { height: calc(100dvh - 120px); }
   .webgis-topbar { min-height: 46px; padding-inline: 8px; }
@@ -602,7 +602,7 @@
   .webgis-side-tabs button, .webgis-tools-panel.is-collapsed .webgis-side-tabs button { width: auto; height: 42px; min-height: 42px; flex-direction: row; gap: 7px; margin: 0; border-radius: 10px; font-size: .67rem; }
   .webgis-panel-title { padding-top: 8px; }
   .main-content:has(.webgis-workspace) ~ .mobile-nav,
-  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: grid !important; }
+  .main-content-expanded:has(.webgis-workspace) ~ .mobile-nav { display: flex !important; flex-flow: row nowrap; }
   .webgis-dashboard-focus-backdrop { padding: 0; }
   .webgis-dashboard-focus { width: min(100vw, calc((100dvh - 42px) * 16 / 9)); max-height: calc(100dvh - 42px); border-radius: 0; }
   .webgis-dashboard-focus-frame { width: 100%; max-height: calc(100dvh - 42px); }

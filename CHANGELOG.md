@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes do SIG Paramirim serão registradas neste arquivo.
 
+## [1.0.6] - 2026-10-15
+
+### Menu móvel no WebGIS
+
+- corrigida a regra de layout que empilhava os atalhos do menu inferior ao abrir o mapa em telas pequenas;
+- os atalhos principais voltaram a ficar alinhados horizontalmente, sem se sobrepor à barra de camadas, legenda e ferramentas do WebGIS.
+
 ## [1.0.5] - 2026-10-15
 
 ### Navegação móvel e leitura da página inicial
